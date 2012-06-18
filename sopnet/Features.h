@@ -1,7 +1,7 @@
 #ifndef SOPNET_FEATURES_H__
 #define SOPNET_FEATURES_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class Features : public pipeline::Data {
 

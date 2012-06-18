@@ -5,7 +5,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include "Segments.h"
 

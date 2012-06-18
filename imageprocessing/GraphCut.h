@@ -4,7 +4,7 @@
 #include <external/maxflow/graph.h>
 
 #include <imageprocessing/Image.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <util/Logger.h>
 
 #include "GraphCutParameters.h"

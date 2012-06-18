@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_TRACKLETS_H__
 #define CELLTRACKER_TRACKLETS_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Segment.h"
 
 class Segments : public pipeline::Data {

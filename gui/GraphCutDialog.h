@@ -8,7 +8,7 @@
 #include <gui/Switch.h>
 #include <gui/VerticalPlacing.h>
 #include <imageprocessing/GraphCutParameters.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class GraphCutDialog : public pipeline::ProcessNode {
 

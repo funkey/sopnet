@@ -1,7 +1,7 @@
 #ifndef SOPNET_GOLD_STANDARD_EXTRACTOR_H__
 #define SOPNET_GOLD_STANDARD_EXTRACTOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include <util/point.hpp>
 #include "Segments.h"

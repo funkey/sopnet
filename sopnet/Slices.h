@@ -3,7 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Slice.h"
 
 class Slices : public pipeline::Data {

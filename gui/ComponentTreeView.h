@@ -4,7 +4,7 @@
 #include <gui/ComponentTreePainter.h>
 #include <gui/Signals.h>
 #include <imageprocessing/ComponentTree.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class ComponentTreeView : public pipeline::SimpleProcessNode {
 

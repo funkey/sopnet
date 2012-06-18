@@ -1,7 +1,7 @@
 #ifndef SOPNET_HISTOGRAM_FEATURE_EXTRACTOR_H_
 #define SOPNET_HISTOGRAM_FEATURE_EXTRACTOR_H_
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include "Segments.h"
 #include "SegmentVisitor.h"

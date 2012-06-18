@@ -1,7 +1,7 @@
 #ifndef SOPNET_SEGMENT_FEATURES_EXTRACTOR_H__
 #define SOPNET_SEGMENT_FEATURES_EXTRACTOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include "Features.h"
 #include "Segments.h"

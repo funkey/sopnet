@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_PROBLEM_ASSEMBLER_H__
 #define CELLTRACKER_PROBLEM_ASSEMBLER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include "Segments.h"
 #include "SegmentVisitor.h"

@@ -6,7 +6,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include <imageprocessing/ComponentTree.h>
 #include "Slices.h"

@@ -4,7 +4,7 @@
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include <util/Logger.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 static logger::LogChannel componenttreelog("componenttreelog", "[ComponentTree] ");
 

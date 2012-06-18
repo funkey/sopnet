@@ -6,7 +6,7 @@
 #include <vigra/multi_array.hxx>
 #include <vigra/random_forest.hxx>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class RandomForest : public pipeline::Data {
 

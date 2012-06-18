@@ -3,7 +3,7 @@
 
 #include <boost/function.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include "Slices.h"
 #include "Segments.h"

@@ -1,7 +1,7 @@
 #ifndef INFERENCE_LINEAR_SOLVER_PARAMETERS_H__
 #define INFERENCE_LINEAR_SOLVER_PARAMETERS_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 #include "VariableType.h"
 

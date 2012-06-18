@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_IO_COMPONENT_TREE_HDF5_WRITER_H__
 #define IMAGEPROCESSING_IO_COMPONENT_TREE_HDF5_WRITER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <util/hdf5.h>
 #include <imageprocessing/ComponentTree.h>
 

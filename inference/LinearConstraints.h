@@ -1,7 +1,7 @@
 #ifndef INFERENCE_LINEAR_CONSTRAINTS_H__
 #define INFERENCE_LINEAR_CONSTRAINTS_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "LinearConstraint.h"
 
 class LinearConstraints : public pipeline::Data {

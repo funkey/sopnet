@@ -1,7 +1,7 @@
 #ifndef SOPNET_SEGMENT_RANDOM_FOREST_TRAINER_H__
 #define SOPNET_SEGMENT_RANDOM_FOREST_TRAINER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include <inference/LinearConstraints.h>
 #include <inference/RandomForest.h>

@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_GUI_IMAGE_STACK_VIEW_H__
 #define IMAGEPROCESSING_GUI_IMAGE_STACK_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include <gui/Keys.h>
 #include <gui/Signals.h>

@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_TRACKLET_EVALUATOR_H__
 #define CELLTRACKER_TRACKLET_EVALUATOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Segment.h"
 #include "SegmentVisitor.h"
 #include "SegmentCostFunctionParameters.h"

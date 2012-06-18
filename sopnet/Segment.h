@@ -3,7 +3,7 @@
 
 #include <boost/thread.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Slice.h"
 
 // forward declaration

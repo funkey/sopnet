@@ -3,7 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 // forward declarations
 class ImageStack;

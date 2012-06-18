@@ -4,7 +4,7 @@
 #include <map>
 #include <utility>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Sense.h"
 
 class QuadraticObjective : public pipeline::Data {

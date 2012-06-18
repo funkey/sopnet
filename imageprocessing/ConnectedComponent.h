@@ -7,7 +7,7 @@
 #include <util/point.hpp>
 #include <util/rect.hpp>
 #include <util/Logger.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class ConnectedComponent : public pipeline::Data {
 

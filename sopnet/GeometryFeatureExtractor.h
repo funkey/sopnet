@@ -1,7 +1,7 @@
 #ifndef SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_
 #define SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Segments.h"
 #include "SegmentVisitor.h"
 #include "Features.h"

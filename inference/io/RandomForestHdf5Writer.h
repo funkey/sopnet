@@ -1,7 +1,7 @@
 #ifndef INFERENCE_IO_RANDOM_FOREST_HDF5_WRITER_H__
 #define INFERENCE_IO_RANDOM_FOREST_HDF5_WRITER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/RandomForest.h>
 
 class RandomForestHdf5Writer : public pipeline::SimpleProcessNode {

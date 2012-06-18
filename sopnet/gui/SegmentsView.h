@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_GUI_TRACKLETS_VIEW_H__
 #define CELLTRACKER_GUI_TRACKLETS_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <sopnet/Segments.h>
 #include <gui/Signals.h>
 #include "SegmentsPainter.h"

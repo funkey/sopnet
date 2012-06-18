@@ -1,7 +1,7 @@
 #ifndef NUMBER_VIEW_H__
 #define NUMBER_VIEW_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <gui/TextPainter.h>
 #include <gui/Signals.h>
 

@@ -1,7 +1,7 @@
 #ifndef TIME_H__
 #define TIME_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 struct TimeStamp : public pipeline::Data {
 

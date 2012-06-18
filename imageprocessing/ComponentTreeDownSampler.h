@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_COMPONENT_TREE_DOWN_SAMPLER_H__
 #define IMAGEPROCESSING_COMPONENT_TREE_DOWN_SAMPLER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ComponentTree.h>
 
 class ComponentTreeDownSampler : public pipeline::SimpleProcessNode {

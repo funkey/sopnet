@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_IMAGE_STACK_H__
 #define IMAGEPROCESSING_IMAGE_STACK_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/Image.h>
 
 class ImageStack : public pipeline::Data {

@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_OBJECTIVE_GENERATOR_H__
 #define CELLTRACKER_OBJECTIVE_GENERATOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/LinearObjective.h>
 #include "Segments.h"
 

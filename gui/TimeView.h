@@ -2,7 +2,7 @@
 #define GUI_TIME_VIEW_H__
 
 #include <toys/Time.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <gui/TextPainter.h>
 #include <gui/Signals.h>
 

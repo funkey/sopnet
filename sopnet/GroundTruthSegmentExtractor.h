@@ -1,7 +1,7 @@
 #ifndef SOPNET_GROUND_TRUTH_SEGMENT_EXTRACTOR_H__
 #define SOPNET_GROUND_TRUTH_SEGMENT_EXTRACTOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Slices.h"
 #include "Segments.h"
 

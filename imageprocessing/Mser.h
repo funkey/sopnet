@@ -4,7 +4,7 @@
 #include <vector>
 #include <stack>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <imageprocessing/ComponentTree.h>
 #include "MserParameters.h"
 #include "mser/Region.h"

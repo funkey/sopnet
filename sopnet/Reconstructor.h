@@ -1,7 +1,7 @@
 #ifndef CELLTRACKER_RECONSTRUCTOR_H__
 #define CELLTRACKER_RECONSTRUCTOR_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/Solution.h>
 #include "Segments.h"
 

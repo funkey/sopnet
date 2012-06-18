@@ -5,7 +5,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "DefaultFactory.h"
 #include "LinearConstraints.h"
 #include "LinearObjective.h"

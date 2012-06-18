@@ -3,7 +3,7 @@
 
 #include <boost/thread.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include "Time.h"
 
 class Clock : public pipeline::ProcessNode {

@@ -1,7 +1,7 @@
 #ifndef SOPNET_RANDOM_FOREST_TRAINER_H__
 #define SOPNET_RANDOM_FOREST_TRAINER_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 #include <inference/RandomForest.h>
 #include "Features.h"
 #include "Segments.h"

@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_GRAPH_CUT_PARAMETERS_H__
 #define IMAGEPROCESSING_GRAPH_CUT_PARAMETERS_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 struct GraphCutParameters : public pipeline::Data {
 

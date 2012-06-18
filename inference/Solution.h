@@ -1,7 +1,7 @@
 #ifndef INFERENCE_SOLUTION_H__
 #define INFERENCE_SOLUTION_H__
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class Solution : public pipeline::Data {
 

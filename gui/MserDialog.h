@@ -7,7 +7,7 @@
 #include <gui/Slider.h>
 #include <gui/VerticalPlacing.h>
 #include <imageprocessing/MserParameters.h>
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 class MserDialog : public pipeline::ProcessNode {
 

@@ -5,7 +5,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include <pipeline.h>
+#include <pipeline/all.h>
 
 // forward declarations
 class Image;
