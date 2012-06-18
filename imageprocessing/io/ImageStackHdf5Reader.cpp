@@ -43,7 +43,7 @@ ImageStackHdf5Reader::readImages() {
 	unsigned int sections = dims[2];
 
 	// create images
-	for (int i = 0; i < std::min(sections, (unsigned int)5); i++) {
+	for (int i = 0; i < sections; i++) {
 
 		// create a shared float vector that stores the actual data
 		boost::shared_ptr<std::vector<float> > imageData = boost::make_shared<std::vector<float> >(width*height);
