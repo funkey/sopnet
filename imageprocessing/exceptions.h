@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_EXCEPTIONS_H__
 #define IMAGEPROCESSING_EXCEPTIONS_H__
 
-#include <common/exceptions.h>
+#include <util/exceptions.h>
 
 /*
  * EXCEPTIONS
