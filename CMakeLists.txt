@@ -178,9 +178,13 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/sopnet)
 include_directories(${PROJECT_SOURCE_DIR}/gui)
 include_directories(${PROJECT_SOURCE_DIR}/imageprocessing)
-include_directories(${PROJECT_SOURCE_DIR}/common)
+include_directories(${PROJECT_SOURCE_DIR}/modules)
 
-add_subdirectory(common)
+add_subdirectory(modules/util)
+add_subdirectory(modules/signals)
+add_subdirectory(modules/pipeline)
+add_subdirectory(modules/imageprocessing)
+add_subdirectory(modules/gui)
 
 #####################
 # compiler settings #
@@ -210,7 +214,7 @@ file (GLOB sopnetfiles
   toys/*.cpp)
 
 add_library(allsopnet ${sopnetfiles})
-target_link_libraries(allsopnet common ${CORELIBS})
+target_link_libraries(allsopnet util signals pipeline imageprocessing gui ${CORELIBS})
 
 add_executable(sopnet sopnet.cpp)
 target_link_libraries(sopnet allsopnet)
