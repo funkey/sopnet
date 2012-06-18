@@ -1,0 +1,33 @@
+Compilation
+===========
+
+If you haven't done so already, make sure that all submodules are up-to-date:
+
+  git submodule update --init
+
+Create a build directory (e.g., ./build), change into it and type
+
+  cmake [path_to_sopnet_directory (e.g. '..')]
+
+cmake will try to find the required packages and tell you, which ones are missing. All packages except for the vigra library can be installed using the default Ubuntu repositories.
+
+To get a recent version of vigra, perform the following steps:
+
+Vigra
+-----
+
+  Get vigra from
+
+    git clone git://github.com/ukoethe/vigra.git
+
+  or
+
+    http://hci.iwr.uni-heidelberg.de/vigra/vigra-1.8.0-src.tar.gz
+
+  and build it
+  (http://hci.iwr.uni-heidelberg.de/vigra/doc/vigra/Installation.html). Set the
+  Vigra_BUILD_DIR to the  directory where you built it.
+
+After cmake finished without errors, run
+
+  make
