@@ -1,0 +1,4 @@
+build
+*.sw[pmno]
+.cproject
+.project
