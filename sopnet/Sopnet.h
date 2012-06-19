@@ -6,17 +6,20 @@
 #include <pipeline/all.h>
 
 // forward declarations
-class ImageStack;
+class GroundTruthExtractor;
 class ImageExtractor;
-class SliceExtractor;
+class ImageStack;
+class LinearSolver;
+class ObjectiveGenerator;
+class ProblemAssembler;
+class RandomForestHdf5Reader;
+class Reconstructor;
 class SegmentEvaluator;
 class SegmentExtractor;
-class ProblemAssembler;
-class ObjectiveGenerator;
-class LinearSolver;
-class Reconstructor;
-class GroundTruthExtractor;
+class SegmentFeaturesExtractor;
+class SegmentRandomForestEvaluator;
 class SegmentRandomForestTrainer;
+class SliceExtractor;
 
 class Sopnet : public pipeline::ProcessNode {
 
@@ -70,9 +73,6 @@ private:
 	// a slice extractor for each section
 	std::vector<boost::shared_ptr<SliceExtractor> >   _sliceExtractors;
 
-	// a segment evaluator that provides a cost function for segments
-	boost::shared_ptr<SegmentEvaluator>               _segmentEvaluator;
-
 	// a segment extractor for each pair of timesteps
 	std::vector<boost::shared_ptr<SegmentExtractor> > _segmentExtractors;
 
@@ -82,6 +82,15 @@ private:
 	/*
 	 * internal pipeline, inference part
 	 */
+
+	// a feature extractor computing features for each segment
+	boost::shared_ptr<SegmentFeaturesExtractor>       _segmentFeaturesExtractor;
+
+	// a random forest file reader
+	boost::shared_ptr<RandomForestHdf5Reader>         _randomForestReader;
+
+	// a segment evaluator that provides a cost function for segments
+	boost::shared_ptr<SegmentRandomForestEvaluator>   _segmentEvaluator;
 
 	// the objective generator that computes the costs for each segment
 	boost::shared_ptr<ObjectiveGenerator>             _objectiveGenerator;

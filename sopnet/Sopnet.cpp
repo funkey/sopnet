@@ -2,8 +2,10 @@
 
 #include <imageprocessing/ImageStack.h>
 #include <imageprocessing/ImageExtractor.h>
+#include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearSolver.h>
 #include <util/foreach.h>
+#include <util/ProgramOptions.h>
 #include "GroundTruthExtractor.h"
 #include "GoldStandardExtractor.h"
 #include "ObjectiveGenerator.h"
@@ -11,17 +13,27 @@
 #include "Reconstructor.h"
 #include "SegmentEvaluator.h"
 #include "SegmentExtractor.h"
+#include "SegmentFeaturesExtractor.h"
+#include "SegmentRandomForestEvaluator.h"
 #include "SegmentRandomForestTrainer.h"
 #include "SliceExtractor.h"
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
 
+util::ProgramOption argRandomForestFile(
+		util::_module = "sopnet",
+		util::_long_name = "segmentRandomForest",
+		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
+		util::_default_value = "segment_rf.hdf");
+
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_projectDirectory(projectDirectory),
 	_membraneExtractor(boost::make_shared<ImageExtractor>()),
-	_segmentEvaluator(boost::make_shared<SegmentEvaluator>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
+	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
+	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(argRandomForestFile.as<std::string>())),
+	_segmentEvaluator(boost::make_shared<SegmentRandomForestEvaluator>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
@@ -103,10 +115,6 @@ Sopnet::createBasicPipeline() {
 	// let the internal image extractor know where to look for the image stack
 	_membraneExtractor->setInput(_membranes.getAssignedOutput());
 
-	// set the parameters for the segment evaluation function
-	// TODO: expose relevant parameters
-	_segmentEvaluator->setInput(boost::make_shared<SegmentCostFunctionParameters>());
-
 	LOG_DEBUG(sopnetlog) << "creating pipeline for " << _membranes->size() << " sections" << std::endl;
 
 	// for every section
@@ -152,6 +160,14 @@ void
 Sopnet::createInferencePipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating inference part..." << std::endl;
+
+	// setup the segment feature extractor
+	_segmentFeaturesExtractor->setInput("segments", _problemAssembler->getOutput("segments"));
+	_segmentFeaturesExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
+
+	// setup the segment evaluation function
+	_segmentEvaluator->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+	_segmentEvaluator->setInput("random forest", _randomForestReader->getOutput("random forest"));
 
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
