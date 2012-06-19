@@ -138,8 +138,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
 		if (section == _membranes->size() - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
-		segmentExtractor->setInput("cost function", _segmentEvaluator->getOutput("cost function"));
-		segmentExtractor->setInput("cost threshold", _segmentExtractionThreshold.getAssignedOutput());
+		segmentExtractor->setInput("distance threshold", _segmentExtractionThreshold.getAssignedOutput());
 
 		_segmentExtractors.push_back(segmentExtractor);
 

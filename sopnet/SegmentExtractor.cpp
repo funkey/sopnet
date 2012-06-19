@@ -1,3 +1,8 @@
+#include <boost/function.hpp>
+
+#include <external/kdtree++/kdtree.hpp>
+
+#include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
@@ -12,8 +17,7 @@ SegmentExtractor::SegmentExtractor() {
 	registerInput(_nextSlices, "next slices");
 	registerInput(_prevLinearConstraints, "previous linear constraints");
 	registerInput(_nextLinearConstraints, "next linear constraints", pipeline::Optional);
-	registerInput(_costFunction, "cost function");
-	registerInput(_costThreshold, "cost threshold");
+	registerInput(_distanceThreshold, "distance threshold");
 
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
@@ -27,10 +31,23 @@ SegmentExtractor::updateOutputs() {
 	assembleLinearConstraints();
 }
 
+struct CoordAccessor {
+
+	double operator()(boost::shared_ptr<Slice> slice, size_t k) {
+
+		if (k == 0)
+			return slice->getComponent()->getCenter().x;
+		else
+			return slice->getComponent()->getCenter().y;
+	}
+};
+
 void
 SegmentExtractor::extractSegments() {
 
 	LOG_DEBUG(segmentextractorlog) << "extracting segments..." << std::endl;
+
+	LOG_ALL(segmentextractorlog) << "extracting ends to previous section..." << std::endl;
 
 	// end segments for every previous slice
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
@@ -38,6 +55,8 @@ SegmentExtractor::extractSegments() {
 		extractSegment(prevSlice, Left);
 		extractSegment(prevSlice, Right);
 	}
+
+	LOG_ALL(segmentextractorlog) << "extracting ends to next section..." << std::endl;
 
 	// end segments for every next slice, if we are the last segment extractor
 	if (_nextLinearConstraints)
@@ -47,10 +66,33 @@ SegmentExtractor::extractSegments() {
 			extractSegment(nextSlice, Right);
 		}
 
-	// continuation segments for every pair of slices
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices)
-		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
+	LOG_ALL(segmentextractorlog) << "creating kd-tree for next slices..." << std::endl;
+
+	// put all next slices in a kd-tree
+	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
+	CoordAccessor coordAccessor;
+	tree_type kdtree(coordAccessor);
+
+	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
+		kdtree.insert(nextSlice);
+	kdtree.optimise();
+
+	LOG_ALL(segmentextractorlog) << "extracting continuations to next slice..." << std::endl;
+
+	// for all slices in previous section...
+	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
+
+		LOG_ALL(segmentextractorlog) << "searching partners of " << prevSlice->getComponent()->getCenter() << " within " << *_distanceThreshold << std::endl;
+
+		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
+		kdtree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
+
+		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
+
+		// ...and all next slices within a threshold distance
+		foreach (boost::shared_ptr<Slice> nextSlice, closeNextSlices)
 			extractSegment(prevSlice, nextSlice);
+	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments" << std::endl;
 }
@@ -72,15 +114,10 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 
 	boost::shared_ptr<Segment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
 
-	double costs = (*_costFunction)(*segment);
+	_segments->add(segment);
 
-	if (costs <= *_costThreshold) {
-
-		_segments->add(segment);
-
-		// only for the left slice
-		_sliceSegments[prevSlice->getId()].push_back(segment->getId());
-	}
+	// only for the left slice
+	_sliceSegments[prevSlice->getId()].push_back(segment->getId());
 }
 
 void

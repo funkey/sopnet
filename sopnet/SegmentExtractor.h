@@ -36,9 +36,9 @@ private:
 	pipeline::Input<LinearConstraints> _prevLinearConstraints;
 	pipeline::Input<LinearConstraints> _nextLinearConstraints;
 
-	// the cost function and the threshold under which to accept a segment
-	pipeline::Input<boost::function<double(const Segment&)> > _costFunction;
-	pipeline::Input<double> _costThreshold;
+	// the distance in pixels until which to consider slices to belong to the
+	// same segment
+	pipeline::Input<double> _distanceThreshold;
 
 	// the extracted segments and the linear constraints on them
 	pipeline::Output<Segments>          _segments;

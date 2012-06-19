@@ -42,6 +42,11 @@ util::ProgramOption argTraining(
 		_short_name = "t",
 		_description_text = "Train the segment random forest classifier.");
 
+util::ProgramOption argSegmentExtractionThreshold(
+		_module = "sopnet",
+		_long_name = "segmentDistanceThreshold",
+		_description_text = "The maximal center distance between slices to consider them for segment hypotheses.");
+
 void handleException(boost::exception& e) {
 
 
@@ -97,8 +102,12 @@ private:
 
 	void updateOutputs() {
 
-		if (_segmentExtractionThreshold)
+		if (argSegmentExtractionThreshold)
+			*_segmentExtractionThreshold = argSegmentExtractionThreshold;
+		else
 			*_segmentExtractionThreshold = 10000.0;
+
+		LOG_USER(out) << "segment extraction threshold set to " << *_segmentExtractionThreshold << std::endl;
 	}
 
 	pipeline::Output<double> _segmentExtractionThreshold;
