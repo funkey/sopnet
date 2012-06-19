@@ -7,6 +7,7 @@
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
+#include "BranchSegment.h"
 #include "SegmentExtractor.h"
 
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
@@ -71,27 +72,69 @@ SegmentExtractor::extractSegments() {
 	// put all next slices in a kd-tree
 	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
 	CoordAccessor coordAccessor;
-	tree_type kdtree(coordAccessor);
+	tree_type nextKDTree(coordAccessor);
 
 	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
-		kdtree.insert(nextSlice);
-	kdtree.optimise();
+		nextKDTree.insert(nextSlice);
+	nextKDTree.optimise();
 
-	LOG_ALL(segmentextractorlog) << "extracting continuations to next slice..." << std::endl;
+	LOG_ALL(segmentextractorlog) << "creating kd-tree for prev slices..." << std::endl;
+
+	// put all prev slices in a kd-tree
+	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
+	tree_type prevKDTree(coordAccessor);
+
+	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices)
+		prevKDTree.insert(prevSlice);
+	prevKDTree.optimise();
+
+	LOG_ALL(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
-		LOG_ALL(segmentextractorlog) << "searching partners of " << prevSlice->getComponent()->getCenter() << " within " << *_distanceThreshold << std::endl;
-
 		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		kdtree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
+		nextKDTree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
 		// ...and all next slices within a threshold distance
 		foreach (boost::shared_ptr<Slice> nextSlice, closeNextSlices)
 			extractSegment(prevSlice, nextSlice);
+	}
+
+	LOG_ALL(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
+
+	// for all slices in previous section...
+	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
+
+		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
+		nextKDTree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
+
+		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
+
+		// ...and all pairs of next slices within a threshold distance
+		foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
+			foreach (boost::shared_ptr<Slice> nextSlice2, closeNextSlices)
+				if (nextSlice1->getId() < nextSlice2->getId())
+					extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
+	}
+
+	LOG_ALL(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
+
+	// for all slices in next section...
+	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
+
+		std::vector<boost::shared_ptr<Slice> > closePrevSlices;
+		prevKDTree.find_within_range(nextSlice, *_distanceThreshold, std::back_inserter(closePrevSlices));
+
+		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
+
+		// ...and all pairs of prev slices within a threshold distance
+		foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
+			foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
+				if (prevSlice1->getId() < prevSlice2->getId())
+					extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments" << std::endl;
@@ -104,7 +147,7 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 
 	_segments->add(segment);
 
-	// only for ends that have the slice on the ride side
+	// only for ends that have the slice on the left side
 	if (direction == Right)
 		_sliceSegments[slice->getId()].push_back(segment->getId());
 }
@@ -118,6 +161,30 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 
 	// only for the left slice
 	_sliceSegments[prevSlice->getId()].push_back(segment->getId());
+}
+
+void
+SegmentExtractor::extractSegment(
+		boost::shared_ptr<Slice> source,
+		boost::shared_ptr<Slice> target1,
+		boost::shared_ptr<Slice> target2,
+		Direction direction) {
+
+	boost::shared_ptr<Segment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
+
+	_segments->add(segment);
+
+	// only for the left slice(s)
+
+	if (direction == Left) {
+
+		_sliceSegments[target1->getId()].push_back(segment->getId());
+		_sliceSegments[target2->getId()].push_back(segment->getId());
+
+	} else {
+
+		_sliceSegments[source->getId()].push_back(segment->getId());
+	}
 }
 
 void

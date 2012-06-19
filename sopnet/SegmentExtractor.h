@@ -24,6 +24,12 @@ private:
 
 	void extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice);
 
+	void extractSegment(
+			boost::shared_ptr<Slice> source,
+			boost::shared_ptr<Slice> target1,
+			boost::shared_ptr<Slice> target2,
+			Direction direction);
+
 	void assembleLinearConstraints();
 
 	void assembleLinearConstraint(const LinearConstraint& sliceConstraint);
