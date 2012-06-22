@@ -47,6 +47,26 @@ util::ProgramOption argSegmentExtractionThreshold(
 		_long_name = "segmentDistanceThreshold",
 		_description_text = "The maximal center distance between slices to consider them for segment hypotheses.");
 
+util::ProgramOption argShowGroundTruth(
+		_module = "sopnet",
+		_long_name = "showGroundTruth",
+		_description_text = "Show a 3D view of the ground-truth.");
+
+util::ProgramOption argShowGoldStandard(
+		_module = "sopnet",
+		_long_name = "showGoldStandard",
+		_description_text = "Show a 3D view of the gold-standard.");
+
+util::ProgramOption argShowNegativeSamples(
+		_module = "sopnet",
+		_long_name = "showNegativeSamples",
+		_description_text = "Show a 3D view of all negative training samples.");
+
+util::ProgramOption argShowResult(
+		_module = "sopnet",
+		_long_name = "showResult",
+		_description_text = "Show a 3D view of the result.");
+
 void handleException(boost::exception& e) {
 
 
@@ -105,7 +125,7 @@ private:
 		if (argSegmentExtractionThreshold)
 			*_segmentExtractionThreshold = argSegmentExtractionThreshold;
 		else
-			*_segmentExtractionThreshold = 10000.0;
+			*_segmentExtractionThreshold = 30.0;
 
 		LOG_USER(out) << "segment extraction threshold set to " << *_segmentExtractionThreshold << std::endl;
 	}
@@ -133,87 +153,98 @@ int main(int argc, char** argv) {
 		 * SETUP *
 		 *********/
 
+		// create a window
 		boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("sopnet");
 		window->processEvents();
 
+		// create sopnet pipeline
 		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
 		boost::shared_ptr<SopnetParameters> sopnetParameters = boost::make_shared<SopnetParameters>();
-
 		sopnet->setInput("segment extraction threshold", sopnetParameters->getOutput("segment extraction threshold"));
 
+		// create basic views
 		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
 		boost::shared_ptr<ImageStackView> membranesView   = boost::make_shared<ImageStackView>();
 		boost::shared_ptr<ImageStackView> groundTruthView = boost::make_shared<ImageStackView>();
 		boost::shared_ptr<SegmentsView>   resultView      = boost::make_shared<SegmentsView>();
 
+		// add views to window
 		boost::shared_ptr<ContainerView<HorizontalPlacing> > container = boost::make_shared<ContainerView<HorizontalPlacing> >();
 		boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
-
 		container->addInput(rawSectionsView->getOutput());
 		container->addInput(membranesView->getOutput());
 		container->addInput(groundTruthView->getOutput());
-
 		zoomView->setInput(container->getOutput());
-
 		window->setInput(zoomView->getOutput());
 
+		// set input of result view
 		resultView->setInput(sopnet->getOutput("solution"));
-
 		boost::shared_ptr<RotateView> r1 = boost::make_shared<RotateView>();
 		r1->setInput(resultView->getOutput());
-
 		container->addInput(r1->getOutput());
 
-		// if no profect filename was given
+		boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
+		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
+		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
+
 		if (!argProjectName) {
 
-			boost::shared_ptr<ImageStackDirectoryReader> rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
-			boost::shared_ptr<ImageStackDirectoryReader> membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
-			boost::shared_ptr<ImageStackDirectoryReader> groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
-
-			rawSectionsView->setInput(rawSectionsReader->getOutput());
-			membranesView->setInput(membranesReader->getOutput());
-			groundTruthView->setInput(groundTruthReader->getOutput());
-
-			sopnet->setInput("raw sections", rawSectionsReader->getOutput());
-			sopnet->setInput("membranes", membranesReader->getOutput());
-			sopnet->setInput("ground truth", groundTruthReader->getOutput());
-
-			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>();
-			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
-
-			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>();
-			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
-
-			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>();
-			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
-
-			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
-			gtRotateView->setInput(groundTruthView->getOutput());
-
-			goldstandardView->setInput(sopnet->getOutput("gold standard"));
-			gsRotateView->setInput(goldstandardView->getOutput());
-
-			negativeView->setInput(sopnet->getOutput("negative samples"));
-			neRotateView->setInput(negativeView->getOutput());
-
-			container->addInput(gtRotateView->getOutput());
-			container->addInput(gsRotateView->getOutput());
-			container->addInput(neRotateView->getOutput());
+			// if no project filename was given, try to read from default
+			// directoryies
+			rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
+			membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
+			groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
 
 		} else {
 
 			// get the project filename
 			std::string projectFilename = argProjectName;
 
-			boost::shared_ptr<ImageStackHdf5Reader> rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
-			boost::shared_ptr<ImageStackHdf5Reader> membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
+			// try to read from project hdf5 file
+			rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
+			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
+			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "groundtruth");
+		}
 
-			rawSectionsView->setInput(rawSectionsReader->getOutput());
-			membranesView->setInput(membranesReader->getOutput());
+		rawSectionsView->setInput(rawSectionsReader->getOutput());
+		membranesView->setInput(membranesReader->getOutput());
+		groundTruthView->setInput(groundTruthReader->getOutput());
 
-			sopnet->setInput("raw sections", rawSectionsReader->getOutput());
-			sopnet->setInput("membranes", membranesReader->getOutput());
+		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
+		sopnet->setInput("membranes", membranesReader->getOutput());
+		sopnet->setInput("ground truth", groundTruthReader->getOutput());
+
+		if (argShowGroundTruth) {
+
+			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
+
+			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
+			gtRotateView->setInput(groundTruthView->getOutput());
+
+			container->addInput(gtRotateView->getOutput());
+		}
+
+		if (argShowGoldStandard) {
+
+			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
+
+			goldstandardView->setInput(sopnet->getOutput("gold standard"));
+			gsRotateView->setInput(goldstandardView->getOutput());
+
+			container->addInput(gsRotateView->getOutput());
+		}
+
+		if (argShowNegativeSamples) {
+
+			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
+
+			negativeView->setInput(sopnet->getOutput("negative samples"));
+			neRotateView->setInput(negativeView->getOutput());
+
+			container->addInput(neRotateView->getOutput());
 		}
 
 		if (argTraining) {
