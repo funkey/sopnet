@@ -11,7 +11,6 @@
 #include "ObjectiveGenerator.h"
 #include "ProblemAssembler.h"
 #include "Reconstructor.h"
-#include "SegmentEvaluator.h"
 #include "SegmentExtractor.h"
 #include "SegmentFeaturesExtractor.h"
 #include "SegmentRandomForestEvaluator.h"
