@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include "Segments.h"
 #include "SegmentVisitor.h"
+#include "SetDifference.h"
 #include "Features.h"
 
 class GeometryFeatureExtractor : public pipeline::SimpleProcessNode {
@@ -30,9 +31,7 @@ private:
 
 	private:
 
-		unsigned int computeSetDifference(const Slice& slice1, const Slice& slice2);
-
-		unsigned int computeSetDifference(const Slice& slice1a, const Slice& slice1b, const Slice& slice2);
+		SetDifference _setDifference;
 
 		std::vector<double> _features;
 	};

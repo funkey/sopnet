@@ -3,6 +3,7 @@
 #include "ContinuationSegment.h"
 #include "EndSegment.h"
 #include "GroundTruthSegmentExtractor.h"
+#include "SetDifference.h"
 
 logger::LogChannel groundtruthsegmentextractorlog("groundtruthsegmentextractorlog", "[GroundTruthSegmentExtractor] ");
 
@@ -33,7 +34,7 @@ GroundTruthSegmentExtractor::updateOutputs() {
 		_values.insert(slice->getComponent()->getValue());
 	}
 
-	LOG_ALL(groundtruthsegmentextractorlog) << "found " << _values.size() << " neurons in previous section" << std::endl;
+	LOG_ALL(groundtruthsegmentextractorlog) << "found " << _prevSliceValues.size() << " different values in previous section" << std::endl;
 
 	// collect all slices of same intensity in next slice
 	foreach (boost::shared_ptr<Slice> slice, *_nextSlices) {
@@ -42,64 +43,179 @@ GroundTruthSegmentExtractor::updateOutputs() {
 		_values.insert(slice->getComponent()->getValue());
 	}
 
-	LOG_ALL(groundtruthsegmentextractorlog) << "found " << _values.size() << " in previous and next section" << std::endl;
+	LOG_ALL(groundtruthsegmentextractorlog) << "found " << _nextSliceValues.size() << " different values in next section" << std::endl;
 
-	// for each intensity, create a segment
+	SetDifference setDifference;
+
+	// for each intensity, extract all segments
 	foreach (float value, _values) {
+
+		LOG_ALL(groundtruthsegmentextractorlog) << "processing value " << value << std::endl;
 
 		const std::vector<boost::shared_ptr<Slice> >& prevSlices = _prevSliceValues[value];
 		const std::vector<boost::shared_ptr<Slice> >& nextSlices = _nextSliceValues[value];
 
-		if (prevSlices.size() == 0 && nextSlices.size() == 1) {
+		LOG_ALL(groundtruthsegmentextractorlog)
+				<< "have to connect " << prevSlices.size() << " slices in previous section to "
+				<< nextSlices.size() << " slices in next section" << std::endl;
 
-			createEnd(Left, nextSlices[0]);
+		// a list of all possible non-end segments between the ground truth slices
+		std::vector<std::pair<double, boost::shared_ptr<Segment> > > segments;
 
-		} else if (prevSlices.size() == 1 && nextSlices.size() == 0) {
+		// add all possible continuations
+		foreach (boost::shared_ptr<Slice> prevSlice, prevSlices)
+			foreach (boost::shared_ptr<Slice> nextSlice, nextSlices)
+				segments.push_back(
+						std::make_pair(
+								setDifference(*prevSlice, *nextSlice, true),
+								boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice)));
 
-			createEnd(Right, prevSlices[0]);
+		// add all possible branches to the next slice
+		foreach (boost::shared_ptr<Slice> prevSlice, prevSlices)
+			foreach (boost::shared_ptr<Slice> nextSlice1, nextSlices)
+				foreach (boost::shared_ptr<Slice> nextSlice2, nextSlices)
+					if (nextSlice1->getId() < nextSlice2->getId())
+						segments.push_back(
+								std::make_pair(
+										setDifference(*prevSlice, *nextSlice1, *nextSlice2, true),
+										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice1, nextSlice2)));
 
-		} else if (prevSlices.size() == 1 && nextSlices.size() == 1) {
+		// add all possible branches to the previous slice
+		foreach (boost::shared_ptr<Slice> nextSlice, nextSlices)
+			foreach (boost::shared_ptr<Slice> prevSlice1, prevSlices)
+				foreach (boost::shared_ptr<Slice> prevSlice2, prevSlices)
+					if (prevSlice1->getId() < prevSlice2->getId())
+						segments.push_back(
+								std::make_pair(
+										setDifference(*nextSlice, *prevSlice1, *prevSlice2, true),
+										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Left, nextSlice, prevSlice1, prevSlice2)));
 
-			createContinuation(prevSlices[0], nextSlices[0]);
+		LOG_ALL(groundtruthsegmentextractorlog) << "considering " << segments.size() << " possible segments" << std::endl;
 
-		} else if (prevSlices.size() == 1 && nextSlices.size() == 2) {
+		// sort segments based on their set difference ratio
+		std::sort(segments.begin(), segments.end());
 
-			createBranch(Right, prevSlices[0], nextSlices[0], nextSlices[1]);
+		// select segments in order of their set difference value
+		SegmentSelector segmentSelector(prevSlices, nextSlices, _segments);
 
-		} else if (prevSlices.size() == 2 && nextSlices.size() == 1) {
+		double setDifferenceRatio;
+		boost::shared_ptr<Segment> segment;
 
-			createBranch(Left, nextSlices[0], prevSlices[0], prevSlices[1]);
+		foreach (boost::tie(setDifferenceRatio, segment), segments) {
 
-		} else {
+			LOG_ALL(groundtruthsegmentextractorlog) << "current segment set difference: " << setDifferenceRatio << std::endl;
 
-			LOG_ERROR(groundtruthsegmentextractorlog)
-					<< "there is a connection from " << prevSlices.size() << " slice to "
-					<< nextSlices.size() << " slice and I don't know how to handle that!"
-					<< std::endl;
+			// if not even a small overlapp
+			if (setDifferenceRatio >= 0.9) {
+
+				LOG_ALL(groundtruthsegmentextractorlog) << "value too high -- skiping this segment" << std::endl;
+				continue;
+			}
+
+			// see if we can use this segment
+			segment->accept(segmentSelector);
+
+			if (segmentSelector.selected()) {
+
+				LOG_ALL(groundtruthsegmentextractorlog) << "this segment can be used" << std::endl;
+				_segments->add(segment);
+			}
 		}
+
+		LOG_ALL(groundtruthsegmentextractorlog)
+				<< "have " << segmentSelector.getRemainingPrevSlices().size()
+				<< " slices in previous section left over" << std::endl;
+
+		LOG_ALL(groundtruthsegmentextractorlog)
+				<< "have " << segmentSelector.getRemainingNextSlices().size()
+				<< " slices in next section left over" << std::endl;
+
+		// all remaining slices must have ended
+		foreach (boost::shared_ptr<Slice> prevSlice, segmentSelector.getRemainingPrevSlices())
+			_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, prevSlice));
+
+		foreach (boost::shared_ptr<Slice> nextSlice, segmentSelector.getRemainingNextSlices())
+			_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, nextSlice));
+	}
+}
+
+GroundTruthSegmentExtractor::SegmentSelector::SegmentSelector(
+		const std::vector<boost::shared_ptr<Slice> > prevSlices,
+		const std::vector<boost::shared_ptr<Slice> > nextSlices,
+		boost::shared_ptr<Segments> segments) {
+
+	std::copy(prevSlices.begin(), prevSlices.end(), std::inserter(_remainingPrevSlices, _remainingPrevSlices.begin()));
+	std::copy(nextSlices.begin(), nextSlices.end(), std::inserter(_remainingNextSlices, _remainingNextSlices.begin()));
+}
+
+void
+GroundTruthSegmentExtractor::SegmentSelector::visit(const EndSegment& end) {}
+
+void
+GroundTruthSegmentExtractor::SegmentSelector::visit(const BranchSegment& branch) {
+
+	_selected = false;
+
+	if (branch.getDirection() == Left) {
+
+		if (_remainingPrevSlices.count(branch.getTargetSlice1()) == 0)
+			return;
+		if (_remainingPrevSlices.count(branch.getTargetSlice2()) == 0)
+			return;
+		if (_remainingNextSlices.count(branch.getSourceSlice()) == 0)
+			return;
+
+		_selected = true;
+
+		_remainingPrevSlices.erase(branch.getTargetSlice1());
+		_remainingPrevSlices.erase(branch.getTargetSlice2());
+		_remainingNextSlices.erase(branch.getSourceSlice());
+
+	} else {
+
+		if (_remainingNextSlices.count(branch.getTargetSlice1()) == 0)
+			return;
+		if (_remainingNextSlices.count(branch.getTargetSlice2()) == 0)
+			return;
+		if (_remainingPrevSlices.count(branch.getSourceSlice()) == 0)
+			return;
+
+		_selected = true;
+
+		_remainingNextSlices.erase(branch.getTargetSlice1());
+		_remainingNextSlices.erase(branch.getTargetSlice2());
+		_remainingPrevSlices.erase(branch.getSourceSlice());
 	}
 }
 
 void
-GroundTruthSegmentExtractor::createEnd(Direction direction, boost::shared_ptr<Slice> slice) {
+GroundTruthSegmentExtractor::SegmentSelector::visit(const ContinuationSegment& continuation) {
 
-	LOG_ALL(groundtruthsegmentextractorlog) << "found an end, from slice " << slice->getSection() << ", " << direction << std::endl;
+	_selected = false;
 
-	_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), direction, slice));
+	if (continuation.getDirection() == Left) {
+
+		if (_remainingPrevSlices.count(continuation.getTargetSlice()) == 0)
+			return;
+		if (_remainingNextSlices.count(continuation.getSourceSlice()) == 0)
+			return;
+
+		_selected = true;
+
+		_remainingPrevSlices.erase(continuation.getTargetSlice());
+		_remainingNextSlices.erase(continuation.getSourceSlice());
+
+	} else {
+
+		if (_remainingNextSlices.count(continuation.getTargetSlice()) == 0)
+			return;
+		if (_remainingPrevSlices.count(continuation.getSourceSlice()) == 0)
+			return;
+
+		_selected = true;
+
+		_remainingPrevSlices.erase(continuation.getSourceSlice());
+		_remainingNextSlices.erase(continuation.getTargetSlice());
+	}
 }
 
-void
-GroundTruthSegmentExtractor::createContinuation(boost::shared_ptr<Slice> prev, boost::shared_ptr<Slice> next) {
-
-	LOG_ALL(groundtruthsegmentextractorlog) << "found a continuation, from slice " << prev->getSection() << " to " << next->getSection() << std::endl;
-
-	_segments->add(boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prev, next));
-}
-
-void
-GroundTruthSegmentExtractor::createBranch(Direction direction, boost::shared_ptr<Slice> source, boost::shared_ptr<Slice> target1, boost::shared_ptr<Slice> target2) {
-
-	LOG_ALL(groundtruthsegmentextractorlog) << "found a branch , from slice " << source->getSection() << " to " << target1->getSection() << ", " << direction << std::endl;
-
-	_segments->add(boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2));
-}

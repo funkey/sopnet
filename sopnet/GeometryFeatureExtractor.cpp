@@ -63,7 +63,7 @@ GeometryFeatureExtractor::FeatureVisitor::visit(const ContinuationSegment& conti
 
 	double distance = difference.x*difference.x + difference.y*difference.y;
 
-	double setDifference = computeSetDifference(*continuation.getSourceSlice(), *continuation.getTargetSlice());
+	double setDifference = _setDifference(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
 	double setDifferenceRatio = setDifference/(sourceSize + targetSize);
 
@@ -88,7 +88,7 @@ GeometryFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
 
 	double distance = difference.x*difference.x + difference.y*difference.y;
 
-	double setDifference = computeSetDifference(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
+	double setDifference = _setDifference(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
 
 	double setDifferenceRatio = setDifference/(sourceSize + targetSize1 + targetSize2);
 
@@ -96,90 +96,6 @@ GeometryFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
 	_features[1] = setDifference;
 	_features[2] = setDifferenceRatio;
 	_features[3] = Features::None;
-}
-
-unsigned int
-GeometryFeatureExtractor::FeatureVisitor::computeSetDifference(const Slice& slice1, const Slice& slice2) {
-
-	const util::rect<double>& bb = slice1.getComponent()->getBoundingBox();
-
-	util::point<unsigned int> offset(static_cast<unsigned int>(bb.minX), static_cast<unsigned int>(bb.minY));
-	util::point<unsigned int> size(static_cast<unsigned int>(bb.width() + 2), static_cast<unsigned int>(bb.height() + 2));
-
-	std::vector<bool> pixels(size.x*size.y, false);
-
-	foreach (const util::point<unsigned int>& pixel, slice1.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-
-	util::point<double> centerOffset = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
-
-	unsigned int different = 0;
-
-	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - centerOffset.x - offset.x;
-		unsigned int y = pixel.y - centerOffset.x - offset.y;
-
-		if (x < 0 || x >= size.x || y < 0 || y >= size.y || pixels[x + y*size.x] != true)
-			different++;
-	}
-
-	return different;
-}
-unsigned int
-GeometryFeatureExtractor::FeatureVisitor::computeSetDifference(const Slice& slice1a, const Slice& slice1b, const Slice& slice2) {
-
-	const util::rect<double>& bba = slice1a.getComponent()->getBoundingBox();
-	const util::rect<double>& bbb = slice1b.getComponent()->getBoundingBox();
-
-	util::rect<double> bb(std::min(bba.minX, bbb.minY), std::min(bba.minY, bbb.minY), std::max(bba.maxX, bbb.maxX), std::max(bba.maxY, bbb.maxY));
-
-	util::point<unsigned int> offset(static_cast<unsigned int>(bb.minX), static_cast<unsigned int>(bb.minY));
-	util::point<unsigned int> size(static_cast<unsigned int>(bb.width() + 2), static_cast<unsigned int>(bb.height() + 2));
-
-	std::vector<bool> pixels(size.x*size.y, false);
-
-	foreach (const util::point<unsigned int>& pixel, slice1a.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-	foreach (const util::point<unsigned int>& pixel, slice1b.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-
-	util::point<double> centerOffset =
-			(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
-			 +
-			 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
-			/
-			(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize())
-			-
-			slice2.getComponent()->getCenter();
-
-	unsigned int different = 0;
-
-	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - centerOffset.x - offset.x;
-		unsigned int y = pixel.y - centerOffset.x - offset.y;
-
-		if (x < 0 || x >= size.x || y < 0 || y >= size.y || pixels[x + y*size.x] != true)
-			different++;
-	}
-
-	return different;
 }
 
 std::vector<double>

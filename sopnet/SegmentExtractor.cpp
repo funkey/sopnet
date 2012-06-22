@@ -46,9 +46,15 @@ struct CoordAccessor {
 void
 SegmentExtractor::extractSegments() {
 
+	unsigned int oldSize = 0;
+
 	LOG_DEBUG(segmentextractorlog) << "extracting segments..." << std::endl;
 
-	LOG_ALL(segmentextractorlog) << "extracting ends to previous section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog)
+			<< "previous sections contains " << _prevSlices->size() << " slices,"
+			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
+
+	LOG_DEBUG(segmentextractorlog) << "extracting ends to and from previous section..." << std::endl;
 
 	// end segments for every previous slice
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
@@ -57,17 +63,25 @@ SegmentExtractor::extractSegments() {
 		extractSegment(prevSlice, Right);
 	}
 
-	LOG_ALL(segmentextractorlog) << "extracting ends to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
 
 	// end segments for every next slice, if we are the last segment extractor
-	if (_nextLinearConstraints)
+	if (_nextLinearConstraints) {
+
+		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
+
 		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
 			extractSegment(nextSlice, Left);
 			extractSegment(nextSlice, Right);
 		}
+	}
 
-	LOG_ALL(segmentextractorlog) << "creating kd-tree for next slices..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
+	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for next slices..." << std::endl;
 
 	// put all next slices in a kd-tree
 	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
@@ -78,7 +92,7 @@ SegmentExtractor::extractSegments() {
 		nextKDTree.insert(nextSlice);
 	nextKDTree.optimise();
 
-	LOG_ALL(segmentextractorlog) << "creating kd-tree for prev slices..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for prev slices..." << std::endl;
 
 	// put all prev slices in a kd-tree
 	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
@@ -88,7 +102,7 @@ SegmentExtractor::extractSegments() {
 		prevKDTree.insert(prevSlice);
 	prevKDTree.optimise();
 
-	LOG_ALL(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
@@ -103,7 +117,10 @@ SegmentExtractor::extractSegments() {
 			extractSegment(prevSlice, nextSlice);
 	}
 
-	LOG_ALL(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
+	LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
 
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
@@ -120,7 +137,10 @@ SegmentExtractor::extractSegments() {
 					extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
 	}
 
-	LOG_ALL(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
+	LOG_DEBUG(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
 
 	// for all slices in next section...
 	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
@@ -137,7 +157,10 @@ SegmentExtractor::extractSegments() {
 					extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
 	}
 
-	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments" << std::endl;
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
+	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
 }
 
 void

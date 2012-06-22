@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include "Slices.h"
 #include "Segments.h"
+#include "SegmentVisitor.h"
 
 class GroundTruthSegmentExtractor : public pipeline::SimpleProcessNode {
 
@@ -12,6 +13,37 @@ public:
 	GroundTruthSegmentExtractor();
 
 private:
+
+	class SegmentSelector : public SegmentVisitor {
+
+	public:
+
+		SegmentSelector(
+				const std::vector<boost::shared_ptr<Slice> > prevSlices,
+				const std::vector<boost::shared_ptr<Slice> > nextSlices,
+				boost::shared_ptr<Segments> segments);
+
+		void visit(const EndSegment& end);
+
+		void visit(const ContinuationSegment& continuation);
+
+		void visit(const BranchSegment& branch);
+
+		const std::set<boost::shared_ptr<Slice> > getRemainingPrevSlices() { return _remainingPrevSlices; }
+
+		const std::set<boost::shared_ptr<Slice> > getRemainingNextSlices() { return _remainingNextSlices; }
+
+		bool selected() { return _selected; }
+
+	private:
+
+		// sets of slices that have not been explained so far
+		std::set<boost::shared_ptr<Slice> > _remainingPrevSlices;
+		std::set<boost::shared_ptr<Slice> > _remainingNextSlices;
+
+		// true, if the last segment was accepted
+		bool _selected;
+	};
 
 	void updateOutputs();
 
