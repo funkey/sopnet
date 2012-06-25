@@ -23,6 +23,7 @@
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
+#include <sopnet/SectionSelector.h>
 #include <sopnet/gui/SegmentsView.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
@@ -32,43 +33,55 @@ using std::endl;
 using namespace gui;
 using namespace logger;
 
-util::ProgramOption argProjectName(
-		_long_name = "project",
-		_short_name = "p",
+util::ProgramOption optionProjectName(
+		_long_name        = "project",
+		_short_name       = "p",
 		_description_text = "The HDF5 project file.");
 
-util::ProgramOption argTraining(
-		_long_name = "train",
-		_short_name = "t",
+util::ProgramOption optionTraining(
+		_long_name        = "train",
+		_short_name       = "t",
 		_description_text = "Train the segment random forest classifier.");
 
-util::ProgramOption argSegmentExtractionThreshold(
-		_module = "sopnet",
-		_long_name = "segmentDistanceThreshold",
+util::ProgramOption optionFirstSection(
+		_module           = "sopnet",
+		_long_name        = "firstSection",
+		_description_text = "The number of the first section to process.",
+		_default_value    = 0);
+
+util::ProgramOption optionLastSection(
+		_module           = "sopnet",
+		_long_name        = "lastSection",
+		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
+		_default_value    = -1);
+
+util::ProgramOption optionSegmentExtractionThreshold(
+		_module           = "sopnet",
+		_long_name        = "segmentDistanceThreshold",
 		_description_text = "The maximal center distance between slices to consider them for segment hypotheses.");
 
-util::ProgramOption argShowGroundTruth(
-		_module = "sopnet",
-		_long_name = "showGroundTruth",
+util::ProgramOption optionShowGroundTruth(
+		_module           = "sopnet",
+		_long_name        = "showGroundTruth",
 		_description_text = "Show a 3D view of the ground-truth.");
 
-util::ProgramOption argShowGoldStandard(
-		_module = "sopnet",
-		_long_name = "showGoldStandard",
+util::ProgramOption optionShowGoldStandard(
+		_module           = "sopnet",
+		_long_name        = "showGoldStandard",
 		_description_text = "Show a 3D view of the gold-standard.");
 
-util::ProgramOption argShowNegativeSamples(
-		_module = "sopnet",
-		_long_name = "showNegativeSamples",
+util::ProgramOption optionShowNegativeSamples(
+		_module           = "sopnet",
+		_long_name        = "showNegativeSamples",
 		_description_text = "Show a 3D view of all negative training samples.");
 
-util::ProgramOption argShowResult(
-		_module = "sopnet",
-		_long_name = "showResult",
+util::ProgramOption optionShowResult(
+		_module           = "sopnet",
+		_long_name        = "showResult",
 		_description_text = "Show a 3D view of the result.");
 
-void handleException(boost::exception& e) {
 
+void handleException(boost::exception& e) {
 
 	LOG_ERROR(out) << "[window thread] caught exception: ";
 
@@ -122,8 +135,8 @@ private:
 
 	void updateOutputs() {
 
-		if (argSegmentExtractionThreshold)
-			*_segmentExtractionThreshold = argSegmentExtractionThreshold;
+		if (optionSegmentExtractionThreshold)
+			*_segmentExtractionThreshold = optionSegmentExtractionThreshold;
 		else
 			*_segmentExtractionThreshold = 30.0;
 
@@ -133,7 +146,7 @@ private:
 	pipeline::Output<double> _segmentExtractionThreshold;
 };
 
-int main(int argc, char** argv) {
+int main(int optionc, char** optionv) {
 
 	try {
 
@@ -142,7 +155,7 @@ int main(int argc, char** argv) {
 		 ********/
 
 		// init command line parser
-		util::ProgramOptions::init(argc, argv);
+		util::ProgramOptions::init(optionc, optionv);
 
 		// init logger
 		LogManager::init();
@@ -187,7 +200,8 @@ int main(int argc, char** argv) {
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
 		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
-		if (!argProjectName) {
+		// create image stack readers
+		if (!optionProjectName) {
 
 			// if no project filename was given, try to read from default
 			// directoryies
@@ -198,12 +212,34 @@ int main(int argc, char** argv) {
 		} else {
 
 			// get the project filename
-			std::string projectFilename = argProjectName;
+			std::string projectFilename = optionProjectName;
 
 			// try to read from project hdf5 file
 			rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
 			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
 			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "groundtruth");
+		}
+
+		// select a substack, if options are set
+		if (optionFirstSection || optionLastSection) {
+
+			int firstSection = optionFirstSection;
+			int lastSection  = optionLastSection;
+
+			// create section selectors
+			boost::shared_ptr<SectionSelector> rawSelector         = boost::make_shared<SectionSelector>(firstSection, lastSection);
+			boost::shared_ptr<SectionSelector> membranesSelector   = boost::make_shared<SectionSelector>(firstSection, lastSection);
+			boost::shared_ptr<SectionSelector> groundTruthSelector = boost::make_shared<SectionSelector>(firstSection, lastSection);
+
+			// set their inputs to the outputs of the section readers
+			rawSelector->setInput(rawSectionsReader->getOutput());
+			membranesSelector->setInput(membranesReader->getOutput());
+			groundTruthSelector->setInput(groundTruthReader->getOutput());
+
+			// sneakily pretend the selectors are the readers
+			rawSectionsReader = rawSelector;
+			membranesReader   = membranesSelector;
+			groundTruthReader = groundTruthSelector;
 		}
 
 		rawSectionsView->setInput(rawSectionsReader->getOutput());
@@ -214,7 +250,7 @@ int main(int argc, char** argv) {
 		sopnet->setInput("membranes", membranesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 
-		if (argShowGroundTruth) {
+		if (optionShowGroundTruth) {
 
 			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
@@ -225,7 +261,7 @@ int main(int argc, char** argv) {
 			container->addInput(gtRotateView->getOutput());
 		}
 
-		if (argShowGoldStandard) {
+		if (optionShowGoldStandard) {
 
 			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
@@ -236,7 +272,7 @@ int main(int argc, char** argv) {
 			container->addInput(gsRotateView->getOutput());
 		}
 
-		if (argShowNegativeSamples) {
+		if (optionShowNegativeSamples) {
 
 			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
@@ -247,7 +283,7 @@ int main(int argc, char** argv) {
 			container->addInput(neRotateView->getOutput());
 		}
 
-		if (argTraining) {
+		if (optionTraining) {
 
 			boost::shared_ptr<RandomForestHdf5Writer> rfWriter = boost::make_shared<RandomForestHdf5Writer>("./segment_rf.hdf");
 
