@@ -14,6 +14,7 @@ class ObjectiveGenerator;
 class ProblemAssembler;
 class RandomForestHdf5Reader;
 class Reconstructor;
+class SectionSelector;
 class SegmentEvaluator;
 class SegmentExtractor;
 class SegmentFeaturesExtractor;
@@ -49,6 +50,10 @@ private:
 
 	void createTrainingPipeline();
 
+	/**********
+	 * INPUTS *
+	 **********/
+
 	// the raw images of the slices
 	pipeline::Input<ImageStack> _rawSections;
 
@@ -61,10 +66,18 @@ private:
 	// the threshold under which to accept segments
 	pipeline::Input<double> _segmentExtractionThreshold;
 
+	/***********
+	 * SIGNALS *
+	 ***********/
+
 	signals::Slot<pipeline::Update> _update;
 
+	/*********************
+	 * INTERNAL PIPELINE *
+	 *********************/
+
 	/*
-	 * internal pipeline, basic part
+	 * basic part
 	 */
 
 	// an image stack to image converter for the membranes
@@ -80,7 +93,7 @@ private:
 	boost::shared_ptr<ProblemAssembler>               _problemAssembler;
 
 	/*
-	 * internal pipeline, inference part
+	 * inference part
 	 */
 
 	// a feature extractor computing features for each segment
@@ -103,7 +116,7 @@ private:
 	boost::shared_ptr<Reconstructor>                  _reconstructor;
 
 	/*
-	 * internal pipeline, training part
+	 * training part
 	 */
 
 	// the ground truth extractor, gives segments from ground truth images
@@ -112,6 +125,9 @@ private:
 	// the training node, trains a random forest classifier on the ground truth
 	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
 
+	/**************************
+	 * PROJECT INFRASTRUCTURE *
+	 **************************/
 
 	// the project directory
 	std::string _projectDirectory;

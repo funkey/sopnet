@@ -20,18 +20,18 @@
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
 
-util::ProgramOption argRandomForestFile(
-		util::_module = "sopnet",
-		util::_long_name = "segmentRandomForest",
+util::ProgramOption optionRandomForestFile(
+		util::_module           = "sopnet",
+		util::_long_name        = "segmentRandomForest",
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
-		util::_default_value = "segment_rf.hdf");
+		util::_default_value    = "segment_rf.hdf");
 
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_projectDirectory(projectDirectory),
 	_membraneExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
-	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(argRandomForestFile.as<std::string>())),
+	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
 	_segmentEvaluator(boost::make_shared<SegmentRandomForestEvaluator>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
@@ -41,7 +41,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
-	registerInput(_membranes, "membranes");
+	registerInput(_membranes,   "membranes");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentExtractionThreshold, "segment extraction threshold");
 
