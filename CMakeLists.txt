@@ -15,7 +15,7 @@ set(VERSION_MINOR 1)
 
 message(STATUS ${CMAKE_MODULE_PATH})
 
-find_package(Boost 1.42 COMPONENTS filesystem signals system thread program_options REQUIRED)
+find_package(Boost 1.42 COMPONENTS filesystem program_options serialization signals system thread REQUIRED)
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIR})
   message(STATUS "Boost found.")

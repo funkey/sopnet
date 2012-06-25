@@ -1,6 +1,11 @@
 #ifndef SOPNET_FEATURES_H__
 #define SOPNET_FEATURES_H__
 
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
+
 #include <pipeline/all.h>
 
 class Features : public pipeline::Data {
@@ -46,6 +51,15 @@ public:
 	static double None;
 
 private:
+
+	friend class boost::serialization::access;
+	template <class Archive>
+	void serialize(Archive& archive, const unsigned int version) {
+
+		archive & _features;
+		archive & _featureNames;
+		archive & _segmentIdsMap;
+	}
 
 	features_type            _features;
 
