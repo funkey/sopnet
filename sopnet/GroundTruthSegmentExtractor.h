@@ -29,9 +29,9 @@ private:
 
 		void visit(const BranchSegment& branch);
 
-		const std::set<boost::shared_ptr<Slice> > getRemainingPrevSlices() { return _remainingPrevSlices; }
+		const std::set<boost::shared_ptr<Slice> >& getRemainingPrevSlices() { return _remainingPrevSlices; }
 
-		const std::set<boost::shared_ptr<Slice> > getRemainingNextSlices() { return _remainingNextSlices; }
+		const std::set<boost::shared_ptr<Slice> >& getRemainingNextSlices() { return _remainingNextSlices; }
 
 		bool selected() { return _selected; }
 
