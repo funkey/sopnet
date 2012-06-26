@@ -1,9 +1,16 @@
+#include <util/ProgramOptions.h>
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/ComponentTreeDownSampler.h>
 #include <imageprocessing/Mser.h>
 #include "SliceExtractor.h"
 
 static logger::LogChannel sliceextractorlog("sliceextractorlog", "[SliceExtractor] ");
+
+util::ProgramOption optionInvertMembraneMaps(
+		util::_module = "sopnet",
+		util::_long_name = "invertMembraneMaps",
+		util::_description_text = "Invert the meaning of the membrane map. The default "
+		                          "(not inverting) is: bright pixel = hight membrane probability.");
 
 SliceExtractor::SliceExtractor(unsigned int section) :
 	_mser(boost::make_shared<Mser>()),
@@ -17,8 +24,8 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 
 	// setup internal pipeline
 
-	_mserParameters->darkToBright = false;
-	_mserParameters->brightToDark = true;
+	_mserParameters->darkToBright =  optionInvertMembraneMaps;
+	_mserParameters->brightToDark = !optionInvertMembraneMaps;
 	_mserParameters->maxArea      = 400000;
 
 	_mser->setInput("parameters", _mserParameters);
