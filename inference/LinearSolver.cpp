@@ -56,16 +56,24 @@ LinearSolver::solve() {
 unsigned int
 LinearSolver::getNumVariables() {
 
-	unsigned int numVars = 0;
+	LOG_ALL(linearsolverlog)
+			<< "objective contains "
+			<< _objective->getCoefficients().size()
+			<< " variables" << std::endl;
 
-	// number of vars in the objective
-	numVars = std::max<unsigned int>(numVars, _objective->getCoefficients().size());
+	unsigned int numVars = _objective->getCoefficients().size();
 
-	// numver of vars in the constraints
-	typedef std::pair<unsigned int, double> lin_coef_type;
+	// number of vars in the constraints
+	unsigned int varNum;
+	double coef;
 	foreach (const LinearConstraint& constraint, *_linearConstraints)
-		foreach (const lin_coef_type& pair, constraint.getCoefficients())
-			numVars = std::max(numVars, pair.first);
+		foreach (boost::tie(varNum, coef), constraint.getCoefficients())
+			numVars = std::max(numVars, varNum + 1);
+
+	LOG_ALL(linearsolverlog)
+			<< "together with the constraints, "
+			<< numVars
+			<< " variables are used" << std::endl;
 
 	return numVars;
 }
