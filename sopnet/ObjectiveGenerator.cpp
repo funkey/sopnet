@@ -26,12 +26,23 @@ ObjectiveGenerator::updateObjective() {
 	_objective->resize(_segments->size());
 
 	// set the coefficient for each segment
-	foreach (boost::shared_ptr<Segment> segment, *_segments) {
+	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+		setCosts(*segment);
 
-		unsigned int numVariable = (*_segmentIdsToVariables)[segment->getId()];
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+		setCosts(*segment);
 
-		LOG_ALL(objectivegeneratorlog) << "setting variable " << numVariable << " to " << (*_costFunction)(*segment) << std::endl;
+	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+		setCosts(*segment);
+}
 
-		_objective->setCoefficient(numVariable, (*_costFunction)(*segment));
-	}
+template <typename SegmentType>
+void
+ObjectiveGenerator::setCosts(const SegmentType& segment) {
+
+	unsigned int numVariable = (*_segmentIdsToVariables)[segment.getId()];
+
+	LOG_ALL(objectivegeneratorlog) << "setting variable " << numVariable << " to " << (*_costFunction)(segment) << std::endl;
+
+	_objective->setCoefficient(numVariable, (*_costFunction)(segment));
 }

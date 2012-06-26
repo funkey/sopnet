@@ -57,8 +57,14 @@ SegmentsPainter::updateRecording() {
 	glEnable(GL_COLOR_MATERIAL);
 	glDisable(GL_TEXTURE_2D);
 
-	foreach (boost::shared_ptr<Segment> segment, *_segments)
-		segment->accept(*this);
+	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+		draw(*segment);
+
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+		draw(*segment);
+
+	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+		draw(*segment);
 
 	glDisable(GL_BLEND);
 
@@ -68,7 +74,7 @@ SegmentsPainter::updateRecording() {
 }
 
 void
-SegmentsPainter::visit(const EndSegment& end) {
+SegmentsPainter::draw(const EndSegment& end) {
 
 	drawSlice(
 			end.getSlice(),
@@ -79,7 +85,7 @@ SegmentsPainter::visit(const EndSegment& end) {
 }
 
 void
-SegmentsPainter::visit(const ContinuationSegment& continuation) {
+SegmentsPainter::draw(const ContinuationSegment& continuation) {
 
 	drawSlice(
 			continuation.getSourceSlice(),
@@ -109,7 +115,7 @@ SegmentsPainter::visit(const ContinuationSegment& continuation) {
 }
 
 void
-SegmentsPainter::visit(const BranchSegment& branch) {
+SegmentsPainter::draw(const BranchSegment& branch) {
 
 	drawSlice(
 			branch.getSourceSlice(),

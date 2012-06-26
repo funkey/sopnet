@@ -30,8 +30,6 @@ GeometryFeatureExtractor::updateOutputs() {
 
 	_features->clear();
 
-	bool useCache;
-
 	// try to read features from file
 	boost::filesystem::path cachefile("./geometry_features.dat");
 
@@ -47,7 +45,7 @@ GeometryFeatureExtractor::updateOutputs() {
 
 		archive >> *_features;
 
-		useCache = true;
+		_useCache = true;
 
 		LOG_DEBUG(geometryfeatureextractorlog) << "done." << std::endl;
 
@@ -55,60 +53,56 @@ GeometryFeatureExtractor::updateOutputs() {
 
 		LOG_DEBUG(geometryfeatureextractorlog) << "cache file does not exist" << std::endl;
 
-		useCache = false;
+		_useCache = false;
 	}
 
-	FeatureVisitor featureVisitor;
+	_numChecked = 0;
 
-	unsigned int numChecked = 0;
+	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds()) {
 
-	foreach (boost::shared_ptr<Segment> segment, *_segments) {
+		LOG_ALL(geometryfeatureextractorlog) << "computing features for end segment" << segment->getId() << std::endl;
 
-		LOG_ALL(geometryfeatureextractorlog) << "computing features for segment" << segment->getId() << std::endl;
+		getFeatures(*segment);
 
-		segment->accept(featureVisitor);
+		if (_numChecked > 10) {
 
-		// check, if cache is still valid
-		if (useCache) {
-
-			LOG_ALL(geometryfeatureextractorlog) << "checking consistency of cache" << std::endl;
-
-			if ((*_features).get(segment->getId()) == featureVisitor.getFeatures()) {
-
-				LOG_ALL(geometryfeatureextractorlog) << "found a good entry" << std::endl;
-
-				numChecked++;
-
-			} else {
-
-				LOG_DEBUG(geometryfeatureextractorlog) << "found a bad entry -- will not use cache anymore" << std::endl;
-
-				LOG_ALL(geometryfeatureextractorlog)
-						<< "expected " << featureVisitor.getFeatures() << " for segment " << segment->getId()
-						<< ", got " << (*_features).get(segment->getId()) << std::endl;
-
-				useCache = false;
-			}
+			LOG_DEBUG(geometryfeatureextractorlog) << "found more than 10 good cache samples, will use cache" << std::endl;
+			break;
 		}
+	}
 
-		if (!useCache) {
+	_numChecked = 0;
 
-			LOG_ALL(geometryfeatureextractorlog) << "set features to " << featureVisitor.getFeatures() << std::endl;
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations()) {
 
-			_features->add(segment->getId(), featureVisitor.getFeatures());
+		LOG_ALL(geometryfeatureextractorlog) << "computing features for continuation segment" << segment->getId() << std::endl;
 
-			LOG_ALL(geometryfeatureextractorlog) << "features are " << (*_features).get(segment->getId()) << std::endl;
+		getFeatures(*segment);
+
+		if (_numChecked > 10) {
+
+			LOG_DEBUG(geometryfeatureextractorlog) << "found more than 10 good cache samples, will use cache" << std::endl;
+			break;
 		}
+	}
 
-		if (numChecked > 10) {
+	_numChecked = 0;
 
-			LOG_DEBUG(geometryfeatureextractorlog) << "found more than 10 good cache samples" << std::endl;
+	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches()) {
+
+		LOG_ALL(geometryfeatureextractorlog) << "computing features for branch segment" << segment->getId() << std::endl;
+
+		getFeatures(*segment);
+
+		if (_numChecked > 10) {
+
+			LOG_DEBUG(geometryfeatureextractorlog) << "found more than 10 good cache samples, will use cache" << std::endl;
 			break;
 		}
 	}
 
 	// write results to cache file
-	if (!useCache) {
+	if (!_useCache) {
 
 		LOG_DEBUG(geometryfeatureextractorlog) << "writing features to file..." << std::endl;
 
@@ -125,26 +119,68 @@ GeometryFeatureExtractor::updateOutputs() {
 
 	LOG_ALL(geometryfeatureextractorlog) << "found features: " << *_features << std::endl;
 
-	if (useCache)
+	if (_useCache)
 		LOG_DEBUG(geometryfeatureextractorlog) << "reusing cache" << std::endl;
 
 	LOG_DEBUG(geometryfeatureextractorlog) << "done" << std::endl;
 }
 
-GeometryFeatureExtractor::FeatureVisitor::FeatureVisitor() :
-	_features(4) {}
-
+template <typename SegmentType>
 void
-GeometryFeatureExtractor::FeatureVisitor::visit(const EndSegment& end) {
+GeometryFeatureExtractor::getFeatures(const SegmentType& segment) {
 
-	_features[0] = Features::None;
-	_features[1] = Features::None;
-	_features[2] = Features::None;
-	_features[3] = end.getSlice()->getComponent()->getSize();
+	LOG_ALL(geometryfeatureextractorlog) << "computing features for segment" << segment.getId() << std::endl;
+
+	std::vector<double> features = computeFeatures(segment);
+
+	// check, if cache is still valid
+	if (_useCache) {
+
+		LOG_ALL(geometryfeatureextractorlog) << "checking consistency of cache" << std::endl;
+
+		if ((*_features).get(segment.getId()) == features) {
+
+			LOG_ALL(geometryfeatureextractorlog) << "found a good entry" << std::endl;
+
+			_numChecked++;
+
+		} else {
+
+			LOG_DEBUG(geometryfeatureextractorlog) << "found a bad entry -- will not use cache anymore" << std::endl;
+
+			LOG_ALL(geometryfeatureextractorlog)
+					<< "expected " << features << " for segment " << segment.getId()
+					<< ", got " << (*_features).get(segment.getId()) << std::endl;
+
+			_useCache = false;
+		}
+	}
+
+	if (!_useCache) {
+
+		LOG_ALL(geometryfeatureextractorlog) << "set features to " << features << std::endl;
+
+		_features->add(segment.getId(), features);
+
+		LOG_ALL(geometryfeatureextractorlog) << "features are " << (*_features).get(segment.getId()) << std::endl;
+	}
 }
 
-void
-GeometryFeatureExtractor::FeatureVisitor::visit(const ContinuationSegment& continuation) {
+std::vector<double>
+GeometryFeatureExtractor::computeFeatures(const EndSegment& end) {
+
+	std::vector<double> features(4);
+
+	features[0] = Features::None;
+	features[1] = Features::None;
+	features[2] = Features::None;
+	features[3] = end.getSlice()->getComponent()->getSize();
+
+	return features;
+}
+
+std::vector<double>
+GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuation) {
 
 	const util::point<double>& sourceCenter = continuation.getSourceSlice()->getComponent()->getCenter();
 	const util::point<double>& targetCenter = continuation.getTargetSlice()->getComponent()->getCenter();
@@ -160,14 +196,18 @@ GeometryFeatureExtractor::FeatureVisitor::visit(const ContinuationSegment& conti
 
 	double setDifferenceRatio = setDifference/(sourceSize + targetSize);
 
-	_features[0] = distance;
-	_features[1] = setDifference;
-	_features[2] = setDifferenceRatio;
-	_features[3] = Features::None;
+	std::vector<double> features(4);
+
+	features[0] = distance;
+	features[1] = setDifference;
+	features[2] = setDifferenceRatio;
+	features[3] = Features::None;
+
+	return features;
 }
 
-void
-GeometryFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
+std::vector<double>
+GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch) {
 
 	const util::point<double>& sourceCenter  = branch.getSourceSlice()->getComponent()->getCenter();
 	const util::point<double>& targetCenter1 = branch.getTargetSlice1()->getComponent()->getCenter();
@@ -185,14 +225,12 @@ GeometryFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
 
 	double setDifferenceRatio = setDifference/(sourceSize + targetSize1 + targetSize2);
 
-	_features[0] = distance;
-	_features[1] = setDifference;
-	_features[2] = setDifferenceRatio;
-	_features[3] = Features::None;
-}
+	std::vector<double> features(4);
 
-std::vector<double>
-GeometryFeatureExtractor::FeatureVisitor::getFeatures() {
+	features[0] = distance;
+	features[1] = setDifference;
+	features[2] = setDifferenceRatio;
+	features[3] = Features::None;
 
-	return _features;
+	return features;
 }

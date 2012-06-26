@@ -29,18 +29,26 @@ Reconstructor::updateReconstruction() {
 
 	LOG_ALL(reconstructorlog) << "Solution consists of segments: ";
 
-	unsigned int i = 0;
-	foreach (boost::shared_ptr<Segment> segment, *_segments) {
+	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+		probe(segment);
 
-		if ((*_solution)[(*_segmentIdsMap)[segment->getId()]] == 1.0) {
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+		probe(segment);
 
-			_reconstruction->add(segment);
-
-			LOG_ALL(reconstructorlog) << segment->getId() << " ";
-		}
-
-		i++;
-	}
+	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+		probe(segment);
 
 	LOG_ALL(reconstructorlog) << std::endl;
+}
+
+template <typename SegmentType>
+void
+Reconstructor::probe(boost::shared_ptr<SegmentType> segment) {
+
+	if ((*_solution)[(*_segmentIdsMap)[segment->getId()]] == 1.0) {
+
+		_reconstruction->add(segment);
+
+		LOG_ALL(reconstructorlog) << segment->getId() << " ";
+	}
 }

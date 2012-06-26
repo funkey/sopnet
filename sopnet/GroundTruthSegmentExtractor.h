@@ -4,7 +4,6 @@
 #include <pipeline/all.h>
 #include "Slices.h"
 #include "Segments.h"
-#include "SegmentVisitor.h"
 
 class GroundTruthSegmentExtractor : public pipeline::SimpleProcessNode {
 
@@ -14,56 +13,43 @@ public:
 
 private:
 
-	class SegmentSelector : public SegmentVisitor {
-
-	public:
-
-		SegmentSelector(
-				const std::vector<boost::shared_ptr<Slice> > prevSlices,
-				const std::vector<boost::shared_ptr<Slice> > nextSlices,
-				boost::shared_ptr<Segments> segments);
-
-		void visit(const EndSegment& end);
-
-		void visit(const ContinuationSegment& continuation);
-
-		void visit(const BranchSegment& branch);
-
-		const std::set<boost::shared_ptr<Slice> >& getRemainingPrevSlices() { return _remainingPrevSlices; }
-
-		const std::set<boost::shared_ptr<Slice> >& getRemainingNextSlices() { return _remainingNextSlices; }
-
-		bool selected() { return _selected; }
-
-	private:
-
-		// sets of slices that have not been explained so far
-		std::set<boost::shared_ptr<Slice> > _remainingPrevSlices;
-		std::set<boost::shared_ptr<Slice> > _remainingNextSlices;
-
-		// true, if the last segment was accepted
-		bool _selected;
-	};
-
 	void updateOutputs();
 
-	void createEnd(Direction direction, boost::shared_ptr<Slice> slice);
+	/**
+	 * Checks, whether the given segment is consistent with the currently found
+	 * ones and adds it to the output, if this is the case.
+	 */
+	void probeContinuation(boost::shared_ptr<ContinuationSegment> continuation);
 
-	void createContinuation(boost::shared_ptr<Slice> prev, boost::shared_ptr<Slice> next);
+	/**
+	 * Checks, whether the given segment is consistent with the currently found
+	 * ones and adds it to the output, if this is the case.
+	 */
+	void probeBranch(boost::shared_ptr<BranchSegment> branch);
 
-	void createBranch(Direction direction, boost::shared_ptr<Slice> source, boost::shared_ptr<Slice> target1, boost::shared_ptr<Slice> target2);
-
+	// slices of the previous section
 	pipeline::Input<Slices> _prevSlices;
 
+	// slices of the next section
 	pipeline::Input<Slices> _nextSlices;
 
+	// extracted segments
 	pipeline::Output<Segments> _segments;
 
+	// mapping from intensity values to the slices having it
 	std::map<float, std::vector<boost::shared_ptr<Slice> > > _prevSliceValues;
 
+	// mapping from intensity values to the slices having it
 	std::map<float, std::vector<boost::shared_ptr<Slice> > > _nextSliceValues;
 
+	// all values in the ground truth images
 	std::set<float> _values;
+
+	// set of slices that have not been explained so far
+	std::set<boost::shared_ptr<Slice> > _remainingPrevSlices;
+
+	// set of slices that have not been explained so far
+	std::set<boost::shared_ptr<Slice> > _remainingNextSlices;
 };
 
 #endif // SOPNET_GROUND_TRUTH_SEGMENT_EXTRACTOR_H__

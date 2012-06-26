@@ -4,7 +4,6 @@
 #include "Segment.h"
 
 // forward declarations
-class SegmentVisitor;
 class Slice;
 
 class BranchSegment : public Segment {
@@ -17,10 +16,6 @@ public:
 			boost::shared_ptr<Slice> sourceSlice,
 			boost::shared_ptr<Slice> targetSlice1,
 			boost::shared_ptr<Slice> targetSlice2);
-
-	void accept(SegmentVisitor& visitor);
-
-	void accept(SegmentVisitor& visitor) const;
 
 	boost::shared_ptr<Slice> getSourceSlice() const;
 

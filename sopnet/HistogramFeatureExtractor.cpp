@@ -24,44 +24,46 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 void
 HistogramFeatureExtractor::updateOutputs() {
 
-	FeatureVisitor featureVisitor(_numBins, *_sections);
+	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+		_features->add(segment->getId(), getFeatures(*segment));
 
-	foreach (boost::shared_ptr<Segment> segment, *_segments) {
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+		_features->add(segment->getId(), getFeatures(*segment));
 
-		segment->accept(featureVisitor);
-		_features->add(segment->getId(), featureVisitor.getFeatures());
-	}
+	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+		_features->add(segment->getId(), getFeatures(*segment));
 }
 
-HistogramFeatureExtractor::FeatureVisitor::FeatureVisitor(unsigned int numBins, ImageStack& sections) :
-	_numBins(numBins),
-	_sections(sections),
-	_features(2*numBins) {}
+std::vector<double>
+HistogramFeatureExtractor::getFeatures(const EndSegment& end) {
 
-void
-HistogramFeatureExtractor::FeatureVisitor::visit(const EndSegment& end) {
+	std::vector<double> features(2*_numBins);
 
 	std::vector<double> histogram = computeHistogram(*end.getSlice().get());
 
 	for (int i = 0; i < _numBins; i++)
-		_features[i] = histogram[i];
+		features[i] = histogram[i];
 
 	double sum = 0;
 	for (int i = 0; i < _numBins; i++)
 		sum += histogram[i];
 
 	for (int i = 0; i < _numBins; i++)
-		_features[_numBins + i] = histogram[i]/sum;
+		features[_numBins + i] = histogram[i]/sum;
+
+	return features;
 }
 
-void
-HistogramFeatureExtractor::FeatureVisitor::visit(const ContinuationSegment& continuation) {
+std::vector<double>
+HistogramFeatureExtractor::getFeatures(const ContinuationSegment& continuation) {
+
+	std::vector<double> features(2*_numBins);
 
 	std::vector<double> sourceHistogram = computeHistogram(*continuation.getSourceSlice().get());
 	std::vector<double> targetHistogram = computeHistogram(*continuation.getTargetSlice().get());
 
 	for (int i = 0; i < _numBins; i++)
-		_features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
+		features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
 
 	double sourceSum = 0;
 	double targetSum = 0;
@@ -72,11 +74,15 @@ HistogramFeatureExtractor::FeatureVisitor::visit(const ContinuationSegment& cont
 	}
 
 	for (int i = 0; i < _numBins; i++)
-		_features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
+		features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
+
+	return features;
 }
 
-void
-HistogramFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
+std::vector<double>
+HistogramFeatureExtractor::getFeatures(const BranchSegment& branch) {
+
+	std::vector<double> features(2*_numBins);
 
 	std::vector<double> sourceHistogram  = computeHistogram(*branch.getSourceSlice().get());
 	std::vector<double> targetHistogram1 = computeHistogram(*branch.getTargetSlice1().get());
@@ -88,7 +94,7 @@ HistogramFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
 		targetHistogram[i] += targetHistogram2[i];
 
 	for (int i = 0; i < _numBins; i++)
-		_features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
+		features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
 
 	double sourceSum = 0;
 	double targetSum = 0;
@@ -99,17 +105,19 @@ HistogramFeatureExtractor::FeatureVisitor::visit(const BranchSegment& branch) {
 	}
 
 	for (int i = 0; i < _numBins; i++)
-		_features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
+		features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
+
+	return features;
 }
 
 std::vector<double>
-HistogramFeatureExtractor::FeatureVisitor::computeHistogram(const Slice& slice) {
+HistogramFeatureExtractor::computeHistogram(const Slice& slice) {
 
 	std::vector<double> histogram(_numBins, 0);
 
 	unsigned int section = slice.getSection();
 
-	Image& image = *_sections[section];
+	Image& image = *(*_sections)[section];
 
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
@@ -121,10 +129,4 @@ HistogramFeatureExtractor::FeatureVisitor::computeHistogram(const Slice& slice) 
 	}
 
 	return histogram;
-}
-
-std::vector<double>
-HistogramFeatureExtractor::FeatureVisitor::getFeatures() {
-
-	return _features;
 }

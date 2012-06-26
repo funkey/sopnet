@@ -166,7 +166,7 @@ SegmentExtractor::extractSegments() {
 void
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direction) {
 
-	boost::shared_ptr<Segment> segment = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), direction, slice);
+	boost::shared_ptr<EndSegment> segment = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), direction, slice);
 
 	_segments->add(segment);
 
@@ -178,7 +178,7 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 void
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
 
-	boost::shared_ptr<Segment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
+	boost::shared_ptr<ContinuationSegment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
 
 	_segments->add(segment);
 
@@ -193,7 +193,7 @@ SegmentExtractor::extractSegment(
 		boost::shared_ptr<Slice> target2,
 		Direction direction) {
 
-	boost::shared_ptr<Segment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
+	boost::shared_ptr<BranchSegment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
 
 	_segments->add(segment);
 

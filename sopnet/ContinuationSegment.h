@@ -4,7 +4,6 @@
 #include "Segment.h"
 
 // forward declarations
-class SegmentVisitor;
 class Slice;
 
 class ContinuationSegment : public Segment {
@@ -16,10 +15,6 @@ public:
 			Direction direction,
 			boost::shared_ptr<Slice> sourceSlice,
 			boost::shared_ptr<Slice> targetSlice);
-
-	void accept(SegmentVisitor& visitor);
-
-	void accept(SegmentVisitor& visitor) const;
 
 	boost::shared_ptr<Slice> getSourceSlice() const;
 

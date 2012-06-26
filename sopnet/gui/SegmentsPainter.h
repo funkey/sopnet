@@ -3,9 +3,8 @@
 
 #include <gui/RecordablePainter.h>
 #include <sopnet/Segments.h>
-#include <sopnet/SegmentVisitor.h>
 
-class SegmentsPainter : public gui::RecordablePainter, public SegmentVisitor {
+class SegmentsPainter : public gui::RecordablePainter {
 
 public:
 
@@ -13,15 +12,15 @@ public:
 
 	void setSegments(boost::shared_ptr<Segments> segments);
 
-	void visit(const EndSegment& end);
-
-	void visit(const ContinuationSegment& continuation);
-
-	void visit(const BranchSegment& branch);
-
 private:
 
 	void updateRecording();
+
+	void draw(const EndSegment& end);
+
+	void draw(const ContinuationSegment& continuation);
+
+	void draw(const BranchSegment& branch);
 
 	void drawSlice(
 			boost::shared_ptr<Slice> slice,

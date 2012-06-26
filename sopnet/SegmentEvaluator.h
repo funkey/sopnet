@@ -3,8 +3,12 @@
 
 #include <pipeline/all.h>
 #include "Segment.h"
-#include "SegmentVisitor.h"
 #include "SegmentCostFunctionParameters.h"
+
+// forward declarations
+class EndSegment;
+class ContinuationSegment;
+class BranchSegment;
 
 class SegmentEvaluator : public pipeline::SimpleProcessNode {
 
@@ -14,24 +18,14 @@ public:
 
 private:
 
-	class CostVisitor : public SegmentVisitor {
-
-	public:
-
-		void visit(const EndSegment& end);
-
-		void visit(const ContinuationSegment& continuation);
-
-		void visit(const BranchSegment& branch);
-
-		double getCosts();
-
-	private:
-
-		double _costs;
-	};
 
 	void updateOutputs();
+
+	double getCosts(const EndSegment& end);
+
+	double getCosts(const ContinuationSegment& continuation);
+
+	double getCosts(const BranchSegment& branch);
 
 	double costs(const Segment& segment, boost::shared_ptr<SegmentCostFunctionParameters> parameters);
 

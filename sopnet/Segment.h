@@ -6,9 +6,6 @@
 #include <pipeline/all.h>
 #include "Slice.h"
 
-// forward declaration
-class SegmentVisitor;
-
 /**
  * The direction of the segment.
  */
@@ -27,15 +24,13 @@ class Segment : public pipeline::Data {
 
 public:
 
-	Segment(unsigned int id, Direction direction);
+	Segment(unsigned int id, Direction direction, unsigned int interSectionInterval);
 
 	unsigned int getId() const;
 
-	virtual void accept(SegmentVisitor& visitor) = 0;
-
-	virtual void accept(SegmentVisitor& visitor) const = 0;
-
 	Direction getDirection() const;
+
+	unsigned int getInterSectionInterval();
 
 	static unsigned int getNextSegmentId();
 
@@ -45,9 +40,15 @@ private:
 
 	static boost::mutex SegmentIdMutex;
 
+	// a unique id for the segment
 	unsigned int _id;
 
+	// the direction of the segment (fixes the meaning of source and target
+	// slices in derived classes)
 	Direction _direction;
+
+	// the number of the inter-section interval this segment lives in
+	unsigned int _interSectionInterval;
 };
 
 #endif // CELLTRACKER_TRACKLET_H__

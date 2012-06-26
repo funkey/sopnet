@@ -3,7 +3,6 @@
 
 #include <pipeline/all.h>
 #include "Segments.h"
-#include "SegmentVisitor.h"
 #include "SetDifference.h"
 #include "Features.h"
 
@@ -15,32 +14,27 @@ public:
 
 private:
 
-	class FeatureVisitor : public SegmentVisitor {
+	template <typename SegmentType>
+	void getFeatures(const SegmentType& segment);
 
-	public:
+	std::vector<double> computeFeatures(const EndSegment& end);
 
-		FeatureVisitor();
+	std::vector<double> computeFeatures(const ContinuationSegment& continuation);
 
-		void visit(const EndSegment& end);
-
-		void visit(const ContinuationSegment& continuation);
-
-		void visit(const BranchSegment& branch);
-
-		std::vector<double> getFeatures();
-
-	private:
-
-		SetDifference _setDifference;
-
-		std::vector<double> _features;
-	};
+	std::vector<double> computeFeatures(const BranchSegment& branch);
 
 	void updateOutputs();
 
 	pipeline::Input<Segments> _segments;
 
 	pipeline::Output<Features> _features;
+
+	SetDifference _setDifference;
+
+	// number of cache hits
+	unsigned int _numChecked;
+
+	bool _useCache;
 };
 
 #endif // SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_

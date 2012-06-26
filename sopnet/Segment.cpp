@@ -1,8 +1,12 @@
 #include "Segment.h"
 
-Segment::Segment(unsigned int id, Direction direction) :
+Segment::Segment(
+		unsigned int id,
+		Direction direction,
+		unsigned int interSectionInterval) :
 	_id(id),
-	_direction(direction) {}
+	_direction(direction),
+	_interSectionInterval(interSectionInterval) {}
 
 unsigned int
 Segment::getNextSegmentId() {
@@ -30,6 +34,12 @@ Direction
 Segment::getDirection() const {
 
 	return _direction;
+}
+
+unsigned int
+Segment::getInterSectionInterval() {
+
+	return _interSectionInterval;
 }
 
 unsigned int Segment::NextSegmentId = 0;

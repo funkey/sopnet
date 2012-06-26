@@ -4,44 +4,14 @@
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include "Segments.h"
-#include "SegmentVisitor.h"
 
-class ProblemAssembler : public pipeline::SimpleProcessNode, public SegmentVisitor {
+class ProblemAssembler : public pipeline::SimpleProcessNode {
 
 public:
 
 	ProblemAssembler();
 
-	void visit(const EndSegment& end);
-
-	void visit(const ContinuationSegment& continuation);
-
-	void visit(const BranchSegment& branch);
-
 private:
-
-	class SliceIdVisitor : public SegmentVisitor {
-
-	public:
-
-		SliceIdVisitor();
-
-		void visit(const EndSegment& end);
-
-		void visit(const ContinuationSegment& continuation);
-
-		void visit(const BranchSegment& branch);
-
-		void addId(unsigned int id);
-
-		std::map<unsigned int, unsigned int> getSliceIdsMap();
-	
-	private:
-
-		std::map<unsigned int, unsigned int> _sliceIdsMap;
-
-		unsigned int _numSlices;
-	};
 
 	void updateOutputs();
 
@@ -51,7 +21,21 @@ private:
 
 	void addConsistencyConstraints();
 
-	std::map<unsigned int, unsigned int> getSliceIdsMap();
+	void setCoefficient(const EndSegment& end);
+
+	void setCoefficient(const ContinuationSegment& continuation);
+
+	void setCoefficient(const BranchSegment& branch);
+
+	void extractSliceIdsMap();
+
+	void addSlices(const EndSegment& end);
+
+	void addSlices(const ContinuationSegment& continuation);
+
+	void addSlices(const BranchSegment& branch);
+
+	void addId(unsigned int id);
 
 	// a list of segments for each pair of frames
 	pipeline::Inputs<Segments>         _segments;
@@ -77,6 +61,9 @@ private:
 
 	// a counter for the number of segments that came in
 	unsigned int _numSegments;
+
+	// the total number of slices
+	unsigned int _numSlices;
 };
 
 #endif // CELLTRACKER_PROBLEM_ASSEMBLER_H__

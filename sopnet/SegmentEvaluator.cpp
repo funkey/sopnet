@@ -26,23 +26,33 @@ SegmentEvaluator::costs(const Segment& segment, boost::shared_ptr<SegmentCostFun
 
 	LOG_ALL(segmentevaluatorlog) << "evaluating segment " << segment.getId() << std::endl;
 
-	CostVisitor costVisitor;
+	/**
+	 * Yes, dynamic casts are evil. This is not a good solution in terms of
+	 * performance. It would be better to have a cost function for each segment
+	 * type. But since noone really uses this cost function here anyway, we can
+	 * postpone the good implementation and live with this.
+	 */
 
-	segment.accept(costVisitor);
+	if (const EndSegment* end = dynamic_cast<const EndSegment*>(&segment))
+		return getCosts(*end);
 
-	LOG_ALL(segmentevaluatorlog) << "final costs are " << costVisitor.getCosts() << std::endl;
+	if (const ContinuationSegment* continuation = dynamic_cast<const ContinuationSegment*>(&segment))
+		return getCosts(*continuation);
 
-	return costVisitor.getCosts();
+	if (const BranchSegment* branch = dynamic_cast<const BranchSegment*>(&segment))
+		return getCosts(*branch);
+
+	return 0;
 }
 
-void
-SegmentEvaluator::CostVisitor::visit(const EndSegment& end) {
+double
+SegmentEvaluator::getCosts(const EndSegment& end) {
 
-	_costs = sqrt(end.getSlice()->getComponent()->getSize())*0.01;
+	return sqrt(end.getSlice()->getComponent()->getSize())*0.01;
 }
 
-void
-SegmentEvaluator::CostVisitor::visit(const ContinuationSegment& continuation) {
+double
+SegmentEvaluator::getCosts(const ContinuationSegment& continuation) {
 
 	boost::shared_ptr<ConnectedComponent> source = continuation.getSourceSlice()->getComponent();
 	boost::shared_ptr<ConnectedComponent> target = continuation.getTargetSlice()->getComponent();
@@ -59,11 +69,11 @@ SegmentEvaluator::CostVisitor::visit(const ContinuationSegment& continuation) {
 
 	LOG_ALL(segmentevaluatorlog) << "distance is " << distance << std::endl;
 
-	_costs = distance;
+	return distance;
 }
 
-void
-SegmentEvaluator::CostVisitor::visit(const BranchSegment& branch) {
+double
+SegmentEvaluator::getCosts(const BranchSegment& branch) {
 
 	boost::shared_ptr<ConnectedComponent> source  = branch.getSourceSlice()->getComponent();
 	boost::shared_ptr<ConnectedComponent> target1 = branch.getTargetSlice1()->getComponent();
@@ -82,11 +92,6 @@ SegmentEvaluator::CostVisitor::visit(const BranchSegment& branch) {
 
 	LOG_ALL(segmentevaluatorlog) << "distance is " << distance << std::endl;
 
-	_costs = distance;
+	return distance;
 }
 
-double
-SegmentEvaluator::CostVisitor::getCosts() {
-
-	return _costs;
-}

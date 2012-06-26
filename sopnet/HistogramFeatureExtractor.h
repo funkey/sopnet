@@ -4,7 +4,6 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 #include "Segments.h"
-#include "SegmentVisitor.h"
 #include "Features.h"
 
 class HistogramFeatureExtractor : public pipeline::SimpleProcessNode {
@@ -15,32 +14,15 @@ public:
 
 private:
 
-	class FeatureVisitor : public SegmentVisitor {
-
-	public:
-
-		FeatureVisitor(unsigned int numBins, ImageStack& sections);
-
-		void visit(const EndSegment& end);
-
-		void visit(const ContinuationSegment& continuation);
-
-		void visit(const BranchSegment& branch);
-
-		std::vector<double> getFeatures();
-
-	private:
-
-		std::vector<double> computeHistogram(const Slice& slice);
-
-		std::vector<double> _features;
-
-		unsigned int _numBins;
-
-		ImageStack& _sections;
-	};
-
 	void updateOutputs();
+
+	std::vector<double> getFeatures(const EndSegment& end);
+
+	std::vector<double> getFeatures(const ContinuationSegment& continuation);
+
+	std::vector<double> getFeatures(const BranchSegment& branch);
+
+	std::vector<double> computeHistogram(const Slice& slice);
 
 	pipeline::Input<Segments> _segments;
 

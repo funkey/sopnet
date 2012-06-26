@@ -1,3 +1,6 @@
+#include <limits>
+
+#include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 #include <imageprocessing/ConnectedComponent.h>
 #include <GoldStandardExtractor.h>
@@ -7,9 +10,19 @@
 
 logger::LogChannel goldstandardextractorlog("goldstandardextractorlog", "[GoldStandardExtractor] ");
 
+util::ProgramOption optionMaxGoldStandardDistance(
+		util::_module           = "sopnet",
+		util::_long_name        = "maxGoldStandardDistance",
+		util::_description_text = "The distance within correspondences between the ground-truth and the gold-standard are sought.",
+		util::_default_value    = 100);
+
 GoldStandardExtractor::GoldStandardExtractor() :
 	_goldStandard(boost::make_shared<Segments>()),
 	_negativeSamples(boost::make_shared<Segments>()) {
+
+	_maxEndDistance          = optionMaxGoldStandardDistance;
+	_maxContinuationDistance = optionMaxGoldStandardDistance;
+	_maxBranchDistance       = optionMaxGoldStandardDistance;
 
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_allSegments, "all segments");
@@ -24,236 +37,264 @@ GoldStandardExtractor::updateOutputs() {
 	LOG_DEBUG(goldstandardextractorlog) << "searching for best-fitting segments to ground truth" << std::endl;
 
 	_goldStandard->clear();
-	_allSegmentIds.clear();
-	_segmentConstraints.clear();
-
-	// create a lookup table for all found segment ids to the segments
-	foreach (boost::shared_ptr<Segment> segment, *_allSegments)
-		_allSegmentIds[segment->getId()] = segment;
-
-	// seperate ground truth segments by their inter-section interval and type
-	SeparateVisitor separateGtVisitor;
-	foreach (boost::shared_ptr<Segment> segment, *_groundTruth)
-		segment->accept(separateGtVisitor);
-
-	// seperate all found segments by their inter-section interval and type
-	SeparateVisitor separateAllVisitor;
-	foreach (boost::shared_ptr<Segment> segment, *_allSegments)
-		segment->accept(separateAllVisitor);
+	_negativeSamples->clear();
 
 	LOG_DEBUG(goldstandardextractorlog)
 			<< "ground truth contains segments in "
-			<< separateGtVisitor.getNumInterSectionIntervals()
+			<< _groundTruth->getNumInterSectionIntervals()
 			<< " inter-section intervalls" << std::endl;
 
-	for (unsigned int interval = 0; interval < separateGtVisitor.getNumInterSectionIntervals(); interval++) {
+	for (unsigned int interval = 0; interval < _groundTruth->getNumInterSectionIntervals(); interval++) {
 
 		LOG_DEBUG(goldstandardextractorlog) << "finding correspondences in inter-section interval " << interval << std::endl;
 
-		std::vector<const Segment*> segments;
-		std::vector<const Segment*> negativeSamples;
-		
-		boost::tie(segments, negativeSamples) = findGoldStandard(
-				separateGtVisitor.getEndSegments(interval),
-				separateGtVisitor.getContinuationSegments(interval),
-				separateGtVisitor.getBranchSegments(interval),
-				separateAllVisitor.getEndSegments(interval),
-				separateAllVisitor.getContinuationSegments(interval),
-				separateAllVisitor.getBranchSegments(interval));
-
-		foreach (const Segment* segment, segments)
-			if (_allSegmentIds.count(segment->getId()))
-				_goldStandard->add(_allSegmentIds[segment->getId()]);
-			else
-				LOG_ERROR(goldstandardextractorlog) << "I found a segment that I didn't know before!" << std::endl;
-
-		foreach (const Segment* segment, negativeSamples)
-			if (_allSegmentIds.count(segment->getId()))
-				_negativeSamples->add(_allSegmentIds[segment->getId()]);
-			else
-				LOG_ERROR(goldstandardextractorlog) << "I found a segment that I didn't know before!" << std::endl;
+		findGoldStandard(interval);
 	}
 }
 
-std::pair<std::vector<const Segment*>, std::vector<const Segment*> >
-GoldStandardExtractor::findGoldStandard(
-		const std::vector<const EndSegment*>&          groundTruthEndSegments,
-		const std::vector<const ContinuationSegment*>& groundTruthContinuationSegments,
-		const std::vector<const BranchSegment*>&       groundTruthBranchSegments,
-		const std::vector<const EndSegment*>&          allEndSegments,
-		const std::vector<const ContinuationSegment*>& allContinuationSegments,
-		const std::vector<const BranchSegment*>&       allBranchSegments) {
+void
+GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 	// set of pairs of segments with a similarity value
-	typedef std::set<std::pair<float, std::pair<const Segment*, const Segment*> > > pairs_type;
-	pairs_type pairs;
+	std::vector<Pair<EndSegment> >          endPairs;
+	std::vector<Pair<ContinuationSegment> > continuationPairs;
+	std::vector<Pair<BranchSegment> >       branchPairs;
+
+	LOG_ALL(goldstandardextractorlog)
+			<< "collecting slices of all extracted segments..."
+			<< std::endl;
 
 	// all remaining slices that are not used by a segment
-	std::set<const Slice*> remainingSlices =
+	_remainingSlices =
 			collectSlices(
-					allEndSegments,
-					allContinuationSegments,
-					allBranchSegments);
+					_allSegments->getEnds(interval),
+					_allSegments->getContinuations(interval),
+					_allSegments->getBranches(interval));
 
-	// find all pairs and evaluate their similarity
-	foreach (const EndSegment* segment1, groundTruthEndSegments) {
+	LOG_ALL(goldstandardextractorlog)
+			<< "finding pairs of ground-truth/extracted end segments..."
+			<< std::endl;
 
-		SimilarityVisitor similarityVisitor(segment1);
+	// find all end pairs and evaluate their similarity
+	foreach (boost::shared_ptr<EndSegment> end1, _groundTruth->getEnds(interval))
+		foreach (boost::shared_ptr<EndSegment> end2, _allSegments->findEnds(end1, _maxEndDistance)) {
 
-		foreach (const Segment* segment2, allEndSegments) {
-
-			if (segment1->getDirection() != segment2->getDirection())
+			if (end1->getDirection() != end2->getDirection())
 				continue;
 
-			segment2->accept(similarityVisitor);
+			float similarity = setDifference(*end1->getSlice(), *end2->getSlice());
 
-			float similarity = similarityVisitor.getSimilarity();
-
-			pairs.insert(std::make_pair(similarity, std::make_pair(segment1, segment2)));
+			endPairs.push_back(Pair<EndSegment>(similarity, end1, end2));
 		}
-	}
-	foreach (const ContinuationSegment* segment1, groundTruthContinuationSegments) {
 
-		SimilarityVisitor similarityVisitor(segment1);
+	LOG_ALL(goldstandardextractorlog)
+			<< "finding pairs of ground-truth/extracted continuation segments..."
+			<< std::endl;
 
-		foreach (const Segment* segment2, allContinuationSegments) {
+	// find all continuation pairs and evaluate their similarity
+	foreach (boost::shared_ptr<ContinuationSegment> continuation1, _groundTruth->getContinuations(interval))
+		foreach (boost::shared_ptr<ContinuationSegment> continuation2, _allSegments->findContinuations(continuation1, _maxContinuationDistance)) {
 
-			if (segment1->getDirection() != segment2->getDirection())
-				continue;
+			float similarity =
+					setDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice()) +
+					setDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice());
 
-			segment2->accept(similarityVisitor);
-
-			float similarity = similarityVisitor.getSimilarity();
-
-			pairs.insert(std::make_pair(similarity, std::make_pair(segment1, segment2)));
+			continuationPairs.push_back(Pair<ContinuationSegment>(similarity, continuation1, continuation2));
 		}
-	}
-	foreach (const BranchSegment* segment1, groundTruthBranchSegments) {
 
-		SimilarityVisitor similarityVisitor(segment1);
+	LOG_ALL(goldstandardextractorlog)
+			<< "finding pairs of ground-truth/extracted branch segments..."
+			<< std::endl;
 
-		foreach (const Segment* segment2, allBranchSegments) {
+	// find all branch pairs and evaluate their similarity
+	foreach (boost::shared_ptr<BranchSegment> branch1, _groundTruth->getBranches(interval))
+		foreach (boost::shared_ptr<BranchSegment> branch2, _allSegments->findBranches(branch1, _maxBranchDistance)) {
 
-			if (segment1->getDirection() != segment2->getDirection())
-				continue;
+			float similarity =
+					setDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice())  +
+					setDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1()) +
+					setDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2());
 
-			segment2->accept(similarityVisitor);
-
-			float similarity = similarityVisitor.getSimilarity();
-
-			pairs.insert(std::make_pair(similarity, std::make_pair(segment1, segment2)));
+			branchPairs.push_back(Pair<BranchSegment>(similarity, branch1, branch2));
 		}
-	}
+
+	LOG_ALL(goldstandardextractorlog) << "sorting found paris..." << std::endl;
+
+	std::sort(endPairs.begin(), endPairs.end());
+	std::sort(continuationPairs.begin(), continuationPairs.end());
+	std::sort(branchPairs.begin(), branchPairs.end());
 
 	LOG_DEBUG(goldstandardextractorlog) << "greedily accepting best matches..." << std::endl;
 
 	// all assigned ground truth segments
 	std::set<const Segment*> assignedGtSegments;
 
-	// the corresponding found segments
-	std::vector<const Segment*> goldStandard;
-	goldStandard.reserve(
-			groundTruthEndSegments.size() +
-			groundTruthContinuationSegments.size() +
-			groundTruthBranchSegments.size());
-
-	// all segments that conflict with the gold standard
-	std::vector<const Segment*> negativeSamples;
-	negativeSamples.reserve(
-			allEndSegments.size() +
-			allContinuationSegments.size() +
-			allBranchSegments.size());
+	LOG_ALL(goldstandardextractorlog) << "  creating a lookup-tables from slices to segments..." << std::endl;
 
 	// create a mapping from slices to segments they are involved in to find the
 	// negative samples
-	std::map<const Slice*, std::vector<const Segment*> > slicesToSegments =
-			createSlicesToSegmentsMap(
-					allEndSegments,
-					allContinuationSegments,
-					allBranchSegments);
+	_endSegments          = slicesToSegments(_allSegments->getEnds(interval));
+	_continuationSegments = slicesToSegments(_allSegments->getContinuations(interval));
+	_branchSegments       = slicesToSegments(_allSegments->getBranches(interval));
 
-	foreach (pairs_type::value_type pair, pairs) {
+	unsigned int nextEnd = 0;
+	unsigned int nextContinuation = 0;
+	unsigned int nextBranch = 0;
 
-		// the next best pair of segments
-		float similarity = pair.first;
-		const Segment* gtSegment = pair.second.first;
-		const Segment* gsSegment = pair.second.second;
+	while (
+			nextEnd          < endPairs.size()          ||
+			nextContinuation < continuationPairs.size() ||
+			nextBranch       < branchPairs.size()) {
 
-		// get the slices that are involved in the gsSegment
-		SliceCollectorVisitor gsSliceCollector;
-		gsSegment->accept(gsSliceCollector);
+		LOG_ALL(goldstandardextractorlog) << "  searching for next best segment pair..." << std::endl;
 
-		// check if the ground truth segment has been assigned already
-		if (assignedGtSegments.count(gtSegment))
-			continue;
+		// find the next best pair
+		float endSimilarity          = (nextEnd          < endPairs.size()          ? endPairs[nextEnd].similarity                   : std::numeric_limits<float>::infinity());
+		float continuationSimilarity = (nextContinuation < continuationPairs.size() ? continuationPairs[nextContinuation].similarity : std::numeric_limits<float>::infinity());
+		float branchSimilarity       = (nextBranch       < branchPairs.size()       ? branchPairs[nextBranch].similarity             : std::numeric_limits<float>::infinity());
 
-		// check if a segment for any of these slices has been found already
-		bool notValid = false;
+		// end is the winner
+		if (endSimilarity <= std::min(continuationSimilarity, branchSimilarity)) {
 
-		foreach (const Slice* slice, gsSliceCollector.getSlices())
-			if (remainingSlices.count(slice) == 0) {
+			LOG_ALL(goldstandardextractorlog) << "  it's an end pair..." << std::endl;
 
-				notValid = true;
-				break;
-			}
+			boost::shared_ptr<EndSegment> gtEnd = endPairs[nextEnd].segment1;
+			boost::shared_ptr<EndSegment> gsEnd = endPairs[nextEnd].segment2;
 
-		// if so, continue with the next best pair of segments
-		if (notValid)
-			continue;
+			probe(gtEnd, gsEnd);
 
-		// otherwise, we can accept the gsSegment to be part of the gold
-		// standard
-		goldStandard.push_back(gsSegment);
+			nextEnd++;
+		}
 
-		// remember that we assigned this gtSegment
-		assignedGtSegments.insert(gtSegment);
+		// continuation is the winner
+		if (continuationSimilarity <= std::min(endSimilarity, branchSimilarity)) {
 
-		// remove all the slices that are involved from the remainig slices
-		foreach (const Slice* slice, gsSliceCollector.getSlices())
-			remainingSlices.erase(slice);
+			LOG_ALL(goldstandardextractorlog) << "  it's a continuation pair..." << std::endl;
 
-		// find all conflicting segments to the found one and add them as
-		// negative samples
-		foreach (const Slice* slice, gsSliceCollector.getSlices())
-			foreach (const Segment* negative, slicesToSegments[slice])
-				if (negative != gsSegment)
-					negativeSamples.push_back(negative);
+			boost::shared_ptr<ContinuationSegment> gtContinuation = continuationPairs[nextContinuation].segment1;
+			boost::shared_ptr<ContinuationSegment> gsContinuation = continuationPairs[nextContinuation].segment2;
+
+			probe(gtContinuation, gsContinuation);
+
+			nextContinuation++;
+		}
+
+		// branch is the winner
+		if (branchSimilarity <= std::min(endSimilarity, continuationSimilarity)) {
+
+			LOG_ALL(goldstandardextractorlog) << "  it's a branch pair..." << std::endl;
+
+			boost::shared_ptr<BranchSegment> gtBranch = branchPairs[nextBranch].segment1;
+			boost::shared_ptr<BranchSegment> gsBranch = branchPairs[nextBranch].segment2;
+
+			probe(gtBranch, gsBranch);
+
+			nextBranch++;
+		}
+
+		LOG_ALL(goldstandardextractorlog) << "  there are still " << _remainingSlices.size() << " slices unexplained" << std::endl;
 
 		// if found segments for all slices, we are done
-		if (remainingSlices.size() == 0)
+		if (_remainingSlices.size() == 0)
 			break;
 	}
 
-	LOG_DEBUG(goldstandardextractorlog) << "remaining slices             : " << remainingSlices.size() << std::endl;
-	LOG_DEBUG(goldstandardextractorlog) << "found gold standard segments : " << goldStandard.size() << std::endl;
+	LOG_DEBUG(goldstandardextractorlog) << "remaining slices : " << _remainingSlices.size() << std::endl;
+}
 
-	LOG_DEBUG(goldstandardextractorlog) << "searching for negative samples..." << std::endl;
+template <typename SegmentType>
+void
+GoldStandardExtractor::probe(
+		boost::shared_ptr<SegmentType> gtSegment,
+		boost::shared_ptr<SegmentType> gsSegment) {
 
+		std::vector<const Slice*> gsSlices = getSlices(gsSegment);
 
-	return std::make_pair(goldStandard, negativeSamples);
+		// check if a segment for any of these slices has been found already
+		foreach (const Slice* slice, gsSlices)
+			if (_remainingSlices.count(slice) == 0)
+				return;
+
+		// otherwise, we can accept the gsSegment to be part of the gold
+		// standard
+		_goldStandard->add(gsSegment);
+
+		// remove all the slices that are involved from the remainig slices
+		foreach (const Slice* slice, gsSlices)
+			_remainingSlices.erase(slice);
+
+		// find all conflicting segments to the found one and add them as
+		// negative samples
+		foreach (const Slice* slice, gsSlices) {
+
+			foreach (boost::shared_ptr<EndSegment> negative, _endSegments[slice])
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+					_negativeSamples->add(negative);
+
+			foreach (boost::shared_ptr<ContinuationSegment> negative, _continuationSegments[slice])
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+					_negativeSamples->add(negative);
+
+			foreach (boost::shared_ptr<BranchSegment> negative, _branchSegments[slice])
+				if (negative != boost::static_pointer_cast<Segment>(gsSegment))
+					_negativeSamples->add(negative);
+		}
+}
+
+std::vector<const Slice*>
+GoldStandardExtractor::getSlices(boost::shared_ptr<EndSegment> end) {
+
+	std::vector<const Slice*> slices;
+
+	slices.push_back(end->getSlice().get());
+
+	return slices;
+}
+
+std::vector<const Slice*>
+GoldStandardExtractor::getSlices(boost::shared_ptr<ContinuationSegment> continuation) {
+
+	std::vector<const Slice*> slices;
+
+	slices.push_back(continuation->getSourceSlice().get());
+	slices.push_back(continuation->getTargetSlice().get());
+
+	return slices;
+}
+
+std::vector<const Slice*>
+GoldStandardExtractor::getSlices(boost::shared_ptr<BranchSegment> branch) {
+
+	std::vector<const Slice*> slices;
+
+	slices.push_back(branch->getSourceSlice().get());
+	slices.push_back(branch->getTargetSlice1().get());
+	slices.push_back(branch->getTargetSlice2().get());
+
+	return slices;
 }
 
 std::set<const Slice*>
 GoldStandardExtractor::collectSlices(
-		const std::vector<const EndSegment*>&          endSegments,
-		const std::vector<const ContinuationSegment*>& continuationSegments,
-		const std::vector<const BranchSegment*>&       branchSegments) {
+		const std::vector<boost::shared_ptr<EndSegment> >&          endSegments,
+		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuationSegments,
+		const std::vector<boost::shared_ptr<BranchSegment> >&       branchSegments) {
 
 	std::set<const Slice*> slices;
 
 	// collect all slices that are used in the allEndSegments
-	foreach (const EndSegment* segment, endSegments)
+	foreach (boost::shared_ptr<EndSegment> segment, endSegments)
 		slices.insert(segment->getSlice().get());
 
 	// collect all slices that are used in the allContinuationSegments
-	foreach (const ContinuationSegment* segment, continuationSegments) {
+	foreach (boost::shared_ptr<ContinuationSegment> segment, continuationSegments) {
 
 		slices.insert(segment->getSourceSlice().get());
 		slices.insert(segment->getTargetSlice().get());
 	}
 
 	// collect all slices that are used in the allSegments
-	foreach (const BranchSegment* segment, branchSegments) {
+	foreach (boost::shared_ptr<BranchSegment> segment, branchSegments) {
 
 		slices.insert(segment->getSourceSlice().get());
 		slices.insert(segment->getTargetSlice1().get());
@@ -263,106 +304,25 @@ GoldStandardExtractor::collectSlices(
 	return slices;
 }
 
-std::map<const Slice*, std::vector<const Segment*> >
-GoldStandardExtractor::createSlicesToSegmentsMap(
-		const std::vector<const EndSegment*>&          endSegments,
-		const std::vector<const ContinuationSegment*>& continuationSegments,
-		const std::vector<const BranchSegment*>&       branchSegments) {
+template <typename SegmentType>
+std::map<
+		const Slice*,
+		std::vector<boost::shared_ptr<SegmentType> >
+>
+GoldStandardExtractor::slicesToSegments(const std::vector<boost::shared_ptr<SegmentType> >& segments) {
 
-	std::map<const Slice*, std::vector<const Segment*> > slices;
+	std::map<const Slice*, std::vector<boost::shared_ptr<SegmentType> > > slices;
 
-	// collect all slices that are used in the allEndSegments
-	foreach (const EndSegment* segment, endSegments)
-		slices[segment->getSlice().get()].push_back(segment);
-
-	// collect all slices that are used in the allContinuationSegments
-	foreach (const ContinuationSegment* segment, continuationSegments) {
-
-		slices[segment->getSourceSlice().get()].push_back(segment);
-		slices[segment->getTargetSlice().get()].push_back(segment);
-	}
-
-	// collect all slices that are used in the allSegments
-	foreach (const BranchSegment* segment, branchSegments) {
-
-		slices[segment->getSourceSlice().get()].push_back(segment);
-		slices[segment->getTargetSlice1().get()].push_back(segment);
-		slices[segment->getTargetSlice2().get()].push_back(segment);
-	}
+	// collect all slices that are used in the segments
+	foreach (boost::shared_ptr<SegmentType> segment, segments)
+		foreach (const Slice* slice, getSlices(segment))
+			slices[slice].push_back(segment);
 
 	return slices;
 }
 
-void
-GoldStandardExtractor::parseConstraint(const LinearConstraint& constraint) {
-
-	if (constraint.getRelation() != Equal && constraint.getRelation() != LessEqual)
-		return;
-
-	if (constraint.getValue() != 1)
-		return;
-
-	typedef std::map<unsigned int, double>::value_type pair_type;
-	foreach (pair_type pair, constraint.getCoefficients())
-		_segmentConstraints[pair.first].push_back(&constraint);
-}
-
-///////////////////////
-// SimilarityVisitor //
-///////////////////////
-
-GoldStandardExtractor::SimilarityVisitor::SimilarityVisitor(const Segment* compare) :
-	_compare(compare) {}
-
-float
-GoldStandardExtractor::SimilarityVisitor::getSimilarity() {
-
-	return _similarity;
-}
-
-void
-GoldStandardExtractor::SimilarityVisitor::visit(const EndSegment& end) {
-
-	_similarity = getSimilarity((const EndSegment&)(*_compare), end);
-}
-
-void
-GoldStandardExtractor::SimilarityVisitor::visit(const ContinuationSegment& continuation) {
-
-	_similarity = getSimilarity((const ContinuationSegment&)(*_compare), continuation);
-}
-
-void
-GoldStandardExtractor::SimilarityVisitor::visit(const BranchSegment& branch) {
-
-	_similarity = getSimilarity((const BranchSegment&)(*_compare), branch);
-}
-
-float
-GoldStandardExtractor::SimilarityVisitor::getSimilarity(const EndSegment& end1, const EndSegment& end2) {
-
-	return setDifference(*end1.getSlice(), *end2.getSlice());
-}
-
-float
-GoldStandardExtractor::SimilarityVisitor::getSimilarity(const ContinuationSegment& continuation1, const ContinuationSegment& continuation2) {
-
-	return
-			setDifference(*continuation1.getSourceSlice(), *continuation2.getSourceSlice()) +
-			setDifference(*continuation1.getTargetSlice(), *continuation2.getTargetSlice());
-}
-
-float
-GoldStandardExtractor::SimilarityVisitor::getSimilarity(const BranchSegment& branch1, const BranchSegment& branch2) {
-
-	return
-			setDifference(*branch1.getSourceSlice(),  *branch2.getSourceSlice())  +
-			setDifference(*branch1.getTargetSlice1(), *branch2.getTargetSlice1()) +
-			setDifference(*branch1.getTargetSlice2(), *branch2.getTargetSlice2());
-}
-
 unsigned int
-GoldStandardExtractor::SimilarityVisitor::setDifference(const Slice& slice1, const Slice& slice2) {
+GoldStandardExtractor::setDifference(const Slice& slice1, const Slice& slice2) {
 
 	const util::rect<double>& bb1 = slice1.getComponent()->getBoundingBox();
 	util::point<unsigned int> offset1(static_cast<unsigned int>(bb1.minX), static_cast<unsigned int>(bb1.minY));
@@ -392,99 +352,3 @@ GoldStandardExtractor::SimilarityVisitor::setDifference(const Slice& slice1, con
 	return different;
 }
 
-///////////////////////////
-// SliceCollectorVisitor //
-///////////////////////////
-
-GoldStandardExtractor::SliceCollectorVisitor::SliceCollectorVisitor() {
-
-	_slices.reserve(3);
-}
-
-void
-GoldStandardExtractor::SliceCollectorVisitor::visit(const EndSegment& end) {
-
-	_slices.push_back(end.getSlice().get());
-}
-
-void
-GoldStandardExtractor::SliceCollectorVisitor::visit(const ContinuationSegment& continuation) {
-
-	_slices.push_back(continuation.getSourceSlice().get());
-	_slices.push_back(continuation.getTargetSlice().get());
-}
-
-void
-GoldStandardExtractor::SliceCollectorVisitor::visit(const BranchSegment& branch) {
-
-	_slices.push_back(branch.getSourceSlice().get());
-	_slices.push_back(branch.getTargetSlice2().get());
-	_slices.push_back(branch.getTargetSlice1().get());
-}
-
-const std::vector<const Slice*>&
-GoldStandardExtractor::SliceCollectorVisitor::getSlices() {
-
-	return _slices;
-}
-
-/////////////////////
-// SeperateVisitor //
-/////////////////////
-
-GoldStandardExtractor::SeparateVisitor::SeparateVisitor() :
-	_numIntervals(0) {}
-
-void
-GoldStandardExtractor::SeparateVisitor::visit(const EndSegment& end) {
-
-	unsigned int interval = end.getSlice()->getSection() + (end.getDirection() == Right ? 1 : 0);
-
-	_numIntervals = std::max(_numIntervals, interval + 1);
-
-	_endSegments[interval].push_back(&end);
-}
-
-void
-GoldStandardExtractor::SeparateVisitor::visit(const ContinuationSegment& continuation) {
-
-	unsigned int interval = continuation.getSourceSlice()->getSection() + (continuation.getDirection() == Right ? 1 : 0);
-
-	_numIntervals = std::max(_numIntervals, interval + 1);
-
-	_continuationSegments[interval].push_back(&continuation);
-}
-
-void
-GoldStandardExtractor::SeparateVisitor::visit(const BranchSegment& branch) {
-
-	unsigned int interval = branch.getSourceSlice()->getSection() + (branch.getDirection() == Right ? 1 : 0);
-
-	_numIntervals = std::max(_numIntervals, interval + 1);
-
-	_branchSegments[interval].push_back(&branch);
-}
-
-unsigned int
-GoldStandardExtractor::SeparateVisitor::getNumInterSectionIntervals() {
-
-	return _numIntervals;
-}
-
-const std::vector<const EndSegment*>&
-GoldStandardExtractor::SeparateVisitor::getEndSegments(unsigned int interval) {
-
-	return _endSegments[interval];
-}
-
-const std::vector<const ContinuationSegment*>&
-GoldStandardExtractor::SeparateVisitor::getContinuationSegments(unsigned int interval) {
-
-	return _continuationSegments[interval];
-}
-
-const std::vector<const BranchSegment*>&
-GoldStandardExtractor::SeparateVisitor::getBranchSegments(unsigned int interval) {
-
-	return _branchSegments[interval];
-}

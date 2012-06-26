@@ -17,6 +17,9 @@ private:
 
 	void updateObjective();
 
+	template <typename SegmentType>
+	void setCosts(const SegmentType& segment);
+
 	pipeline::Input<Segments> _segments;
 
 	pipeline::Input<boost::function<double(const Segment&)> > _costFunction;

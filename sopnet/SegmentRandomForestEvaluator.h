@@ -5,7 +5,6 @@
 #include <inference/RandomForest.h>
 #include "Features.h"
 #include "Segment.h"
-#include "SegmentVisitor.h"
 
 class SegmentRandomForestEvaluator : public pipeline::SimpleProcessNode {
 

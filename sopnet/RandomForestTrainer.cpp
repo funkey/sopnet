@@ -33,10 +33,22 @@ RandomForestTrainer::updateOutputs() {
 
 	LOG_DEBUG(randomforesttrainerlog) << "setting samples..." << std::endl;
 
-	foreach (boost::shared_ptr<Segment> segment, *_positiveSamples)
+	foreach (boost::shared_ptr<EndSegment> segment, _positiveSamples->getEnds())
 		_randomForest->addSample(_features->get(segment->getId()), 1);
 
-	foreach (boost::shared_ptr<Segment> segment, *_negativeSamples)
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _positiveSamples->getContinuations())
+		_randomForest->addSample(_features->get(segment->getId()), 1);
+
+	foreach (boost::shared_ptr<BranchSegment> segment, _positiveSamples->getBranches())
+		_randomForest->addSample(_features->get(segment->getId()), 1);
+
+	foreach (boost::shared_ptr<EndSegment> segment, _negativeSamples->getEnds())
+		_randomForest->addSample(_features->get(segment->getId()), 0);
+
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _negativeSamples->getContinuations())
+		_randomForest->addSample(_features->get(segment->getId()), 0);
+
+	foreach (boost::shared_ptr<BranchSegment> segment, _negativeSamples->getBranches())
 		_randomForest->addSample(_features->get(segment->getId()), 0);
 
 	LOG_DEBUG(randomforesttrainerlog) << "training..." << std::endl;

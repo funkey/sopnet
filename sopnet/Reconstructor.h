@@ -17,6 +17,9 @@ private:
 
 	void updateReconstruction();
 
+	template <typename SegmentType>
+	void probe(boost::shared_ptr<SegmentType> segment);
+
 	pipeline::Input<Solution>                               _solution;
 	pipeline::Input<std::map<unsigned int, unsigned int> >  _segmentIdsMap;
 	pipeline::Input<Segments>                               _segments;

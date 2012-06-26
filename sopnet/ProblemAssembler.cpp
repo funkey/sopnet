@@ -72,12 +72,11 @@ ProblemAssembler::addConsistencyConstraints() {
 
 	_allLinearConstraints->clear();
 
-	/* Get a map from slice ids to slice numbers in [0, numSlices -1]. We need this
+	/* Get a map from slice ids to slice numbers in [0, numSlices-1]. We need this
 	 * map to find the correct linear constraint for each slice.
 	 */
-	_sliceIdsMap = getSliceIdsMap();
+	extractSliceIdsMap();
 
-	unsigned int numSlices = _sliceIdsMap.size();
 	_numSegments = 0;
 
 	/* Make sure that the number of accepted segments having a certain slice at
@@ -90,7 +89,7 @@ ProblemAssembler::addConsistencyConstraints() {
 	 */
 
 	// allocate a set of linear constraints
-	_consistencyConstraints = LinearConstraints(numSlices);
+	_consistencyConstraints = LinearConstraints(_numSlices);
 
 	// set the relation and value
 	foreach (LinearConstraint& constraint, _consistencyConstraints) {
@@ -100,9 +99,17 @@ ProblemAssembler::addConsistencyConstraints() {
 	}
 
 	// set the coefficients
-	foreach (boost::shared_ptr<Segments> segments, _segments)
-		foreach (boost::shared_ptr<Segment> segment, *segments)
-			segment->accept(*this);
+	foreach (boost::shared_ptr<Segments> segments, _segments) {
+
+		foreach (boost::shared_ptr<EndSegment> segment, segments->getEnds())
+			setCoefficient(*segment);
+
+		foreach (boost::shared_ptr<ContinuationSegment> segment, segments->getContinuations())
+			setCoefficient(*segment);
+
+		foreach (boost::shared_ptr<BranchSegment> segment, segments->getBranches())
+			setCoefficient(*segment);
+	}
 
 	LOG_DEBUG(problemassemblerlog) << "created " << _consistencyConstraints.size() << " consistency constraints" << std::endl;
 
@@ -113,7 +120,7 @@ ProblemAssembler::addConsistencyConstraints() {
 }
 
 void
-ProblemAssembler::visit(const EndSegment& end) {
+ProblemAssembler::setCoefficient(const EndSegment& end) {
 
 	unsigned int sliceId = end.getSlice()->getId();
 
@@ -136,7 +143,7 @@ ProblemAssembler::visit(const EndSegment& end) {
 }
 
 void
-ProblemAssembler::visit(const ContinuationSegment& continuation) {
+ProblemAssembler::setCoefficient(const ContinuationSegment& continuation) {
 
 	unsigned int sourceSliceId = continuation.getSourceSlice()->getId();
 	unsigned int targetSliceId = continuation.getTargetSlice()->getId();
@@ -166,7 +173,7 @@ ProblemAssembler::visit(const ContinuationSegment& continuation) {
 }
 
 void
-ProblemAssembler::visit(const BranchSegment& branch) {
+ProblemAssembler::setCoefficient(const BranchSegment& branch) {
 
 	unsigned int sourceSliceId  = branch.getSourceSlice()->getId();
 	unsigned int targetSlice1Id = branch.getTargetSlice1()->getId();
@@ -198,39 +205,43 @@ ProblemAssembler::visit(const BranchSegment& branch) {
 	_numSegments++;
 }
 
-std::map<unsigned int, unsigned int>
-ProblemAssembler::getSliceIdsMap() {
+void
+ProblemAssembler::extractSliceIdsMap() {
 
-	SliceIdVisitor sliceIdVisitor;
+	_numSlices = 0;
+	_sliceIdsMap.clear();
 
 	/* Collect all slice ids and assign them uniquely to a number between 0 and
 	 * the number of slices in the problem.
 	 */
-	foreach (boost::shared_ptr<Segments> segments, _segments)
-		foreach (boost::shared_ptr<Segment> segment, *segments)
-			segment->accept(sliceIdVisitor);
+	foreach (boost::shared_ptr<Segments> segments, _segments) {
 
-	return sliceIdVisitor.getSliceIdsMap();
+		foreach (boost::shared_ptr<EndSegment> segment, segments->getEnds())
+			addSlices(*segment);
+
+		foreach (boost::shared_ptr<ContinuationSegment> segment, segments->getContinuations())
+			addSlices(*segment);
+
+		foreach (boost::shared_ptr<BranchSegment> segment, segments->getBranches())
+			addSlices(*segment);
+	}
 }
 
-ProblemAssembler::SliceIdVisitor::SliceIdVisitor() :
-	_numSlices(0) {}
-
 void
-ProblemAssembler::SliceIdVisitor::visit(const EndSegment& end) {
+ProblemAssembler::addSlices(const EndSegment& end) {
 
 	addId(end.getSlice()->getId());
 }
 
 void
-ProblemAssembler::SliceIdVisitor::visit(const ContinuationSegment& continuation) {
+ProblemAssembler::addSlices(const ContinuationSegment& continuation) {
 
 	addId(continuation.getSourceSlice()->getId());
 	addId(continuation.getTargetSlice()->getId());
 }
 
 void
-ProblemAssembler::SliceIdVisitor::visit(const BranchSegment& branch) {
+ProblemAssembler::addSlices(const BranchSegment& branch) {
 
 	addId(branch.getSourceSlice()->getId());
 	addId(branch.getTargetSlice1()->getId());
@@ -238,7 +249,7 @@ ProblemAssembler::SliceIdVisitor::visit(const BranchSegment& branch) {
 }
 
 void
-ProblemAssembler::SliceIdVisitor::addId(unsigned int id) {
+ProblemAssembler::addId(unsigned int id) {
 
 	if (_sliceIdsMap.find(id) == _sliceIdsMap.end()) {
 
@@ -248,8 +259,3 @@ ProblemAssembler::SliceIdVisitor::addId(unsigned int id) {
 	}
 }
 
-std::map<unsigned int, unsigned int>
-ProblemAssembler::SliceIdVisitor::getSliceIdsMap() {
-
-	return _sliceIdsMap;
-}
