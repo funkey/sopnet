@@ -114,6 +114,8 @@ SliceExtractor::ComponentTreeConverter::addLinearConstraint() {
 	LOG_ALL(sliceextractorlog) << "add constraint " << constraint << std::endl;
 
 	_linearConstraints->add(constraint);
+
+	_slices->addConflicts(_path);
 }
 
 unsigned int SliceExtractor::ComponentTreeConverter::NextSliceId = 0;

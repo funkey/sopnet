@@ -134,7 +134,8 @@ SegmentExtractor::extractSegments() {
 		foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
 			foreach (boost::shared_ptr<Slice> nextSlice2, closeNextSlices)
 				if (nextSlice1->getId() < nextSlice2->getId())
-					extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
+					if (!_nextSlices->areConflicting(nextSlice1->getId(), nextSlice2->getId()))
+						extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
@@ -154,7 +155,8 @@ SegmentExtractor::extractSegments() {
 		foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
 			foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
 				if (prevSlice1->getId() < prevSlice2->getId())
-					extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
+					if (!_prevSlices->areConflicting(prevSlice1->getId(), prevSlice2->getId()))
+						extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;

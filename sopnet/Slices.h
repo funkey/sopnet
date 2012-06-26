@@ -13,6 +13,7 @@ class Slices : public pipeline::Data {
 public:
 
 	typedef slices_type::iterator       iterator;
+
 	typedef slices_type::const_iterator const_iterator;
 
 	/**
@@ -30,6 +31,30 @@ public:
 	 */
 	void addAll(boost::shared_ptr<Slices> slices);
 
+	/**
+	 * Add information about conflicting slices, e.g., slices that are
+	 * overlapping in space.
+	 *
+	 * @param conflicting A vector of slice ids that are mutually in conflict.
+	 */
+	template <typename Collection>
+	void addConflicts(const Collection& conflicts) {
+
+		foreach (unsigned int id, conflicts) {
+
+			_conflicts[id].reserve(_conflicts[id].size() + conflicts.size() - 1);
+
+			foreach (unsigned int otherId, conflicts)
+				if (id != otherId)
+					_conflicts[id].push_back(otherId);
+		}
+	}
+
+	/**
+	 * Check, whether to slices (given by their id) are in conflict.
+	 */
+	bool areConflicting(unsigned int id1, unsigned int id2);
+
 	const const_iterator begin() const { return _slices.begin(); }
 
 	iterator begin() { return _slices.begin(); }
@@ -40,10 +65,13 @@ public:
 
 	unsigned int size() { return _slices.size(); }
 
-
 private:
 
+	// the slices
 	slices_type _slices;
+
+	// map from ids of slices to all ids of conflicting slices
+	std::map<unsigned int, std::vector<unsigned int> > _conflicts;
 };
 
 #endif // CELLTRACKER_CELLS_H__
