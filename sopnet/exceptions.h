@@ -5,5 +5,7 @@
 
 struct InvalidParameters : virtual Exception {};
 
+struct NoSuchSegment : virtual Exception {};
+
 #endif // SOPNET_EXCEPTIONS_H__
 

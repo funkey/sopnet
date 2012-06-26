@@ -38,7 +38,7 @@ Features::get(unsigned int segmentId) {
 
 	else
 
-		BOOST_THROW_EXCEPTION(Exception() << error_message("invalid segment id given") << STACK_TRACE);
+		BOOST_THROW_EXCEPTION(NoSuchSegment() << error_message("invalid segment id given") << STACK_TRACE);
 }
 
 unsigned int

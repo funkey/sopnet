@@ -138,19 +138,28 @@ GeometryFeatureExtractor::getFeatures(const SegmentType& segment) {
 
 		LOG_ALL(geometryfeatureextractorlog) << "checking consistency of cache" << std::endl;
 
-		if ((*_features).get(segment.getId()) == features) {
+		try {
 
-			LOG_ALL(geometryfeatureextractorlog) << "found a good entry" << std::endl;
+			if ((*_features).get(segment.getId()) == features) {
 
-			_numChecked++;
+				LOG_ALL(geometryfeatureextractorlog) << "found a good entry" << std::endl;
 
-		} else {
+				_numChecked++;
 
-			LOG_DEBUG(geometryfeatureextractorlog) << "found a bad entry -- will not use cache anymore" << std::endl;
+			} else {
 
-			LOG_ALL(geometryfeatureextractorlog)
-					<< "expected " << features << " for segment " << segment.getId()
-					<< ", got " << (*_features).get(segment.getId()) << std::endl;
+				LOG_DEBUG(geometryfeatureextractorlog) << "found a bad entry -- will not use cache anymore" << std::endl;
+
+				LOG_ALL(geometryfeatureextractorlog)
+						<< "expected " << features << " for segment " << segment.getId()
+						<< ", got " << (*_features).get(segment.getId()) << std::endl;
+
+				_useCache = false;
+			}
+
+		} catch (NoSuchSegment& e) {
+
+			LOG_DEBUG(geometryfeatureextractorlog) << "cache is missing an entry -- will not use cache anymore" << std::endl;
 
 			_useCache = false;
 		}
