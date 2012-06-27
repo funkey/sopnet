@@ -2,9 +2,9 @@
 
 #include <gui/OpenGl.h>
 #include <imageprocessing/ConnectedComponent.h>
-#include <sopnet/EndSegment.h>
-#include <sopnet/ContinuationSegment.h>
-#include <sopnet/BranchSegment.h>
+#include <sopnet/segments/EndSegment.h>
+#include <sopnet/segments/ContinuationSegment.h>
+#include <sopnet/segments/BranchSegment.h>
 #include <util/foreach.h>
 #include "SegmentsPainter.h"
 
@@ -95,7 +95,7 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 	opaque[0] = 0.0;
 	opaque[1] = 0.0;
 	opaque[2] = 0.0;
-	opaque[3] = 0.0;
+	opaque[3] = 0.5;
 	pixels.resize(size.x*size.y, opaque);
 
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {

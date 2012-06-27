@@ -6,16 +6,16 @@
 #include <inference/LinearSolver.h>
 #include <util/foreach.h>
 #include <util/ProgramOptions.h>
-#include "GroundTruthExtractor.h"
-#include "GoldStandardExtractor.h"
-#include "ObjectiveGenerator.h"
-#include "ProblemAssembler.h"
-#include "Reconstructor.h"
-#include "SegmentExtractor.h"
-#include "SegmentFeaturesExtractor.h"
-#include "SegmentRandomForestEvaluator.h"
-#include "SegmentRandomForestTrainer.h"
-#include "SliceExtractor.h"
+#include <sopnet/evaluation/GroundTruthExtractor.h>
+#include <sopnet/features/SegmentFeaturesExtractor.h>
+#include <sopnet/inference/ObjectiveGenerator.h>
+#include <sopnet/inference/ProblemAssembler.h>
+#include <sopnet/inference/RandomForestCostFunction.h>
+#include <sopnet/inference/Reconstructor.h>
+#include <sopnet/segments/SegmentExtractor.h>
+#include <sopnet/slices/SliceExtractor.h>
+#include <sopnet/training/GoldStandardExtractor.h>
+#include <sopnet/training/SegmentRandomForestTrainer.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -32,7 +32,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
-	_segmentEvaluator(boost::make_shared<SegmentRandomForestEvaluator>()),
+	_segmentCostFunction(boost::make_shared<RandomForestCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
@@ -165,12 +165,12 @@ Sopnet::createInferencePipeline() {
 	_segmentFeaturesExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
 
 	// setup the segment evaluation function
-	_segmentEvaluator->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
-	_segmentEvaluator->setInput("random forest", _randomForestReader->getOutput("random forest"));
+	_segmentCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+	_segmentCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
 
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-	_objectiveGenerator->setInput("cost function", _segmentEvaluator->getOutput("cost function"));
+	_objectiveGenerator->setInput("cost function", _segmentCostFunction->getOutput("cost function"));
 	_objectiveGenerator->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
 
 	// feed objective and linear constraints to ilp creator

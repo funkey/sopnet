@@ -197,20 +197,13 @@ set(CMAKE_CXX_FLAGS_DEBUG   "-g -Wno-deprecated -Wno-invalid-offsetof")
 # main target #
 ###############
 
-file (GLOB sopnetfiles
+file (GLOB_RECURSE sopnetfiles
   external/maxflow/*.cpp
   sopnet/*.cpp
-  sopnet/gui/*.cpp
-  sopnet/io/*.cpp
-  external/maxflow/*.cpp
   gui/*.cpp
   imageprocessing/*.cpp
-  imageprocessing/gui/*.cpp
-  imageprocessing/io/*.cpp
-  imageprocessing/mser/*.cpp
   io/*.cpp
   inference/*.cpp
-  inference/io/*.cpp
   toys/*.cpp)
 
 add_library(allsopnet ${sopnetfiles})

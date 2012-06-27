@@ -3,7 +3,7 @@
 
 #include <gui/RecordablePainter.h>
 #include <gui/Texture.h>
-#include <sopnet/Segments.h>
+#include <sopnet/segments/Segments.h>
 
 class SegmentsPainter : public gui::RecordablePainter {
 

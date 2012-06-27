@@ -19,11 +19,11 @@
 #include <gui/ZoomView.h>
 #include <inference/io/RandomForestHdf5Writer.h>
 #include <imageprocessing/ImageExtractor.h>
+#include <imageprocessing/SubStackSelector.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
-#include <sopnet/SectionSelector.h>
 #include <sopnet/gui/SegmentsView.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
@@ -227,9 +227,9 @@ int main(int optionc, char** optionv) {
 			int lastSection  = optionLastSection;
 
 			// create section selectors
-			boost::shared_ptr<SectionSelector> rawSelector         = boost::make_shared<SectionSelector>(firstSection, lastSection);
-			boost::shared_ptr<SectionSelector> membranesSelector   = boost::make_shared<SectionSelector>(firstSection, lastSection);
-			boost::shared_ptr<SectionSelector> groundTruthSelector = boost::make_shared<SectionSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> groundTruthSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 
 			// set their inputs to the outputs of the section readers
 			rawSelector->setInput(rawSectionsReader->getOutput());
