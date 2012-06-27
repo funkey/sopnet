@@ -63,9 +63,6 @@ private:
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
 
-	// the threshold under which to accept segments
-	pipeline::Input<double> _segmentExtractionThreshold;
-
 	/***********
 	 * SIGNALS *
 	 ***********/

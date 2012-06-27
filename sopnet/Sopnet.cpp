@@ -43,7 +43,6 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes,   "membranes");
 	registerInput(_groundTruth, "ground truth");
-	registerInput(_segmentExtractionThreshold, "segment extraction threshold");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
@@ -87,7 +86,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !_rawSections || !_groundTruth || !_segmentExtractionThreshold) {
+	if (!_membranes || !_rawSections || !_groundTruth) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -145,7 +144,6 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
 		if (section == _membranes->size() - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
-		segmentExtractor->setInput("distance threshold", _segmentExtractionThreshold.getAssignedOutput());
 
 		_segmentExtractors.push_back(segmentExtractor);
 

@@ -4,6 +4,7 @@
 
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
+#include <util/ProgramOptions.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
@@ -12,13 +13,19 @@
 
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
 
+util::ProgramOption optionDistanceThreshold(
+		util::_module           = "sopnet",
+		util::_long_name        = "segmentDistanceThreshold",
+		util::_description_text = "The maximal center distance between slices to consider them for segment hypotheses.",
+		util::_default_value    = 50);
+
 SegmentExtractor::SegmentExtractor() {
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
 	registerInput(_prevLinearConstraints, "previous linear constraints");
 	registerInput(_nextLinearConstraints, "next linear constraints", pipeline::Optional);
-	registerInput(_distanceThreshold, "distance threshold");
+	registerInput(_distanceThreshold, "distance threshold", pipeline::Optional);
 
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
@@ -104,11 +111,19 @@ SegmentExtractor::extractSegments() {
 
 	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
+	double distanceThreshold;
+
+	// prefer the distance threshold that was set via the input, if available
+	if (_distanceThreshold)
+		distanceThreshold = *_distanceThreshold;
+	else
+		distanceThreshold = optionDistanceThreshold;
+
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
 		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
+		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
@@ -126,7 +141,7 @@ SegmentExtractor::extractSegments() {
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
 		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, *_distanceThreshold, std::back_inserter(closeNextSlices));
+		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
@@ -147,7 +162,7 @@ SegmentExtractor::extractSegments() {
 	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
 		std::vector<boost::shared_ptr<Slice> > closePrevSlices;
-		prevKDTree.find_within_range(nextSlice, *_distanceThreshold, std::back_inserter(closePrevSlices));
+		prevKDTree.find_within_range(nextSlice, distanceThreshold, std::back_inserter(closePrevSlices));
 
 		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 

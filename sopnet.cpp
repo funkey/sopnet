@@ -55,11 +55,6 @@ util::ProgramOption optionLastSection(
 		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
 		_default_value    = -1);
 
-util::ProgramOption optionSegmentExtractionThreshold(
-		_module           = "sopnet",
-		_long_name        = "segmentDistanceThreshold",
-		_description_text = "The maximal center distance between slices to consider them for segment hypotheses.");
-
 util::ProgramOption optionShowGroundTruth(
 		_module           = "sopnet",
 		_long_name        = "showGroundTruth",
@@ -122,30 +117,6 @@ void processEvents(boost::shared_ptr<gui::Window> window) {
 	LOG_USER(out) << "[window thread] quitting" << std::endl;
 }
 
-class SopnetParameters : public pipeline::SimpleProcessNode {
-
-public:
-
-	SopnetParameters() {
-
-		registerOutput(_segmentExtractionThreshold, "segment extraction threshold");
-	}
-
-private:
-
-	void updateOutputs() {
-
-		if (optionSegmentExtractionThreshold)
-			*_segmentExtractionThreshold = optionSegmentExtractionThreshold;
-		else
-			*_segmentExtractionThreshold = 30.0;
-
-		LOG_USER(out) << "segment extraction threshold set to " << *_segmentExtractionThreshold << std::endl;
-	}
-
-	pipeline::Output<double> _segmentExtractionThreshold;
-};
-
 int main(int optionc, char** optionv) {
 
 	try {
@@ -172,8 +143,6 @@ int main(int optionc, char** optionv) {
 
 		// create sopnet pipeline
 		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
-		boost::shared_ptr<SopnetParameters> sopnetParameters = boost::make_shared<SopnetParameters>();
-		sopnet->setInput("segment extraction threshold", sopnetParameters->getOutput("segment extraction threshold"));
 
 		// create basic views
 		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
