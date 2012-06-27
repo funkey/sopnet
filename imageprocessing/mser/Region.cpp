@@ -185,20 +185,20 @@ Region::calculateVariation() {
 bool
 Region::isStable() {
 
+	if (_size <= _parameters->minArea || _size >= _parameters->maxArea) {
+
+		LOG_ALL(mserregionlog) << "[Region] I am unstable (my size of " << _size
+							   << " is not within [" << _parameters->minArea << ", " << _parameters->maxArea << ")"
+							   << std::endl;
+
+		return false;
+	}
+
 	if (_history == 0) {
 
 		LOG_ALL(mserregionlog) << "[Region] I am unstable (I have no history)" << std::endl;
 
 		return true;
-	}
-
-	if (_history->size <= _parameters->minArea || _history->size >= _parameters->maxArea) {
-
-		LOG_ALL(mserregionlog) << "[Region] I am unstable (my size of " << _history->size
-							   << " is not within [" << _parameters->minArea << ", " << _parameters->maxArea << ")"
-							   << std::endl;
-
-		return false;
 	}
 
 	double div = (double)(_history->size - _history->stableSize)/(double)_history->size;

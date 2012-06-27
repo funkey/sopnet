@@ -80,10 +80,10 @@ private:
 	GrowHistory* _history;
 
 	// the maximal gray-value of this component
-	int      _value;
+	int _value;
 
 	// the number of pixels in this component
-	int      _size;
+	int _size;
 
 	// the center of mass of this component
 	util::point<double> _center;
