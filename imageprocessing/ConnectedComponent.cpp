@@ -16,12 +16,13 @@ ConnectedComponent::ConnectedComponent(boost::shared_ptr<Image> source, double v
 	_begin(_pixels->begin() + begin),
 	_end(_pixels->begin() + end) {
 
-	if (_pixels->size() > 0) {
+	// if there is at least one pixel
+	if (begin != end) {
 
-		_boundingBox.minX = (*_pixels)[0].x;
-		_boundingBox.maxX = (*_pixels)[0].x + 1;
-		_boundingBox.minY = (*_pixels)[0].y;
-		_boundingBox.maxY = (*_pixels)[0].y + 1;
+		_boundingBox.minX = _begin->x;
+		_boundingBox.maxX = _begin->x + 1;
+		_boundingBox.minY = _begin->y;
+		_boundingBox.maxY = _begin->y + 1;
 	}
 
 	foreach (const util::point<unsigned int>& pixel, getPixels()) {
