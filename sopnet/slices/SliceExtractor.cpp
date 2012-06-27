@@ -7,30 +7,55 @@
 static logger::LogChannel sliceextractorlog("sliceextractorlog", "[SliceExtractor] ");
 
 util::ProgramOption optionInvertMembraneMaps(
-		util::_module = "sopnet",
-		util::_long_name = "invertMembraneMaps",
+		util::_module           = "sopnet",
+		util::_long_name        = "invertMembraneMaps",
 		util::_description_text = "Invert the meaning of the membrane map. The default "
 		                          "(not inverting) is: bright pixel = hight membrane probability.");
 
+util::ProgramOption optionMinSliceSize(
+		util::_module           = "sopnet",
+		util::_long_name        = "minSliceSize",
+		util::_description_text = "The minimal size of a neuron slice in pixels.",
+		util::_default_value    = 10);
+
+util::ProgramOption optionMaxSliceSize(
+		util::_module           = "sopnet",
+		util::_long_name        = "maxSliceSize",
+		util::_description_text = "The maximal size of a neuron slice in pixels.",
+		util::_default_value    = 100*100);
+
 SliceExtractor::SliceExtractor(unsigned int section) :
 	_mser(boost::make_shared<Mser>()),
-	_mserParameters(boost::make_shared<MserParameters>()),
+	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
 
 	registerInput(_mser->getInput("image"), "membrane");
+	registerInput(_mserParameters, "mser parameters");
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_converter->getOutput("linear constraints"), "linear constraints");
 
+	_mserParameters.registerBackwardCallback(&SliceExtractor::onInputSet, this);
+
+	// set default mser parameters from program options
+	_defaultMserParameters->darkToBright =  optionInvertMembraneMaps;
+	_defaultMserParameters->brightToDark = !optionInvertMembraneMaps;
+	_defaultMserParameters->minArea      =  optionMinSliceSize;
+	_defaultMserParameters->maxArea      =  optionMaxSliceSize;
+
 	// setup internal pipeline
-
-	_mserParameters->darkToBright =  optionInvertMembraneMaps;
-	_mserParameters->brightToDark = !optionInvertMembraneMaps;
-	_mserParameters->maxArea      = 400000;
-
-	_mser->setInput("parameters", _mserParameters);
+	_mser->setInput("parameters", _defaultMserParameters);
 	_downSampler->setInput(_mser->getOutput());
 	_converter->setInput(_downSampler->getOutput());
+}
+
+void
+SliceExtractor::onInputSet(const pipeline::InputSet<MserParameters>& signal) {
+
+	LOG_ALL(sliceextractorlog) << "using non-default mser parameters" << std::endl;
+
+	// don't use the default
+	_mser->setInput("parameters", _mserParameters);
 }
 
 SliceExtractor::ComponentTreeConverter::ComponentTreeConverter(unsigned int section) :

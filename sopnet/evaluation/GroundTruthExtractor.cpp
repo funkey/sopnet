@@ -38,13 +38,32 @@ GroundTruthExtractor::createPipeline() {
 	unsigned int firstSection = (_firstSection >= 0 ? _firstSection : 0);
 	unsigned int lastSection  = (_lastSection  >= 0 ? _lastSection  : _groundTruthSections->size() - 1);
 
+	LOG_ALL(groundtruthextractorlog)
+			<< "extacting groundtruth from sections "
+			<< firstSection << " - " << lastSection
+			<< std::endl;
+
+	// create mser parameters suitable to extract ground-truth connected
+	// components
+	boost::shared_ptr<MserParameters> mserParameters = boost::make_shared<MserParameters>();
+	mserParameters->delta        = 1;
+	mserParameters->minArea      = 50; // this is to avoid this tiny annotation that mess up the result
+	mserParameters->maxArea      = 10000000;
+	mserParameters->maxVariation = 100;
+	mserParameters->minDiversity = 0;
+	mserParameters->darkToBright = false;
+	mserParameters->brightToDark = true;
+
 	for (unsigned int section = firstSection; section <= lastSection; section++) {
 
-		// create an SliceExtractor
+		LOG_ALL(groundtruthextractorlog) << "creating pipeline for section " << section << std::endl;
+
+		// create a SliceExtractor
 		boost::shared_ptr<SliceExtractor> sliceExtractor = boost::make_shared<SliceExtractor>(section);
 
-		// give it the section it has to process
-		sliceExtractor->setInput(_sectionExtractor->getOutput(section));
+		// give it the section it has to process and our mser parameters
+		sliceExtractor->setInput("membrane", _sectionExtractor->getOutput(section));
+		sliceExtractor->setInput("mser parameters", mserParameters);
 
 		// store it in the list of all slice extractors
 		_sliceExtractors.push_back(sliceExtractor);
@@ -78,9 +97,18 @@ GroundTruthExtractor::SegmentsAssembler::SegmentsAssembler() {
 void
 GroundTruthExtractor::SegmentsAssembler::updateOutputs() {
 
+	LOG_ALL(groundtruthextractorlog)
+			<< "assembling segments from "
+			<< _segments.size() << " inter-section intervals"
+			<< std::endl;
+
 	_allSegments->clear();
 
-	foreach (boost::shared_ptr<Segments> segments, _segments)
+	foreach (boost::shared_ptr<Segments> segments, _segments) {
+
+		LOG_ALL(groundtruthextractorlog) << "adding " << segments->size() << " segments" << std::endl;
+
 		_allSegments->addAll(segments);
+	}
 }
 

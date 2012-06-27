@@ -9,6 +9,7 @@
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include <imageprocessing/ComponentTree.h>
+#include <imageprocessing/MserParameters.h>
 #include "Slices.h"
 
 // forward declaration
@@ -58,10 +59,15 @@ private:
 		unsigned int _section;
 	};
 
+	void onInputSet(const pipeline::InputSet<MserParameters>& signal);
+
+	// optional mser parameters to override the program options
+	pipeline::Input<MserParameters> _mserParameters;
+
 	void extractSlices();
 
 	boost::shared_ptr<Mser>                     _mser;
-	boost::shared_ptr<MserParameters>           _mserParameters;
+	boost::shared_ptr<MserParameters>           _defaultMserParameters;
 	boost::shared_ptr<ComponentTreeDownSampler> _downSampler;
 	boost::shared_ptr<ComponentTreeConverter>   _converter;
 };

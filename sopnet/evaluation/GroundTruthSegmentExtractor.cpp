@@ -1,17 +1,25 @@
+#include <util/ProgramOptions.h>
 #include <imageprocessing/ConnectedComponent.h>
 #include <sopnet/segments/BranchSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
 #include <sopnet/segments/EndSegment.h>
-#include <sopnet/features/SetDifference.h>
 #include "GroundTruthSegmentExtractor.h"
 
 logger::LogChannel groundtruthsegmentextractorlog("groundtruthsegmentextractorlog", "[GroundTruthSegmentExtractor] ");
+
+util::ProgramOption optionMaxSegmentDistance(
+		util::_module           = "sopnet",
+		util::_long_name        = "groundTruthMaxSegmentDistance",
+		util::_description_text = "The maximal distance between slices in a ground-truth segment.",
+		util::_default_value    = 100);
 
 GroundTruthSegmentExtractor::GroundTruthSegmentExtractor() {
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
 	registerOutput(_segments, "segments");
+
+	_maxSegmentDistance = optionMaxSegmentDistance;
 }
 
 void
@@ -45,8 +53,6 @@ GroundTruthSegmentExtractor::updateOutputs() {
 
 	LOG_ALL(groundtruthsegmentextractorlog) << "found " << _nextSliceValues.size() << " different values in next section" << std::endl;
 
-	SetDifference setDifference;
-
 	// for each intensity, extract all segments
 	foreach (float value, _values) {
 
@@ -68,7 +74,7 @@ GroundTruthSegmentExtractor::updateOutputs() {
 			foreach (boost::shared_ptr<Slice> nextSlice, nextSlices)
 				continuationSegments.push_back(
 						std::make_pair(
-								setDifference(*prevSlice, *nextSlice, true),
+								distance(*prevSlice, *nextSlice),
 								boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice)));
 
 		// add all possible branches to the next slice
@@ -78,7 +84,7 @@ GroundTruthSegmentExtractor::updateOutputs() {
 					if (nextSlice1->getId() < nextSlice2->getId())
 						branchSegments.push_back(
 								std::make_pair(
-										setDifference(*prevSlice, *nextSlice1, *nextSlice2, true),
+										distance(*prevSlice, *nextSlice1) + distance(*prevSlice, *nextSlice2),
 										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice1, nextSlice2)));
 
 		// add all possible branches to the previous slice
@@ -88,7 +94,7 @@ GroundTruthSegmentExtractor::updateOutputs() {
 					if (prevSlice1->getId() < prevSlice2->getId())
 						branchSegments.push_back(
 								std::make_pair(
-										setDifference(*nextSlice, *prevSlice1, *prevSlice2, true),
+										distance(*nextSlice, *prevSlice1) + distance(*nextSlice, *prevSlice2),
 										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Left, nextSlice, prevSlice1, prevSlice2)));
 
 		LOG_ALL(groundtruthsegmentextractorlog) << "considering " << continuationSegments.size() << " possible continuation segments" << std::endl;
@@ -107,61 +113,16 @@ GroundTruthSegmentExtractor::updateOutputs() {
 		unsigned int nextContinuation = 0;
 		unsigned int nextBranch = 0;
 
-		while (_remainingNextSlices.size() > 0 && _remainingPrevSlices.size() > 0) {
+		// accept all branches that have spatial overlap
+		double distance;
+		boost::shared_ptr<BranchSegment> branch;
+		foreach (boost::tie(distance, branch), branchSegments)
+			probeBranch(branch);
 
-			if (nextContinuation == continuationSegments.size()) {
-
-				LOG_ALL(groundtruthsegmentextractorlog)
-						<< "there are no more continuation segments -- processing remaining branches"
-						<< std::endl;
-
-				for (int i = nextBranch; i < branchSegments.size(); i++)
-					probeBranch(branchSegments[i].second);
-				break;
-			}
-
-			if (nextBranch == branchSegments.size()) {
-
-				LOG_ALL(groundtruthsegmentextractorlog)
-						<< "there are no more branch segments -- processing remaining continuations"
-						<< std::endl;
-
-				for (int i = nextContinuation; i < continuationSegments.size(); i++)
-					probeContinuation(continuationSegments[i].second);
-				break;
-			}
-
-			// find the next best segment
-
-			double continuationDifference = continuationSegments[nextContinuation].first;
-			boost::shared_ptr<ContinuationSegment> continuation = continuationSegments[nextContinuation].second;
-
-			double branchDifference = branchSegments[nextBranch].first;
-			boost::shared_ptr<BranchSegment> branch = branchSegments[nextBranch].second;
-
-			double difference = std::min(continuationDifference, branchDifference);
-
-			LOG_ALL(groundtruthsegmentextractorlog) << "current segment set difference: " << difference << std::endl;
-
-			// if the difference is too high (almost no overlap), stop looking
-			// for segments
-			if (difference >= 0.9) {
-
-				LOG_ALL(groundtruthsegmentextractorlog) << "value too high -- stopping search" << std::endl;
-				break;
-			}
-
-			if (continuationDifference < branchDifference) {
-
-				probeContinuation(continuation);
-				nextContinuation++;
-
-			} else {
-
-				probeBranch(branch);
-				nextBranch++;
-			}
-		}
+		// accept all remaining possible continuations
+		boost::shared_ptr<ContinuationSegment> continuation;
+		foreach (boost::tie(distance, continuation), continuationSegments)
+			probeContinuation(continuation);
 
 		LOG_ALL(groundtruthsegmentextractorlog)
 				<< "have " << _remainingPrevSlices.size()
@@ -182,6 +143,9 @@ GroundTruthSegmentExtractor::updateOutputs() {
 
 void
 GroundTruthSegmentExtractor::probeContinuation(boost::shared_ptr<ContinuationSegment> continuation) {
+
+	if (distance(*continuation->getSourceSlice(), *continuation->getTargetSlice()) > _maxSegmentDistance)
+		return;
 
 	if (continuation->getDirection() == Left) {
 
@@ -213,6 +177,31 @@ GroundTruthSegmentExtractor::probeContinuation(boost::shared_ptr<ContinuationSeg
 
 void
 GroundTruthSegmentExtractor::probeBranch(boost::shared_ptr<BranchSegment> branch) {
+
+	// be picky about branches:
+
+	LOG_ALL(groundtruthsegmentextractorlog)
+			<< "value is " << branch->getSourceSlice()->getComponent()->getValue() << ", "
+			<< "evaluating branch from " << std::endl
+			<< branch->getSourceSlice()->getComponent()->getCenter() << " to "
+			<< branch->getTargetSlice1()->getComponent()->getCenter() << " and "
+			<< branch->getTargetSlice2()->getComponent()->getCenter() << std::endl;
+
+	LOG_ALL(groundtruthsegmentextractorlog)
+		<< _setDifference(*branch->getSourceSlice(), *branch->getTargetSlice1(), true, false) << " "
+		<< _setDifference(*branch->getSourceSlice(), *branch->getTargetSlice2(), true, false) << std::endl;
+
+	// there has to be overlap between source and both targets
+	if (_setDifference(*branch->getSourceSlice(), *branch->getTargetSlice1(), true, false) > 0.9)
+		return;
+	if (_setDifference(*branch->getSourceSlice(), *branch->getTargetSlice2(), true, false) > 0.9)
+		return;
+
+	// targets shouldn't move too much
+	if (distance(*branch->getSourceSlice(), *branch->getTargetSlice1()) > _maxSegmentDistance)
+		return;
+	if (distance(*branch->getSourceSlice(), *branch->getTargetSlice2()) > _maxSegmentDistance)
+		return;
 
 	if (branch->getDirection() == Left) {
 
@@ -248,5 +237,16 @@ GroundTruthSegmentExtractor::probeBranch(boost::shared_ptr<BranchSegment> branch
 		_remainingNextSlices.erase(branch->getTargetSlice2());
 		_remainingPrevSlices.erase(branch->getSourceSlice());
 	}
+}
+
+double
+GroundTruthSegmentExtractor::distance(const Slice& slice1, const Slice& slice2) {
+
+	const util::point<double>& center1 = slice1.getComponent()->getCenter();
+	const util::point<double>& center2 = slice2.getComponent()->getCenter();
+
+	util::point<double> diff = center1 - center2;
+
+	return sqrt(diff.x*diff.x + diff.y*diff.y);
 }
 
