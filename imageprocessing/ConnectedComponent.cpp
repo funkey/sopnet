@@ -16,7 +16,7 @@ ConnectedComponent::ConnectedComponent(boost::shared_ptr<Image> source, double v
 	_begin(_pixels->begin() + begin),
 	_end(_pixels->begin() + end) {
 
-	if (getSize() > 0) {
+	if (_pixels->size() > 0) {
 
 		_boundingBox.minX = (*_pixels)[0].x;
 		_boundingBox.maxX = (*_pixels)[0].x + 1;
