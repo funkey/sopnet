@@ -4,7 +4,7 @@
 #include "SetDifference.h"
 
 double
-SetDifference::operator()(const Slice& slice1, const Slice& slice2, bool normalized) {
+SetDifference::operator()(const Slice& slice1, const Slice& slice2, bool normalized, bool align) {
 
 	const util::rect<double>& bb = slice1.getComponent()->getBoundingBox();
 
@@ -21,18 +21,17 @@ SetDifference::operator()(const Slice& slice1, const Slice& slice2, bool normali
 		pixels[x + y*size.x] = true;
 	}
 
-	util::point<double> centerOffset = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
+	util::point<double> centerOffset(0, 0);
+	if (align)
+		centerOffset = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
 
-	unsigned int different = 0;
-
-	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - centerOffset.x - offset.x;
-		unsigned int y = pixel.y - centerOffset.x - offset.y;
-
-		if (x < 0 || x >= size.x || y < 0 || y >= size.y || pixels[x + y*size.x] != true)
-			different++;
-	}
+	unsigned int different = numDifferent(
+			slice1.getComponent()->getSize(),
+			pixels,
+			size,
+			centerOffset,
+			offset,
+			slice2);
 
 	if (normalized)
 		return static_cast<double>(different)/(slice1.getComponent()->getSize() + slice2.getComponent()->getSize());
@@ -41,7 +40,7 @@ SetDifference::operator()(const Slice& slice1, const Slice& slice2, bool normali
 }
 
 double
-SetDifference::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, bool normalized) {
+SetDifference::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, bool normalized, bool align) {
 
 	const util::rect<double>& bba = slice1a.getComponent()->getBoundingBox();
 	const util::rect<double>& bbb = slice1b.getComponent()->getBoundingBox();
@@ -68,28 +67,70 @@ SetDifference::operator()(const Slice& slice1a, const Slice& slice1b, const Slic
 		pixels[x + y*size.x] = true;
 	}
 
-	util::point<double> centerOffset =
-			(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
-			 +
-			 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
-			/
-			(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize())
-			-
-			slice2.getComponent()->getCenter();
+	util::point<double> centerOffset(0, 0);
+	if (align) 
+		centerOffset =
+				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
+				 +
+				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
+				/
+				(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize())
+				-
+				slice2.getComponent()->getCenter();
 
-	unsigned int different = 0;
+	unsigned int different = numDifferent(
+			slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize(),
+			pixels,
+			size,
+			centerOffset,
+			offset,
+			slice2);
+
+	if (normalized)
+		return static_cast<double>(different)/(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize());
+	else
+		return different;
+}
+
+unsigned int
+SetDifference::numDifferent(
+		unsigned int size1,
+		const std::vector<bool>& pixels,
+		const util::point<unsigned int>& size,
+		const util::point<double>& centerOffset,
+		const util::point<double>& offset,
+		const Slice& slice2) {
+
+	// number of pixels in 2 but not 1
+	unsigned int in2not1 = 0;
+
+	// number of pixels that are both in 1 and 2
+	unsigned int shared  = 0;
 
 	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
 
 		unsigned int x = pixel.x - centerOffset.x - offset.x;
 		unsigned int y = pixel.y - centerOffset.x - offset.y;
 
-		if (x < 0 || x >= size.x || y < 0 || y >= size.y || pixels[x + y*size.x] != true)
-			different++;
+		// not even close
+		if (x < 0 || x >= size.x || y < 0 || y >= size.y) {
+
+			in2not1++;
+			continue;
+		}
+		
+		// within bounding box
+		if (pixels[x + y*size.x] == false)
+			// not in 1, but in 2
+			in2not1++;
+		else
+			// both in 1 and 2
+			shared++;
 	}
 
-	if (normalized)
-		return static_cast<double>(different)/(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize());
-	else
-		return different;
+	unsigned int in1not2 = size1 - shared;
+
+	assert(in2not1 + shared == slice2.getComponent()->getSize());
+
+	return in2not1 + in1not2;
 }
