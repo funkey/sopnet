@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <sopnet/segments/Segments.h>
 #include <gui/Signals.h>
+#include <gui/Keys.h>
 #include "SegmentsPainter.h"
 
 class SegmentsView : public pipeline::SimpleProcessNode {
@@ -15,6 +16,8 @@ public:
 private:
 
 	void updateOutputs();
+
+	void onKeyDown(gui::KeyDown& signal);
 
 	pipeline::Input<Segments>         _segments;
 	pipeline::Output<SegmentsPainter> _painter;

@@ -11,7 +11,10 @@
 logger::LogChannel segmentspainterlog("segmentspainterlog", "[SegmentsPainter] ");
 
 SegmentsPainter::SegmentsPainter() :
-	_zScale(8) {}
+	_zScale(15),
+	_showEnds(true),
+	_showContinuations(true),
+	_showBranches(true) {}
 
 SegmentsPainter::~SegmentsPainter() {
 
@@ -35,20 +38,71 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 }
 
 void
+SegmentsPainter::showEnds(bool show) {
+
+	_showEnds = show;
+
+	loadTextures();
+
+	util::rect<double> size(0, 0, 0, 0);
+
+	updateRecording();
+
+	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+
+	setSize(_size);
+}
+
+void
+SegmentsPainter::showContinuations(bool show) {
+
+	_showContinuations = show;
+
+	loadTextures();
+
+	util::rect<double> size(0, 0, 0, 0);
+
+	updateRecording();
+
+	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+
+	setSize(_size);
+}
+
+void
+SegmentsPainter::showBranches(bool show) {
+
+	_showBranches = show;
+
+	loadTextures();
+
+	util::rect<double> size(0, 0, 0, 0);
+
+	updateRecording();
+
+	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+
+	setSize(_size);
+}
+
+void
 SegmentsPainter::loadTextures() {
 
 	LOG_DEBUG(segmentspainterlog) << "loading textures..." << std::endl;
 
 	deleteTextures();
 
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
-		loadTextures(*segment);
+	if (_showEnds)
+		foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
+			loadTextures(*segment);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
-		loadTextures(*segment);
+	if (_showContinuations)
+		foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
+			loadTextures(*segment);
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
-		loadTextures(*segment);
+	if (_showBranches)
+		foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
+			loadTextures(*segment);
 
 	LOG_DEBUG(segmentspainterlog) << "all textures loaded..." << std::endl;
 }
@@ -83,6 +137,8 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 	// create image data
 	const util::rect<double> bb = slice.getComponent()->getBoundingBox();
 
+	LOG_ALL(segmentspainterlog) << "loading texture of size " << bb << std::endl;
+
 	util::point<unsigned int> size(bb.maxX - bb.minX + 2, bb.maxY - bb.minY + 2);
 	util::point<unsigned int> offset(bb.minX, bb.minY);
 
@@ -95,7 +151,7 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 	opaque[0] = 0.0;
 	opaque[1] = 0.0;
 	opaque[2] = 0.0;
-	opaque[3] = 0.5;
+	opaque[3] = 0.0;
 	pixels.resize(size.x*size.y, opaque);
 
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
@@ -105,7 +161,7 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 		pixels[index][0] = 1.0;
 		pixels[index][1] = 1.0;
 		pixels[index][2] = 1.0;
-		pixels[index][3] = 1.0;
+		pixels[index][3] = 0.5;
 	}
 
 	gui::Texture* texture = new gui::Texture(size.x, size.y, GL_RGBA);
@@ -148,14 +204,17 @@ SegmentsPainter::updateRecording() {
 	_rightSide = true;
 	for (int i = 0; i < _segments->getNumInterSectionIntervals(); i++) {
 
-		foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
-			draw(*segment);
+		if (_showEnds)
+			foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
+				draw(*segment);
 
-		foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
-			draw(*segment);
+		if (_showContinuations)
+			foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
+				draw(*segment);
 
-		foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
-			draw(*segment);
+		if (_showBranches)
+			foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
+				draw(*segment);
 	}
 
 	// draw from back to front, facing to the left
@@ -163,14 +222,17 @@ SegmentsPainter::updateRecording() {
 	_rightSide = false;
 	for (int i = _segments->getNumInterSectionIntervals() - 1; i >= 0; i--) {
 
-		foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
-			draw(*segment);
+		if (_showEnds)
+			foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
+				draw(*segment);
 
-		foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
-			draw(*segment);
+		if (_showContinuations)
+			foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
+				draw(*segment);
 
-		foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
-			draw(*segment);
+		if (_showBranches)
+			foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
+				draw(*segment);
 	}
 
 	glCheck(glDisable(GL_BLEND));
@@ -305,6 +367,8 @@ SegmentsPainter::drawSlice(
 void
 SegmentsPainter::deleteTextures() {
 
+	LOG_ALL(segmentspainterlog) << "deleting previous textures" << std::endl;
+
 	unsigned int id;
 	gui::Texture* texture;
 	foreach (boost::tie(id, texture), _textures)
@@ -312,4 +376,6 @@ SegmentsPainter::deleteTextures() {
 			delete texture;
 
 	_textures.clear();
+
+	LOG_ALL(segmentspainterlog) << "deleted previous textures" << std::endl;
 }

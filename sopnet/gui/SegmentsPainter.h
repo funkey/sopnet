@@ -15,6 +15,12 @@ public:
 
 	void setSegments(boost::shared_ptr<Segments> segments);
 
+	void showEnds(bool show);
+
+	void showContinuations(bool show);
+
+	void showBranches(bool show);
+
 private:
 
 	void loadTextures();
@@ -52,6 +58,10 @@ private:
 	// which side of the faces to draw
 	bool _leftSide;
 	bool _rightSide;
+
+	bool _showEnds;
+	bool _showContinuations;
+	bool _showBranches;
 };
 
 #endif // CELLTRACKER_GUI_TRACKLETS_PAINTER_H__
