@@ -64,12 +64,12 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 			<< "collecting slices of all extracted segments..."
 			<< std::endl;
 
-	// all remaining slices that are not used by a segment
+	// all remaining ground-truth slices that are not used by a segment
 	_remainingSlices =
 			collectSlices(
-					_allSegments->getEnds(interval),
-					_allSegments->getContinuations(interval),
-					_allSegments->getBranches(interval));
+					_groundTruth->getEnds(interval),
+					_groundTruth->getContinuations(interval),
+					_groundTruth->getBranches(interval));
 
 	LOG_ALL(goldstandardextractorlog)
 			<< "finding pairs of ground-truth/extracted end segments..."
@@ -82,7 +82,8 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 			if (end1->getDirection() != end2->getDirection())
 				continue;
 
-			float similarity = setDifference(*end1->getSlice(), *end2->getSlice());
+			// normalized, non-aligned set difference
+			float similarity = _setDifference(*end1->getSlice(), *end2->getSlice(), true, false);
 
 			endPairs.push_back(Pair<EndSegment>(similarity, end1, end2));
 		}
@@ -95,9 +96,10 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 	foreach (boost::shared_ptr<ContinuationSegment> continuation1, _groundTruth->getContinuations(interval))
 		foreach (boost::shared_ptr<ContinuationSegment> continuation2, _allSegments->findContinuations(continuation1, _maxContinuationDistance)) {
 
+			// mean of the two normalized set differences
 			float similarity =
-					setDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice()) +
-					setDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice());
+					(_setDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice(), true, false) +
+					 _setDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice(), true, false))/2.0;
 
 			continuationPairs.push_back(Pair<ContinuationSegment>(similarity, continuation1, continuation2));
 		}
@@ -110,10 +112,11 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 	foreach (boost::shared_ptr<BranchSegment> branch1, _groundTruth->getBranches(interval))
 		foreach (boost::shared_ptr<BranchSegment> branch2, _allSegments->findBranches(branch1, _maxBranchDistance)) {
 
+			// mean of the three normalized set differences
 			float similarity =
-					setDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice())  +
-					setDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1()) +
-					setDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2());
+					(_setDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice(),  true, false)  +
+					 _setDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1(), true, false) +
+					 _setDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2(), true, false))/3.0;
 
 			branchPairs.push_back(Pair<BranchSegment>(similarity, branch1, branch2));
 		}
@@ -158,6 +161,12 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			LOG_ALL(goldstandardextractorlog) << "  it's an end pair..." << std::endl;
 
+			if (endSimilarity >= 0.9) {
+
+				LOG_ALL(goldstandardextractorlog) << "similarity value got too worse -- stop searching for further pairs" << std::endl;
+				break;
+			}
+
 			boost::shared_ptr<EndSegment> gtEnd = endPairs[nextEnd].segment1;
 			boost::shared_ptr<EndSegment> gsEnd = endPairs[nextEnd].segment2;
 
@@ -170,6 +179,12 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 		if (continuationSimilarity <= std::min(endSimilarity, branchSimilarity)) {
 
 			LOG_ALL(goldstandardextractorlog) << "  it's a continuation pair..." << std::endl;
+
+			if (continuationSimilarity >= 0.9) {
+
+				LOG_ALL(goldstandardextractorlog) << "similarity value got too worse -- stop searching for further pairs" << std::endl;
+				break;
+			}
 
 			boost::shared_ptr<ContinuationSegment> gtContinuation = continuationPairs[nextContinuation].segment1;
 			boost::shared_ptr<ContinuationSegment> gsContinuation = continuationPairs[nextContinuation].segment2;
@@ -184,6 +199,12 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			LOG_ALL(goldstandardextractorlog) << "  it's a branch pair..." << std::endl;
 
+			if (branchSimilarity >= 0.9) {
+
+				LOG_ALL(goldstandardextractorlog) << "similarity value got too worse -- stop searching for further pairs" << std::endl;
+				break;
+			}
+
 			boost::shared_ptr<BranchSegment> gtBranch = branchPairs[nextBranch].segment1;
 			boost::shared_ptr<BranchSegment> gsBranch = branchPairs[nextBranch].segment2;
 
@@ -192,14 +213,14 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 			nextBranch++;
 		}
 
-		LOG_ALL(goldstandardextractorlog) << "  there are still " << _remainingSlices.size() << " slices unexplained" << std::endl;
+		LOG_ALL(goldstandardextractorlog) << "  there are still " << _remainingSlices.size() << " ground-truth slices unexplained" << std::endl;
 
 		// if found segments for all slices, we are done
 		if (_remainingSlices.size() == 0)
 			break;
 	}
 
-	LOG_DEBUG(goldstandardextractorlog) << "remaining slices : " << _remainingSlices.size() << std::endl;
+	LOG_DEBUG(goldstandardextractorlog) << "remaining grount-truth slices : " << _remainingSlices.size() << std::endl;
 }
 
 template <typename SegmentType>
@@ -208,10 +229,11 @@ GoldStandardExtractor::probe(
 		boost::shared_ptr<SegmentType> gtSegment,
 		boost::shared_ptr<SegmentType> gsSegment) {
 
+		std::vector<const Slice*> gtSlices = getSlices(gtSegment);
 		std::vector<const Slice*> gsSlices = getSlices(gsSegment);
 
 		// check if a segment for any of these slices has been found already
-		foreach (const Slice* slice, gsSlices)
+		foreach (const Slice* slice, gtSlices)
 			if (_remainingSlices.count(slice) == 0)
 				return;
 
@@ -220,7 +242,7 @@ GoldStandardExtractor::probe(
 		_goldStandard->add(gsSegment);
 
 		// remove all the slices that are involved from the remainig slices
-		foreach (const Slice* slice, gsSlices)
+		foreach (const Slice* slice, gtSlices)
 			_remainingSlices.erase(slice);
 
 		// find all conflicting segments to the found one and add them as
@@ -319,36 +341,5 @@ GoldStandardExtractor::slicesToSegments(const std::vector<boost::shared_ptr<Segm
 			slices[slice].push_back(segment);
 
 	return slices;
-}
-
-unsigned int
-GoldStandardExtractor::setDifference(const Slice& slice1, const Slice& slice2) {
-
-	const util::rect<double>& bb1 = slice1.getComponent()->getBoundingBox();
-	util::point<unsigned int> offset1(static_cast<unsigned int>(bb1.minX), static_cast<unsigned int>(bb1.minY));
-	util::point<unsigned int> size1(static_cast<unsigned int>(bb1.width() + 2), static_cast<unsigned int>(bb1.height() + 2));
-
-	std::vector<bool> pixels1(size1.x*size1.y, false);
-
-	foreach (const util::point<unsigned int>& pixel, slice1.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset1.x;
-		unsigned int y = pixel.y - offset1.y;
-
-		pixels1[x + y*size1.x] = true;
-	}
-
-	unsigned int different = 0;
-
-	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset1.x;
-		unsigned int y = pixel.y - offset1.y;
-
-		if (x < 0 || x >= size1.x || y < 0 || y >= size1.y || pixels1[x + y*size1.x] != true)
-			different++;
-	}
-
-	return different;
 }
 

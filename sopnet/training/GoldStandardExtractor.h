@@ -3,8 +3,9 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
-#include <util/point.hpp>
+#include <sopnet/features/SetDifference.h>
 #include <sopnet/segments/Segments.h>
+#include <util/point.hpp>
 
 class GoldStandardExtractor : public pipeline::SimpleProcessNode {
 
@@ -74,6 +75,9 @@ private:
 	pipeline::Output<Segments> _goldStandard;
 
 	pipeline::Output<Segments> _negativeSamples;
+
+	// functor to compute the set difference between slices
+	SetDifference _setDifference;
 
 	std::map<unsigned int, boost::shared_ptr<Segment> > _allSegmentIds;
 
