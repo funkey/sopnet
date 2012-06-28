@@ -14,6 +14,7 @@
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/ImageView.h>
+#include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
@@ -163,7 +164,9 @@ int main(int optionc, char** optionv) {
 		resultView->setInput(sopnet->getOutput("solution"));
 		boost::shared_ptr<RotateView> r1 = boost::make_shared<RotateView>();
 		r1->setInput(resultView->getOutput());
-		container->addInput(r1->getOutput());
+		boost::shared_ptr<NamedView> n1 = boost::make_shared<NamedView>("Result:");
+		n1->setInput(r1->getOutput());
+		container->addInput(n1->getOutput());
 
 		boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
@@ -227,36 +230,42 @@ int main(int optionc, char** optionv) {
 
 			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>    namedView       = boost::make_shared<NamedView>("Ground-truth:");
 
 			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
 			groundTruthView->setInput("raw sections", rawSectionsReader->getOutput());
 			gtRotateView->setInput(groundTruthView->getOutput());
+			namedView->setInput(gtRotateView->getOutput());
 
-			container->addInput(gtRotateView->getOutput());
+			container->addInput(namedView->getOutput());
 		}
 
 		if (optionShowGoldStandard) {
 
 			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>    namedView        = boost::make_shared<NamedView>("Gold Standard:");
 
 			goldstandardView->setInput(sopnet->getOutput("gold standard"));
 			goldstandardView->setInput("raw sections", rawSectionsReader->getOutput());
 			gsRotateView->setInput(goldstandardView->getOutput());
+			namedView->setInput(gsRotateView->getOutput());
 
-			container->addInput(gsRotateView->getOutput());
+			container->addInput(namedView->getOutput());
 		}
 
 		if (optionShowNegativeSamples) {
 
 			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>();
 			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Negative Samples:");
 
 			negativeView->setInput(sopnet->getOutput("negative samples"));
 			negativeView->setInput("raw sections", rawSectionsReader->getOutput());
 			neRotateView->setInput(negativeView->getOutput());
+			namedView->setInput(neRotateView->getOutput());
 
-			container->addInput(neRotateView->getOutput());
+			container->addInput(namedView->getOutput());
 		}
 
 		if (optionTraining) {
