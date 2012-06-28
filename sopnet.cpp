@@ -211,9 +211,13 @@ int main(int optionc, char** optionv) {
 			groundTruthReader = groundTruthSelector;
 		}
 
+		// set input for image stack views
 		rawSectionsView->setInput(rawSectionsReader->getOutput());
 		membranesView->setInput(membranesReader->getOutput());
 		groundTruthView->setInput(groundTruthReader->getOutput());
+
+		// set input for segments views
+		resultView->setInput("raw sections", rawSectionsReader->getOutput());
 
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
 		sopnet->setInput("membranes", membranesReader->getOutput());
@@ -225,6 +229,7 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
 
 			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
+			groundTruthView->setInput("raw sections", rawSectionsReader->getOutput());
 			gtRotateView->setInput(groundTruthView->getOutput());
 
 			container->addInput(gtRotateView->getOutput());
@@ -236,6 +241,7 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
 
 			goldstandardView->setInput(sopnet->getOutput("gold standard"));
+			goldstandardView->setInput("raw sections", rawSectionsReader->getOutput());
 			gsRotateView->setInput(goldstandardView->getOutput());
 
 			container->addInput(gsRotateView->getOutput());
@@ -247,6 +253,7 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
 
 			negativeView->setInput(sopnet->getOutput("negative samples"));
+			negativeView->setInput("raw sections", rawSectionsReader->getOutput());
 			neRotateView->setInput(negativeView->getOutput());
 
 			container->addInput(neRotateView->getOutput());
@@ -259,13 +266,13 @@ int main(int optionc, char** optionv) {
 			rfWriter->setInput("random forest", sopnet->getOutput("random forest"));
 			rfWriter->write();
 
-		} else {
+			LOG_USER(out) << "[main] training finished!" << std::endl;
+		}
 
-			while (!window->closed()) {
+		while (!window->closed()) {
 
-				window->processEvents();
-				usleep(1000);
-			}
+			window->processEvents();
+			usleep(1000);
 		}
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
