@@ -6,6 +6,8 @@ static logger::LogChannel segmentsviewlog("segmentsviewlog", "[SegmentsView] ");
 SegmentsView::SegmentsView() {
 
 	registerInput(_segments, "segments");
+	registerInput(_rawSections, "raw sections", pipeline::Optional);
+
 	registerOutput(_painter, "painter");
 
 	_painter.registerForwardSlot(_sizeChanged);
@@ -61,6 +63,9 @@ void
 SegmentsView::updateOutputs() {
 
 	LOG_DEBUG(segmentsviewlog) << "setting painter content" << std::endl;
+
+	if (_rawSections)
+		_painter->setImageStack(_rawSections);
 
 	_painter->setSegments(_segments);
 

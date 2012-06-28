@@ -3,6 +3,7 @@
 
 #include <gui/RecordablePainter.h>
 #include <gui/Texture.h>
+#include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
 
 class SegmentsPainter : public gui::RecordablePainter {
@@ -13,6 +14,14 @@ public:
 
 	~SegmentsPainter();
 
+	/**
+	 * Set the image stack that should be used to texture the segments.
+	 */
+	void setImageStack(boost::shared_ptr<ImageStack> imageStack);
+
+	/**
+	 * Set the segments to draw.
+	 */
 	void setSegments(boost::shared_ptr<Segments> segments);
 
 	void showEnds(bool show);
@@ -44,6 +53,8 @@ private:
 	void drawSlice(boost::shared_ptr<Slice> slice, double red, double green, double blue);
 
 	void deleteTextures();
+
+	boost::shared_ptr<ImageStack> _imageStack;
 
 	boost::shared_ptr<Segments> _segments;
 

@@ -22,6 +22,12 @@ SegmentsPainter::~SegmentsPainter() {
 }
 
 void
+SegmentsPainter::setImageStack(boost::shared_ptr<ImageStack> imageStack) {
+
+	_imageStack = imageStack;
+}
+
+void
 SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
 	_segments = segments;
@@ -158,9 +164,14 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 
 		unsigned int index = (pixel.x - offset.x) + (pixel.y - offset.y)*size.x;
 
-		pixels[index][0] = 1.0;
-		pixels[index][1] = 1.0;
-		pixels[index][2] = 1.0;
+		float value = 1.0;
+
+		if (_imageStack)
+			value = (*(*_imageStack)[slice.getSection()])(pixel.x, pixel.y);
+
+		pixels[index][0] = value;
+		pixels[index][1] = value;
+		pixels[index][2] = value;
 		pixels[index][3] = 0.5;
 	}
 
@@ -247,7 +258,7 @@ SegmentsPainter::draw(const EndSegment& end) {
 
 	glCheck(glEnable(GL_TEXTURE_2D));
 
-	drawSlice(end.getSlice(), 1.0, 0.0, 0.0);
+	drawSlice(end.getSlice(), 1.0, 0.5, 0.5);
 
 	glCheck(glDisable(GL_TEXTURE_2D));
 }
@@ -257,8 +268,8 @@ SegmentsPainter::draw(const ContinuationSegment& continuation) {
 
 	glCheck(glEnable(GL_TEXTURE_2D));
 
-	drawSlice(continuation.getSourceSlice(), 0.0, 1.0, 0.0);
-	drawSlice(continuation.getTargetSlice(), 0.0, 1.0, 0.0);
+	drawSlice(continuation.getSourceSlice(), 0.5, 1.0, 0.5);
+	drawSlice(continuation.getTargetSlice(), 0.5, 1.0, 0.5);
 
 	util::point<double> center1 = continuation.getSourceSlice()->getComponent()->getCenter();
 	util::point<double> center2 = continuation.getTargetSlice()->getComponent()->getCenter();
@@ -281,9 +292,9 @@ SegmentsPainter::draw(const BranchSegment& branch) {
 
 	glCheck(glEnable(GL_TEXTURE_2D));
 
-	drawSlice(branch.getSourceSlice(), 0.0, 0.0, 1.0);
-	drawSlice(branch.getTargetSlice1(), 0.0, 0.0, 1.0);
-	drawSlice(branch.getTargetSlice2(), 0.0, 0.0, 1.0);
+	drawSlice(branch.getSourceSlice(), 0.5, 0.5, 1.0);
+	drawSlice(branch.getTargetSlice1(), 0.5, 0.5, 1.0);
+	drawSlice(branch.getTargetSlice2(), 0.5, 0.5, 1.0);
 
 	util::point<double> center1 = branch.getSourceSlice()->getComponent()->getCenter();
 	util::point<double> center2 = branch.getTargetSlice1()->getComponent()->getCenter();
