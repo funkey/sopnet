@@ -1,59 +1,30 @@
+#include <sopnet/features/SegmentFeaturesExtractor.h>
+#include "GoldStandardExtractor.h"
 #include "RandomForestTrainer.h"
 
-logger::LogChannel randomforesttrainerlog("randomforesttrainerlog", "[RandomForestTrainer] ");
-
 RandomForestTrainer::RandomForestTrainer() :
-	_randomForest(boost::make_shared<RandomForest>()) {
+	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
+	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
+	_rfTrainer(boost::make_shared<SegmentRandomForestTrainer>()) {
 
-	registerInput(_positiveSamples, "positive samples");
-	registerInput(_negativeSamples, "negative samples");
-	registerInput(_features, "features");
-	registerOutput(_randomForest, "random forest");
+	registerInput(_goldStandardExtractor->getInput("ground truth"), "ground truth");
+	registerInput(_allSegments, "all segments");
+	registerInput(_segmentFeaturesExtractor->getInput("raw sections"), "raw sections");
+
+	_allSegments.registerBackwardCallback(&RandomForestTrainer::onSegmentsSet, this);
+
+	_rfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
+	_rfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
+	_rfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+
+	registerOutput(_rfTrainer->getOutput("random forest"), "random forest");
+	registerOutput(_goldStandardExtractor->getOutput("gold standard"), "gold standard");
+	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
 }
 
 void
-RandomForestTrainer::updateOutputs() {
+RandomForestTrainer::onSegmentsSet(const pipeline::InputSet<Segments>& signal) {
 
-	LOG_DEBUG(randomforesttrainerlog) << "updating random forest classifier..." << std::endl;
-
-	if (_features->size() == 0) {
-
-		LOG_DEBUG(randomforesttrainerlog) << "I have no features -- skipping training" << std::endl;
-		return;
-	}
-
-	unsigned int numFeatures = (*_features)[0].size();
-	unsigned int numSamples  = _positiveSamples->size() + _negativeSamples->size();
-
-	LOG_DEBUG(randomforesttrainerlog)
-			<< "starting training for " << numSamples
-			<< " samples with " << numFeatures << " features" << std::endl;
-
-	_randomForest->prepareTraining(numSamples, numFeatures);
-
-	LOG_DEBUG(randomforesttrainerlog) << "setting samples..." << std::endl;
-
-	foreach (boost::shared_ptr<EndSegment> segment, _positiveSamples->getEnds())
-		_randomForest->addSample(_features->get(segment->getId()), 1);
-
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _positiveSamples->getContinuations())
-		_randomForest->addSample(_features->get(segment->getId()), 1);
-
-	foreach (boost::shared_ptr<BranchSegment> segment, _positiveSamples->getBranches())
-		_randomForest->addSample(_features->get(segment->getId()), 1);
-
-	foreach (boost::shared_ptr<EndSegment> segment, _negativeSamples->getEnds())
-		_randomForest->addSample(_features->get(segment->getId()), 0);
-
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _negativeSamples->getContinuations())
-		_randomForest->addSample(_features->get(segment->getId()), 0);
-
-	foreach (boost::shared_ptr<BranchSegment> segment, _negativeSamples->getBranches())
-		_randomForest->addSample(_features->get(segment->getId()), 0);
-
-	LOG_DEBUG(randomforesttrainerlog) << "training..." << std::endl;
-
-	_randomForest->train();
-
-	LOG_DEBUG(randomforesttrainerlog) << "done" << std::endl;
+	_goldStandardExtractor->setInput("all segments", _allSegments.getAssignedOutput());
+	_segmentFeaturesExtractor->setInput("segments", _allSegments.getAssignedOutput());
 }

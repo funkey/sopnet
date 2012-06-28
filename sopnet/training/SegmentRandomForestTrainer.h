@@ -2,17 +2,11 @@
 #define SOPNET_SEGMENT_RANDOM_FOREST_TRAINER_H__
 
 #include <pipeline/all.h>
-#include <imageprocessing/ImageStack.h>
-#include <inference/LinearConstraints.h>
 #include <inference/RandomForest.h>
+#include <sopnet/features/Features.h>
 #include <sopnet/segments/Segments.h>
-#include "RandomForestTrainer.h"
 
-// forward declarations
-class GoldStandardExtractor;
-class SegmentFeaturesExtractor;
-
-class SegmentRandomForestTrainer : public pipeline::ProcessNode {
+class SegmentRandomForestTrainer : public pipeline::SimpleProcessNode {
 
 public:
 
@@ -20,26 +14,15 @@ public:
 
 private:
 
-	void onSegmentsSet(const pipeline::InputSet<Segments>& signal);
+	void updateOutputs();
 
-	pipeline::Input<Segments> _groundTruth;
+	pipeline::Input<Segments> _positiveSamples;
 
-	pipeline::Input<Segments> _allSegments;
+	pipeline::Input<Segments> _negativeSamples;
 
-	pipeline::Input<LinearConstraints> _linearConstraints;
-
-	pipeline::Input<ImageStack> _rawSections;
+	pipeline::Input<Features> _features;
 
 	pipeline::Output<RandomForest> _randomForest;
-
-	// finds the closest segements to the given ground truth
-	boost::shared_ptr<GoldStandardExtractor> _goldStandardExtractor;
-
-	// extracts the features for all given segments
-	boost::shared_ptr<SegmentFeaturesExtractor> _segmentFeaturesExtractor;
-
-	// trains a random forest give positve and negative samples
-	boost::shared_ptr<RandomForestTrainer> _rfTrainer;
 };
 
 #endif // SOPNET_SEGMENT_RANDOM_FOREST_TRAINER_H__

@@ -15,7 +15,7 @@
 #include <sopnet/segments/SegmentExtractor.h>
 #include <sopnet/slices/SliceExtractor.h>
 #include <sopnet/training/GoldStandardExtractor.h>
-#include <sopnet/training/SegmentRandomForestTrainer.h>
+#include <sopnet/training/RandomForestTrainer.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -37,7 +37,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()) {
+	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");

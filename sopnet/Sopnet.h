@@ -19,7 +19,7 @@ class SegmentEvaluator;
 class SegmentExtractor;
 class SegmentFeaturesExtractor;
 class RandomForestCostFunction;
-class SegmentRandomForestTrainer;
+class RandomForestTrainer;
 class SliceExtractor;
 
 class Sopnet : public pipeline::ProcessNode {
@@ -120,7 +120,7 @@ private:
 	boost::shared_ptr<GroundTruthExtractor>           _groundTruthExtractor;
 
 	// the training node, trains a random forest classifier on the ground truth
-	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
+	boost::shared_ptr<RandomForestTrainer>            _segmentRfTrainer;
 
 	/**************************
 	 * PROJECT INFRASTRUCTURE *
