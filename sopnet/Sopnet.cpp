@@ -46,10 +46,12 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes,   "membranes");
 	registerInput(_groundTruth, "ground truth");
+	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
+	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
 
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
@@ -85,11 +87,19 @@ Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal) {
 }
 
 void
+Sopnet::onParametersSet(const pipeline::InputSetBase& signal) {
+
+	LOG_DEBUG(sopnetlog) << "parameters set" << std::endl;
+
+	createPipeline();
+}
+
+void
 Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !_rawSections || !_groundTruth) {
+	if (!_membranes || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -169,9 +179,7 @@ Sopnet::createInferencePipeline() {
 	_randomForestCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 	_randomForestCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
 	_segmentationCostFunction->setInput("membranes", _membranes);
-	boost::shared_ptr<SegmentationCostFunctionParameters> segmentationCostFunctionParameters =
-			boost::make_shared<SegmentationCostFunctionParameters>();
-	_segmentationCostFunction->setInput("parameters", segmentationCostFunctionParameters);
+	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));

@@ -26,6 +26,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/gui/SegmentsView.h>
+#include <sopnet/gui/SopnetDialog.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
 
@@ -151,8 +152,12 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<ContainerView<HorizontalPlacing> > imageStackContainer = boost::make_shared<ContainerView<HorizontalPlacing> >();
 		boost::shared_ptr<ContainerView<HorizontalPlacing> > segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >();
 
+		// create sopnet dialog
+		boost::shared_ptr<SopnetDialog> sopnetDialog = boost::make_shared<SopnetDialog>();
+
 		// connect them to the window via the zoom view
 		mainContainer->addInput(imageStackContainer->getOutput());
+		mainContainer->addInput(sopnetDialog->getOutput("painter"));
 		mainContainer->addInput(segmentsContainer->getOutput());
 		zoomView->setInput(mainContainer->getOutput());
 
@@ -234,6 +239,7 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
 		sopnet->setInput("membranes", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
+		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 
 		if (optionShowResult) {
 

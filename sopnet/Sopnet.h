@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <pipeline/all.h>
+#include <sopnet/inference/SegmentationCostFunctionParameters.h>
 
 // forward declarations
 class GroundTruthExtractor;
@@ -43,6 +44,8 @@ private:
 
 	void onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal);
 
+	void onParametersSet(const pipeline::InputSetBase& signal);
+
 	void createPipeline();
 
 	void createBasicPipeline();
@@ -63,6 +66,9 @@ private:
 
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
+
+	// parameters of the segmentation cost function
+	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
 
 	/***********
 	 * SIGNALS *

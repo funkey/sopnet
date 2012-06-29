@@ -8,6 +8,10 @@ struct SegmentationCostFunctionParameters : public pipeline::Data {
 	SegmentationCostFunctionParameters() :
 		weightPotts(1.0) {}
 
+	// the weight of the whole term
+	double weight;
+
+	// the weight of the potts-term
 	double weightPotts;
 };
 
