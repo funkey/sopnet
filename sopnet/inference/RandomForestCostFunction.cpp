@@ -9,7 +9,7 @@
 static logger::LogChannel randomforestcostfunctionlog("randomforestcostfunctionlog", "[RandomForestCostFunction] ");
 
 RandomForestCostFunction::RandomForestCostFunction() :
-	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1)) {
+	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4)) {
 
 	registerInput(_features, "features");
 	registerInput(_randomForest, "random forest");
@@ -22,17 +22,44 @@ RandomForestCostFunction::updateOutputs() {
 	// nothing to do, here
 }
 
+void
+RandomForestCostFunction::costs(
+		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+		const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
+		std::vector<double>& segmentCosts) {
+
+	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
+
+	unsigned int i = 0;
+
+	foreach (boost::shared_ptr<EndSegment> end, ends) {
+
+		segmentCosts[i] += costs(*end);
+
+		i++;
+	}
+
+	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
+
+		segmentCosts[i] += costs(*continuation);
+
+		i++;
+	}
+
+	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
+
+		segmentCosts[i] += costs(*branch);
+
+		i++;
+	}
+}
+
 double
 RandomForestCostFunction::costs(const Segment& segment) {
 
-	LOG_ALL(randomforestcostfunctionlog) << "evaluating segment " << segment.getId() << std::endl;
-
 	double prob = _randomForest->getProbabilities(_features->get(segment.getId()))[1];
 
-	double costs = -log(std::max(0.001, std::min(0.999, prob)));
-
-	LOG_ALL(randomforestcostfunctionlog) << "final costs are " << costs << std::endl;
-
-	return costs;
+	return -log(std::max(0.001, std::min(0.999, prob)));
 }
 

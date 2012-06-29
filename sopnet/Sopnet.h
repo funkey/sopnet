@@ -15,6 +15,7 @@ class ProblemAssembler;
 class RandomForestHdf5Reader;
 class Reconstructor;
 class SectionSelector;
+class SegmentationCostFunction;
 class SegmentEvaluator;
 class SegmentExtractor;
 class SegmentFeaturesExtractor;
@@ -100,7 +101,10 @@ private:
 	boost::shared_ptr<RandomForestHdf5Reader>         _randomForestReader;
 
 	// a segment evaluator that provides a cost function for segments
-	boost::shared_ptr<RandomForestCostFunction>       _segmentCostFunction;
+	boost::shared_ptr<RandomForestCostFunction>       _randomForestCostFunction;
+
+	// a segment evaluator that provides a cost function for slices
+	boost::shared_ptr<SegmentationCostFunction>       _segmentationCostFunction;
 
 	// the objective generator that computes the costs for each segment
 	boost::shared_ptr<ObjectiveGenerator>             _objectiveGenerator;

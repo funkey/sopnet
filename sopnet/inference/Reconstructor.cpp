@@ -8,7 +8,6 @@ Reconstructor::Reconstructor() :
 	_reconstruction(boost::make_shared<Segments>()) {
 
 	registerInput(_solution, "solution");
-	registerInput(_segmentIdsMap, "segment ids map");
 	registerInput(_segments, "segments");
 	registerOutput(_reconstruction, "reconstruction");
 }
@@ -29,6 +28,8 @@ Reconstructor::updateReconstruction() {
 
 	LOG_ALL(reconstructorlog) << "Solution consists of segments: ";
 
+	_currentSegmentNum = 0;
+
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 		probe(segment);
 
@@ -45,10 +46,12 @@ template <typename SegmentType>
 void
 Reconstructor::probe(boost::shared_ptr<SegmentType> segment) {
 
-	if ((*_solution)[(*_segmentIdsMap)[segment->getId()]] == 1.0) {
+	if ((*_solution)[_currentSegmentNum] == 1.0) {
 
 		_reconstruction->add(segment);
 
 		LOG_ALL(reconstructorlog) << segment->getId() << " ";
 	}
+
+	_currentSegmentNum++;
 }

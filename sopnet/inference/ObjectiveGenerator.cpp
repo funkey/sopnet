@@ -6,8 +6,8 @@ static logger::LogChannel objectivegeneratorlog("objectivegeneratorlog", "[Objec
 ObjectiveGenerator::ObjectiveGenerator() {
 
 	registerInput(_segments, "segments");
-	registerInput(_costFunction, "cost function");
-	registerInput(_segmentIdsToVariables, "segment ids map");
+	registerInputs(_costFunctions, "cost functions");
+
 	registerOutput(_objective, "objective");
 }
 
@@ -25,24 +25,17 @@ ObjectiveGenerator::updateObjective() {
 	// we have as many linear coefficients as segments
 	_objective->resize(_segments->size());
 
-	// set the coefficient for each segment
-	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
-		setCosts(*segment);
+	// create a vector of all accumulated costs
+	std::vector<double> allCosts(_segments->size(), 0);
 
-	foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
-		setCosts(*segment);
+	// accumulate costs
+	for (int i = 0; i < _costFunctions.size(); i++) {
 
-	foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
-		setCosts(*segment);
-}
+		costs_function_type& costFunction = *_costFunctions[i];
+		costFunction(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), allCosts);
+	}
 
-template <typename SegmentType>
-void
-ObjectiveGenerator::setCosts(const SegmentType& segment) {
-
-	unsigned int numVariable = (*_segmentIdsToVariables)[segment.getId()];
-
-	LOG_ALL(objectivegeneratorlog) << "setting variable " << numVariable << " to " << (*_costFunction)(segment) << std::endl;
-
-	_objective->setCoefficient(numVariable, (*_costFunction)(segment));
+	// set the coefficients
+	for (int i = 0; i < allCosts.size(); i++)
+		_objective->setCoefficient(i, allCosts[i]);
 }

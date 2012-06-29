@@ -40,32 +40,6 @@ ProblemAssembler::collectSegments() {
 }
 
 void
-ProblemAssembler::collectLinearConstraints() {
-
-	LOG_DEBUG(problemassemblerlog) << "collecting linear constraints..." << std::endl;
-
-	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _linearConstraints) {
-
-		foreach (const LinearConstraint& linearConstraint, *linearConstraints) {
-
-			LinearConstraint mappedConstraint;
-
-			typedef std::map<unsigned int, double>::value_type pair_t;
-			foreach(const pair_t& pair, linearConstraint.getCoefficients())
-				mappedConstraint.setCoefficient((*_segmentIdsToVariables)[pair.first], pair.second);
-
-			mappedConstraint.setRelation(linearConstraint.getRelation());
-
-			mappedConstraint.setValue(linearConstraint.getValue());
-
-			_allLinearConstraints->add(mappedConstraint);
-		}
-	}
-
-	LOG_DEBUG(problemassemblerlog) << "collected " << _allLinearConstraints->size() << " linear constraints" << std::endl;
-}
-
-void
 ProblemAssembler::addConsistencyConstraints() {
 
 	LOG_DEBUG(problemassemblerlog) << "adding consistency constraints..." << std::endl;
@@ -99,17 +73,14 @@ ProblemAssembler::addConsistencyConstraints() {
 	}
 
 	// set the coefficients
-	foreach (boost::shared_ptr<Segments> segments, _segments) {
+	foreach (boost::shared_ptr<EndSegment> segment, _allSegments->getEnds())
+		setCoefficient(*segment);
 
-		foreach (boost::shared_ptr<EndSegment> segment, segments->getEnds())
-			setCoefficient(*segment);
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _allSegments->getContinuations())
+		setCoefficient(*segment);
 
-		foreach (boost::shared_ptr<ContinuationSegment> segment, segments->getContinuations())
-			setCoefficient(*segment);
-
-		foreach (boost::shared_ptr<BranchSegment> segment, segments->getBranches())
-			setCoefficient(*segment);
-	}
+	foreach (boost::shared_ptr<BranchSegment> segment, _allSegments->getBranches())
+		setCoefficient(*segment);
 
 	LOG_DEBUG(problemassemblerlog) << "created " << _consistencyConstraints.size() << " consistency constraints" << std::endl;
 
@@ -117,6 +88,32 @@ ProblemAssembler::addConsistencyConstraints() {
 		LOG_ALL(problemassemblerlog) << constraint << std::endl;
 
 	_allLinearConstraints->addAll(_consistencyConstraints);
+}
+
+void
+ProblemAssembler::collectLinearConstraints() {
+
+	LOG_DEBUG(problemassemblerlog) << "collecting linear constraints..." << std::endl;
+
+	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _linearConstraints) {
+
+		foreach (const LinearConstraint& linearConstraint, *linearConstraints) {
+
+			LinearConstraint mappedConstraint;
+
+			typedef std::map<unsigned int, double>::value_type pair_t;
+			foreach(const pair_t& pair, linearConstraint.getCoefficients())
+				mappedConstraint.setCoefficient((*_segmentIdsToVariables)[pair.first], pair.second);
+
+			mappedConstraint.setRelation(linearConstraint.getRelation());
+
+			mappedConstraint.setValue(linearConstraint.getValue());
+
+			_allLinearConstraints->add(mappedConstraint);
+		}
+	}
+
+	LOG_DEBUG(problemassemblerlog) << "collected " << _allLinearConstraints->size() << " linear constraints" << std::endl;
 }
 
 void
