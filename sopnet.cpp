@@ -56,6 +56,11 @@ util::ProgramOption optionLastSection(
 		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
 		_default_value    = -1);
 
+util::ProgramOption optionShowResult(
+		_module           = "sopnet",
+		_long_name        = "showResult",
+		_description_text = "Show a 3D view of the result.");
+
 util::ProgramOption optionShowGroundTruth(
 		_module           = "sopnet",
 		_long_name        = "showGroundTruth",
@@ -70,11 +75,6 @@ util::ProgramOption optionShowNegativeSamples(
 		_module           = "sopnet",
 		_long_name        = "showNegativeSamples",
 		_description_text = "Show a 3D view of all negative training samples.");
-
-util::ProgramOption optionShowResult(
-		_module           = "sopnet",
-		_long_name        = "showResult",
-		_description_text = "Show a 3D view of the result.");
 
 
 void handleException(boost::exception& e) {
@@ -142,34 +142,36 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("sopnet");
 		window->processEvents();
 
-		// create sopnet pipeline
-		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
+		// create a zoom view for this window
+		boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
+		window->setInput(zoomView->getOutput());
+
+		// create two rows of views
+		boost::shared_ptr<ContainerView<VerticalPlacing> >   mainContainer       = boost::make_shared<ContainerView<VerticalPlacing> >();
+		boost::shared_ptr<ContainerView<HorizontalPlacing> > imageStackContainer = boost::make_shared<ContainerView<HorizontalPlacing> >();
+		boost::shared_ptr<ContainerView<HorizontalPlacing> > segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >();
+
+		// connect them to the window via the zoom view
+		mainContainer->addInput(imageStackContainer->getOutput());
+		mainContainer->addInput(segmentsContainer->getOutput());
+		zoomView->setInput(mainContainer->getOutput());
 
 		// create basic views
 		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
 		boost::shared_ptr<ImageStackView> membranesView   = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> slicesView      = boost::make_shared<ImageStackView>();
 		boost::shared_ptr<ImageStackView> groundTruthView = boost::make_shared<ImageStackView>();
-		boost::shared_ptr<SegmentsView>   resultView      = boost::make_shared<SegmentsView>();
 
-		// add views to window
-		boost::shared_ptr<ContainerView<HorizontalPlacing> > container = boost::make_shared<ContainerView<HorizontalPlacing> >();
-		boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
-		container->addInput(rawSectionsView->getOutput());
-		container->addInput(membranesView->getOutput());
-		container->addInput(groundTruthView->getOutput());
-		zoomView->setInput(container->getOutput());
-		window->setInput(zoomView->getOutput());
+		// fill first row
+		imageStackContainer->addInput(rawSectionsView->getOutput());
+		imageStackContainer->addInput(membranesView->getOutput());
+		imageStackContainer->addInput(slicesView->getOutput());
+		imageStackContainer->addInput(groundTruthView->getOutput());
 
-		// set input of result view
-		resultView->setInput(sopnet->getOutput("solution"));
-		boost::shared_ptr<RotateView> r1 = boost::make_shared<RotateView>();
-		r1->setInput(resultView->getOutput());
-		boost::shared_ptr<NamedView> n1 = boost::make_shared<NamedView>("Result:");
-		n1->setInput(r1->getOutput());
-		container->addInput(n1->getOutput());
-
+		// create section readers
 		boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
+		boost::shared_ptr<pipeline::ProcessNode> slicesReader;
 		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
 		// create image stack readers
@@ -179,6 +181,7 @@ int main(int optionc, char** optionv) {
 			// directoryies
 			rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
 			membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
+			slicesReader      = boost::make_shared<ImageStackDirectoryReader>("./slices/");
 			groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
 
 		} else {
@@ -189,6 +192,7 @@ int main(int optionc, char** optionv) {
 			// try to read from project hdf5 file
 			rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
 			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
+			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "slices");
 			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "groundtruth");
 		}
 
@@ -201,30 +205,49 @@ int main(int optionc, char** optionv) {
 			// create section selectors
 			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 			boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> slicesSelector      = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 			boost::shared_ptr<SubStackSelector> groundTruthSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 
 			// set their inputs to the outputs of the section readers
 			rawSelector->setInput(rawSectionsReader->getOutput());
 			membranesSelector->setInput(membranesReader->getOutput());
+			slicesSelector->setInput(slicesReader->getOutput());
 			groundTruthSelector->setInput(groundTruthReader->getOutput());
 
 			// sneakily pretend the selectors are the readers
 			rawSectionsReader = rawSelector;
 			membranesReader   = membranesSelector;
+			slicesReader      = slicesSelector;
 			groundTruthReader = groundTruthSelector;
 		}
 
 		// set input for image stack views
 		rawSectionsView->setInput(rawSectionsReader->getOutput());
 		membranesView->setInput(membranesReader->getOutput());
+		slicesView->setInput(slicesReader->getOutput());
 		groundTruthView->setInput(groundTruthReader->getOutput());
 
-		// set input for segments views
-		resultView->setInput("raw sections", rawSectionsReader->getOutput());
+		// create sopnet pipeline
+		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
 
+		// set input to sopnet pipeline
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
-		sopnet->setInput("membranes", membranesReader->getOutput());
+		sopnet->setInput("membranes", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
+
+		if (optionShowResult) {
+
+			boost::shared_ptr<SegmentsView> resultView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<RotateView>   rotateView = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>    namedView  = boost::make_shared<NamedView>("Result:");
+
+			resultView->setInput(sopnet->getOutput("solution"));
+			resultView->setInput("raw sections", rawSectionsReader->getOutput());
+			rotateView->setInput(resultView->getOutput());
+			namedView->setInput(rotateView->getOutput());
+
+			segmentsContainer->addInput(namedView->getOutput());
+		}
 
 		if (optionShowGroundTruth) {
 
@@ -237,7 +260,7 @@ int main(int optionc, char** optionv) {
 			gtRotateView->setInput(groundTruthView->getOutput());
 			namedView->setInput(gtRotateView->getOutput());
 
-			container->addInput(namedView->getOutput());
+			segmentsContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionShowGoldStandard) {
@@ -251,7 +274,7 @@ int main(int optionc, char** optionv) {
 			gsRotateView->setInput(goldstandardView->getOutput());
 			namedView->setInput(gsRotateView->getOutput());
 
-			container->addInput(namedView->getOutput());
+			segmentsContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionShowNegativeSamples) {
@@ -265,7 +288,7 @@ int main(int optionc, char** optionv) {
 			neRotateView->setInput(negativeView->getOutput());
 			namedView->setInput(neRotateView->getOutput());
 
-			container->addInput(namedView->getOutput());
+			segmentsContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionTraining) {
