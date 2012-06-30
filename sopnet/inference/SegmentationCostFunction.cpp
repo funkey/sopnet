@@ -33,21 +33,21 @@ SegmentationCostFunction::costs(
 
 	foreach (boost::shared_ptr<EndSegment> end, ends) {
 
-		segmentCosts[i] += costs(*end);
+		segmentCosts[i] += _parameters->weight*costs(*end);
 
 		i++;
 	}
 
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
 
-		segmentCosts[i] += costs(*continuation);
+		segmentCosts[i] += _parameters->weight*costs(*continuation);
 
 		i++;
 	}
 
 	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
 
-		segmentCosts[i] += costs(*branch);
+		segmentCosts[i] += _parameters->weight*costs(*branch);
 
 		i++;
 	}
