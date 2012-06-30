@@ -210,6 +210,10 @@ SegmentsPainter::updateRecording() {
 	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
 
+	// draw thicker lines and points
+	glLineWidth(5.0);
+	glEnable(GL_LINE_SMOOTH);
+
 	// draw from front to back, facing to the right
 	_leftSide  = false;
 	_rightSide = true;
@@ -285,6 +289,13 @@ SegmentsPainter::draw(const ContinuationSegment& continuation) {
 	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
 
 	glCheck(glEnd());
+
+	glCheck(glBegin(GL_POINTS));
+
+	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
+	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
+
+	glCheck(glEnd());
 }
 
 void
@@ -313,7 +324,21 @@ SegmentsPainter::draw(const BranchSegment& branch) {
 
 	glCheck(glEnd());
 
+	glCheck(glBegin(GL_POINTS));
+
+	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
+	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
+
+	glCheck(glEnd());
+
 	glCheck(glBegin(GL_LINES));
+
+	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
+	glCheck(glVertex3f(center3.x, center3.y, section3*_zScale));
+
+	glCheck(glEnd());
+
+	glCheck(glBegin(GL_POINTS));
 
 	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
 	glCheck(glVertex3f(center3.x, center3.y, section3*_zScale));
