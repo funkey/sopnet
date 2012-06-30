@@ -37,6 +37,8 @@ private:
 	pipeline::Input<RandomForest> _randomForest;
 
 	pipeline::Output<costs_function_type> _costFunction;
+
+	std::vector<double> _cache;
 };
 
 #endif // SOPNET_SEGMENT_RANDOM_FOREST_EVALUATOR_H__

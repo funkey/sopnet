@@ -19,7 +19,8 @@ RandomForestCostFunction::RandomForestCostFunction() :
 void
 RandomForestCostFunction::updateOutputs() {
 
-	// nothing to do, here
+	// invalidate cache
+	_cache.clear();
 }
 
 void
@@ -31,11 +32,22 @@ RandomForestCostFunction::costs(
 
 	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
 
+	if (segmentCosts.size() == _cache.size()) {
+
+		for (int i = 0; i < segmentCosts.size(); i++)
+			segmentCosts[i] += _cache[i];
+
+		return;
+	}
+
+	_cache.resize(ends.size() + continuations.size() + branches.size());
+
 	unsigned int i = 0;
 
 	foreach (boost::shared_ptr<EndSegment> end, ends) {
 
 		segmentCosts[i] += costs(*end);
+		_cache[i] = costs(*end);
 
 		i++;
 	}
@@ -43,6 +55,7 @@ RandomForestCostFunction::costs(
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
 
 		segmentCosts[i] += costs(*continuation);
+		_cache[i] = costs(*continuation);
 
 		i++;
 	}
@@ -50,6 +63,7 @@ RandomForestCostFunction::costs(
 	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
 
 		segmentCosts[i] += costs(*branch);
+		_cache[i] = costs(*branch);
 
 		i++;
 	}
