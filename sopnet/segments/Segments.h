@@ -187,6 +187,11 @@ private:
 	EndSegmentCoordinates          _endCoordinates;
 	ContinuationSegmentCoordinates _continuationCoordinates;
 	BranchSegmentCoordinates       _branchCoordinates;
+
+	// all end, continuation, and branch segments
+	std::vector<boost::shared_ptr<EndSegment> >          _ends;
+	std::vector<boost::shared_ptr<ContinuationSegment> > _continuations;
+	std::vector<boost::shared_ptr<BranchSegment> >       _branches;
 };
 
 #endif // CELLTRACKER_TRACKLETS_H__

@@ -22,6 +22,10 @@ Segments::clear() {
 		if (branchTree)
 			delete branchTree;
 	_branchTrees.clear();
+
+	_ends.clear();
+	_continuations.clear();
+	_branches.clear();
 }
 
 void
@@ -40,6 +44,8 @@ Segments::add(boost::shared_ptr<EndSegment> end) {
 
 	// insert the end segment into the tree
 	_endTrees[interSectionInterval]->insert(end);
+
+	_ends.push_back(end);
 }
 
 void
@@ -58,6 +64,8 @@ Segments::add(boost::shared_ptr<ContinuationSegment> continuation) {
 
 	// insert the continuation segment into the tree
 	_continuationTrees[interSectionInterval]->insert(continuation);
+
+	_continuations.push_back(continuation);
 }
 
 void
@@ -76,6 +84,8 @@ Segments::add(boost::shared_ptr<BranchSegment> branch) {
 
 	// insert the branch segment into the tree
 	_branchTrees[interSectionInterval]->insert(branch);
+
+	_branches.push_back(branch);
 }
 
 void
@@ -97,15 +107,17 @@ Segments::addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments) {
 std::vector<boost::shared_ptr<EndSegment> >
 Segments::getEnds(int interval) {
 
+	// all ends for interval == -1
+	if (interval < 0)
+		return _ends;
+
 	std::vector<boost::shared_ptr<EndSegment> > ends;
 
-	for (int i = (interval < 0 ? 0 : interval); i < (interval < 0 ? _endTrees.size() : interval + 1); i++) {
+	// nothing
+	if (interval >= _endTrees.size() || !_endTrees[interval])
+		return ends;
 
-		if (i >= _endTrees.size() || !_endTrees[i])
-			continue;
-
-		std::copy(_endTrees[i]->begin(), _endTrees[i]->end(), std::back_inserter(ends));
-	}
+	std::copy(_endTrees[interval]->begin(), _endTrees[interval]->end(), std::back_inserter(ends));
 
 	return ends;
 }
@@ -113,15 +125,17 @@ Segments::getEnds(int interval) {
 std::vector<boost::shared_ptr<ContinuationSegment> >
 Segments::getContinuations(int interval) {
 
+	// all continuations for interval == -1
+	if (interval < 0)
+		return _continuations;
+
 	std::vector<boost::shared_ptr<ContinuationSegment> > continuations;
 
-	for (int i = (interval < 0 ? 0 : interval); i < (interval < 0 ? _continuationTrees.size() : interval + 1); i++) {
+	// nothing
+	if (interval >= _continuationTrees.size() || !_continuationTrees[interval])
+		return continuations;
 
-		if (i >= _continuationTrees.size() || !_continuationTrees[i])
-			continue;
-
-		std::copy(_continuationTrees[i]->begin(), _continuationTrees[i]->end(), std::back_inserter(continuations));
-	}
+	std::copy(_continuationTrees[interval]->begin(), _continuationTrees[interval]->end(), std::back_inserter(continuations));
 
 	return continuations;
 }
@@ -129,15 +143,17 @@ Segments::getContinuations(int interval) {
 std::vector<boost::shared_ptr<BranchSegment> >
 Segments::getBranches(int interval) {
 
+	// all branches for interval == -1
+	if (interval < 0)
+		return _branches;
+
 	std::vector<boost::shared_ptr<BranchSegment> > branches;
 
-	for (int i = (interval < 0 ? 0 : interval); i < (interval < 0 ? _branchTrees.size() : interval + 1); i++) {
+	// nothing
+	if (interval >= _branchTrees.size() || !_branchTrees[interval])
+		return branches;
 
-		if (i >= _branchTrees.size() || !_branchTrees[i])
-			continue;
-
-		std::copy(_branchTrees[i]->begin(), _branchTrees[i]->end(), std::back_inserter(branches));
-	}
+	std::copy(_branchTrees[interval]->begin(), _branchTrees[interval]->end(), std::back_inserter(branches));
 
 	return branches;
 }
@@ -220,20 +236,6 @@ Segments::getNumInterSectionIntervals() {
 unsigned int
 Segments::size() {
 
-	unsigned int n = 0;
-
-	for (int i = 0; i < _endTrees.size(); i++)
-		if (_endTrees[i])
-			n += _endTrees[i]->size();
-
-	for (int i = 0; i < _continuationTrees.size(); i++)
-		if (_continuationTrees[i])
-			n += _continuationTrees[i]->size();
-
-	for (int i = 0; i < _branchTrees.size(); i++)
-		if (_branchTrees[i])
-			n += _branchTrees[i]->size();
-
-	return n;
+	return _ends.size() + _continuations.size() + _branches.size();
 }
 
