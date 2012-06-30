@@ -1,7 +1,7 @@
 #ifndef INFERENCE_DEFAULT_FACTORY_H__
 #define INFERENCE_DEFAULT_FACTORY_H__
 
-#include <exceptions.h>
+#include <util/exceptions.h>
 #include "LinearSolverBackendFactory.h"
 #include "QuadraticSolverBackendFactory.h"
 

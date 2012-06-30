@@ -10,7 +10,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/progress.hpp>
 
-#include <exceptions.h>
+#include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/ImageView.h>

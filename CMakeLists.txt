@@ -175,9 +175,6 @@ set(CORELIBS
 
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/sopnet)
-include_directories(${PROJECT_SOURCE_DIR}/gui)
-include_directories(${PROJECT_SOURCE_DIR}/imageprocessing)
 include_directories(${PROJECT_SOURCE_DIR}/modules)
 
 add_subdirectory(modules/util)

@@ -1,4 +1,4 @@
-#include "ImageExtractor.h"
+#include <imageprocessing/ImageExtractor.h>
 #include <sopnet/slices/SliceExtractor.h>
 #include "GroundTruthSegmentExtractor.h"
 #include "GroundTruthExtractor.h"
