@@ -37,6 +37,8 @@ private:
 
 	void addId(unsigned int id);
 
+	unsigned int getSliceNum(unsigned int sliceId);
+
 	// a list of segments for each pair of frames
 	pipeline::Inputs<Segments>         _segments;
 

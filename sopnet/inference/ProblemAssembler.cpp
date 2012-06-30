@@ -125,9 +125,9 @@ ProblemAssembler::setCoefficient(const EndSegment& end) {
 	 * the number of the slice in the problem.
 	 */
 	if (end.getDirection() == Left) // slice is on the right
-		_consistencyConstraints[_sliceIdsMap[sliceId]].setCoefficient(_numSegments,  1.0);
+		_consistencyConstraints[getSliceNum(sliceId)].setCoefficient(_numSegments,  1.0);
 	else                            // slice is on the left
-		_consistencyConstraints[_sliceIdsMap[sliceId]].setCoefficient(_numSegments, -1.0);
+		_consistencyConstraints[getSliceNum(sliceId)].setCoefficient(_numSegments, -1.0);
 
 	/* Sneakily we assigned a variable number (_numSegments) to every
 	 * segment we found. Remember this mapping -- we will need it to
@@ -150,13 +150,13 @@ ProblemAssembler::setCoefficient(const ContinuationSegment& continuation) {
 	 */
 	if (continuation.getDirection() == Left) { // target is left
 
-		_consistencyConstraints[_sliceIdsMap[targetSliceId]].setCoefficient(_numSegments, -1.0);
-		_consistencyConstraints[_sliceIdsMap[sourceSliceId]].setCoefficient(_numSegments,  1.0);
+		_consistencyConstraints[getSliceNum(targetSliceId)].setCoefficient(_numSegments, -1.0);
+		_consistencyConstraints[getSliceNum(sourceSliceId)].setCoefficient(_numSegments,  1.0);
 
 	} else  {                                  // target is right
 
-		_consistencyConstraints[_sliceIdsMap[targetSliceId]].setCoefficient(_numSegments,  1.0);
-		_consistencyConstraints[_sliceIdsMap[sourceSliceId]].setCoefficient(_numSegments, -1.0);
+		_consistencyConstraints[getSliceNum(targetSliceId)].setCoefficient(_numSegments,  1.0);
+		_consistencyConstraints[getSliceNum(sourceSliceId)].setCoefficient(_numSegments, -1.0);
 	}
 
 	/* Sneakily we assigned a variable number (_numSegments) to every
@@ -181,15 +181,15 @@ ProblemAssembler::setCoefficient(const BranchSegment& branch) {
 	 */
 	if (branch.getDirection() == Left) { // targets are left
 
-		_consistencyConstraints[_sliceIdsMap[targetSlice1Id]].setCoefficient(_numSegments, -1.0);
-		_consistencyConstraints[_sliceIdsMap[targetSlice2Id]].setCoefficient(_numSegments, -1.0);
-		_consistencyConstraints[_sliceIdsMap[sourceSliceId]].setCoefficient(_numSegments,   1.0);
+		_consistencyConstraints[getSliceNum(targetSlice1Id)].setCoefficient(_numSegments, -1.0);
+		_consistencyConstraints[getSliceNum(targetSlice2Id)].setCoefficient(_numSegments, -1.0);
+		_consistencyConstraints[getSliceNum(sourceSliceId)].setCoefficient(_numSegments,   1.0);
 
 	} else  {                                  // target is right
 
-		_consistencyConstraints[_sliceIdsMap[targetSlice1Id]].setCoefficient(_numSegments,  1.0);
-		_consistencyConstraints[_sliceIdsMap[targetSlice2Id]].setCoefficient(_numSegments,  1.0);
-		_consistencyConstraints[_sliceIdsMap[sourceSliceId]].setCoefficient(_numSegments,  -1.0);
+		_consistencyConstraints[getSliceNum(targetSlice1Id)].setCoefficient(_numSegments,  1.0);
+		_consistencyConstraints[getSliceNum(targetSlice2Id)].setCoefficient(_numSegments,  1.0);
+		_consistencyConstraints[getSliceNum(sourceSliceId)].setCoefficient(_numSegments,  -1.0);
 	}
 
 	/* Sneakily we assigned a variable number (_numSegments) to every
@@ -211,17 +211,14 @@ ProblemAssembler::extractSliceIdsMap() {
 	/* Collect all slice ids and assign them uniquely to a number between 0 and
 	 * the number of slices in the problem.
 	 */
-	foreach (boost::shared_ptr<Segments> segments, _segments) {
+	foreach (boost::shared_ptr<EndSegment> segment, _allSegments->getEnds())
+		addSlices(*segment);
 
-		foreach (boost::shared_ptr<EndSegment> segment, segments->getEnds())
-			addSlices(*segment);
+	foreach (boost::shared_ptr<ContinuationSegment> segment, _allSegments->getContinuations())
+		addSlices(*segment);
 
-		foreach (boost::shared_ptr<ContinuationSegment> segment, segments->getContinuations())
-			addSlices(*segment);
-
-		foreach (boost::shared_ptr<BranchSegment> segment, segments->getBranches())
-			addSlices(*segment);
-	}
+	foreach (boost::shared_ptr<BranchSegment> segment, _allSegments->getBranches())
+		addSlices(*segment);
 }
 
 void
@@ -254,5 +251,14 @@ ProblemAssembler::addId(unsigned int id) {
 		_sliceIdsMap[id] = _numSlices;
 		_numSlices++;
 	}
+}
+
+unsigned int
+ProblemAssembler::getSliceNum(unsigned int sliceId) {
+
+	if (_sliceIdsMap.count(sliceId) == 0)
+		LOG_ERROR(problemassemblerlog) << "unknown slice id!" << std::endl;
+
+	return _sliceIdsMap[sliceId];
 }
 
