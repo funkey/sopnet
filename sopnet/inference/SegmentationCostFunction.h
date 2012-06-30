@@ -34,21 +34,41 @@ private:
 			const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
 			std::vector<double>& costs);
 
-	double costs(const EndSegment& end);
+	void computeSegmentationCosts(
+			const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+			const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+			const std::vector<boost::shared_ptr<BranchSegment> >&       branches);
 
-	double costs(const ContinuationSegment& continuation);
+	void computeBoundaryLengths(
+			const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+			const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+			const std::vector<boost::shared_ptr<BranchSegment> >&       branches);
 
-	double costs(const BranchSegment& branch);
+	void computeSegmentationCost(const EndSegment& end);
 
-	double costs(const Slice& slice);
+	void computeSegmentationCost(const ContinuationSegment& continuation);
 
-	unsigned int getBoundaryLength(const Slice& slice);
+	void computeSegmentationCost(const BranchSegment& branch);
+
+	void computeBoundaryLength(const EndSegment& end);
+
+	void computeBoundaryLength(const ContinuationSegment& continuation);
+
+	void computeBoundaryLength(const BranchSegment& branch);
+
+	double computeSegmentationCost(const Slice& slice);
+
+	unsigned int computeBoundaryLength(const Slice& slice);
 
 	pipeline::Input<ImageStack> _membranes;
 
 	pipeline::Input<SegmentationCostFunctionParameters> _parameters;
 
 	pipeline::Output<costs_function_type> _costFunction;
+
+	std::vector<double> _segmentationCosts;
+
+	std::vector<unsigned int> _boundaryLengths;
 };
 
 #endif // SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_H__

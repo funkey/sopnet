@@ -5,6 +5,8 @@
 #include <sopnet/segments/BranchSegment.h>
 #include <sopnet/slices/Slice.h>
 
+logger::LogChannel segmentationcostfunctionlog("segmentationcostfunctionlog", "[SegmentationCostFunction] ");
+
 SegmentationCostFunction::SegmentationCostFunction() :
 	_costFunction(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4)) {
 
@@ -29,50 +31,136 @@ SegmentationCostFunction::costs(
 
 	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
 
+	if (_segmentationCosts.size() != segmentCosts.size()) {
+
+		LOG_DEBUG(segmentationcostfunctionlog)
+				<< "updating segmentation costs (number of segments: "
+				<< segmentCosts.size() << ", number of cached values "
+				<< _segmentationCosts.size() << ")" << std::endl;
+
+		_segmentationCosts.clear();
+		_segmentationCosts.reserve(ends.size() + continuations.size() + branches.size());
+
+		computeSegmentationCosts(ends, continuations, branches);
+
+		LOG_DEBUG(segmentationcostfunctionlog)
+				<< "computed " << _segmentationCosts.size() << " segmentation cost values" << std::endl;
+	}
+
+	if (_boundaryLengths.size() != segmentCosts.size()) {
+
+		LOG_DEBUG(segmentationcostfunctionlog) << "updating boundary lengths..." << std::endl;
+
+		_boundaryLengths.clear();
+		_boundaryLengths.reserve(ends.size() + continuations.size() + branches.size());
+
+		computeBoundaryLengths(ends, continuations, branches);
+	}
+
 	unsigned int i = 0;
 
 	foreach (boost::shared_ptr<EndSegment> end, ends) {
 
-		segmentCosts[i] += _parameters->weight*costs(*end);
+		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
 		i++;
 	}
 
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
 
-		segmentCosts[i] += _parameters->weight*costs(*continuation);
+		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
 		i++;
 	}
 
 	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
 
-		segmentCosts[i] += _parameters->weight*costs(*branch);
+		segmentCosts[i] += _parameters->weight*(_segmentationCosts[i] + _parameters->weightPotts*_boundaryLengths[i]);
 
 		i++;
 	}
 }
 
-double
-SegmentationCostFunction::costs(const EndSegment& end) {
+void
+SegmentationCostFunction::computeSegmentationCosts(
+		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+		const std::vector<boost::shared_ptr<BranchSegment> >&       branches) {
 
-	return 0.5*costs(*end.getSlice());
+	foreach (boost::shared_ptr<EndSegment> end, ends)
+		computeSegmentationCost(*end);
+
+	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+		computeSegmentationCost(*continuation);
+
+	foreach (boost::shared_ptr<BranchSegment> branch, branches)
+		computeSegmentationCost(*branch);
+}
+
+void
+SegmentationCostFunction::computeBoundaryLengths(
+		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+		const std::vector<boost::shared_ptr<BranchSegment> >&       branches) {
+
+	foreach (boost::shared_ptr<EndSegment> end, ends)
+		computeBoundaryLength(*end);
+
+	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+		computeBoundaryLength(*continuation);
+
+	foreach (boost::shared_ptr<BranchSegment> branch, branches)
+		computeBoundaryLength(*branch);
+}
+
+void
+SegmentationCostFunction::computeSegmentationCost(const EndSegment& end) {
+
+	_segmentationCosts.push_back(computeSegmentationCost(*end.getSlice()));
+}
+
+void
+SegmentationCostFunction::computeSegmentationCost(const ContinuationSegment& continuation) {
+
+	_segmentationCosts.push_back(
+			computeSegmentationCost(*continuation.getSourceSlice()) +
+			computeSegmentationCost(*continuation.getTargetSlice()));
+}
+
+void
+SegmentationCostFunction::computeSegmentationCost(const BranchSegment& branch) {
+
+	_segmentationCosts.push_back(
+			computeSegmentationCost(*branch.getSourceSlice()) +
+			computeSegmentationCost(*branch.getTargetSlice1()) +
+			computeSegmentationCost(*branch.getTargetSlice2()));
+}
+
+void
+SegmentationCostFunction::computeBoundaryLength(const EndSegment& end) {
+
+	_boundaryLengths.push_back(computeBoundaryLength(*end.getSlice()));
+}
+
+void
+SegmentationCostFunction::computeBoundaryLength(const ContinuationSegment& continuation) {
+
+	_boundaryLengths.push_back(
+			computeBoundaryLength(*continuation.getSourceSlice()) +
+			computeBoundaryLength(*continuation.getTargetSlice()));
+}
+
+void
+SegmentationCostFunction::computeBoundaryLength(const BranchSegment& branch) {
+
+	_boundaryLengths.push_back(
+			computeBoundaryLength(*branch.getSourceSlice()) +
+			computeBoundaryLength(*branch.getTargetSlice1()) +
+			computeBoundaryLength(*branch.getTargetSlice2()));
 }
 
 double
-SegmentationCostFunction::costs(const ContinuationSegment& continuation) {
-
-	return 0.5*(costs(*continuation.getSourceSlice()) + costs(*continuation.getTargetSlice()));
-}
-
-double
-SegmentationCostFunction::costs(const BranchSegment& branch) {
-
-	return 0.5*(costs(*branch.getSourceSlice()) + costs(*branch.getTargetSlice1()) + costs(*branch.getTargetSlice2()));
-}
-
-double
-SegmentationCostFunction::costs(const Slice& slice) {
+SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 
 	unsigned int section = slice.getSection();
 
@@ -87,14 +175,11 @@ SegmentationCostFunction::costs(const Slice& slice) {
 		costs += - log(probMembrane) - log(probNeuron);
 	}
 
-	// for each boundary crack
-	costs += getBoundaryLength(slice)*_parameters->weightPotts;
-
 	return costs;
 }
 
 unsigned int
-SegmentationCostFunction::getBoundaryLength(const Slice& slice) {
+SegmentationCostFunction::computeBoundaryLength(const Slice& slice) {
 
 	boost::shared_ptr<ConnectedComponent> component = slice.getComponent();
 
