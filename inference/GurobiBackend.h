@@ -83,6 +83,8 @@ private:
 	// the objective
 	GRBQuadExpr _objective;
 
+	std::vector<GRBConstr> _constraints;
+
 	// the GRB model containing the objective and constraints
 	GRBModel _model;
 

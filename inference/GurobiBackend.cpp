@@ -130,6 +130,16 @@ GurobiBackend::setObjective(const QuadraticObjective& objective) {
 void
 GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 
+	// remove previous constraints
+	foreach (GRBConstr constraint, _constraints)
+		_model.remove(constraint);
+	_constraints.clear();
+
+	_model.update();
+
+	// allocate memory for new constraints
+	_constraints.reserve(constraints.size());
+
 	try {
 
 		LOG_DEBUG(gurobilog) << "setting " << constraints.size() << " constraints" << std::endl;
@@ -150,12 +160,13 @@ GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 				lhsExpr += pair.second*_variables[pair.first];
 
 			// add to the model
-			_model.addConstr(
-					lhsExpr,
-					(constraint.getRelation() == LessEqual ? GRB_LESS_EQUAL :
-							(constraint.getRelation() == GreaterEqual ? GRB_GREATER_EQUAL :
-									GRB_EQUAL)),
-					constraint.getValue());
+			_constraints.push_back(
+					_model.addConstr(
+						lhsExpr,
+						(constraint.getRelation() == LessEqual ? GRB_LESS_EQUAL :
+								(constraint.getRelation() == GreaterEqual ? GRB_GREATER_EQUAL :
+										GRB_EQUAL)),
+						constraint.getValue()));
 
 			j++;
 		}
