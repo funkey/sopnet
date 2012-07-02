@@ -47,6 +47,12 @@ public:
 
 private:
 
+	void onObjectiveModified(const pipeline::Modified& signal);
+
+	void onLinearConstraintsModified(const pipeline::Modified& signal);
+
+	void onParametersModified(const pipeline::Modified& signal);
+
 	////////////////////////
 	// pipeline interface //
 	////////////////////////
@@ -70,6 +76,12 @@ private:
 	unsigned int getNumVariables();
 
 	LinearSolverBackend* _solver;
+
+	bool _objectiveDirty;
+
+	bool _linearConstraintsDirty;
+
+	bool _parametersDirty;
 };
 
 #endif // INFERENCE_LINEAR_SOLVER_H__
