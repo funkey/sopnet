@@ -21,6 +21,7 @@ private:
 
 	pipeline::Input<ImageStack>         _stack;
 	pipeline::Output<ImageStackPainter> _painter;
+	pipeline::Output<Image>             _currentImage;
 
 	signals::Slot<gui::SizeChanged>    _sizeChanged;
 	signals::Slot<gui::ContentChanged> _contentChanged;

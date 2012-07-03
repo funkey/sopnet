@@ -4,10 +4,12 @@
 static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackView] ");
 
 ImageStackView::ImageStackView() :
-	_section(0) {
+	_section(0),
+	_currentImage(boost::make_shared<Image>()) {
 
 	registerInput(_stack, "imagestack");
 	registerOutput(_painter, "painter");
+	registerOutput(_currentImage, "current image");
 
 	_painter.registerForwardSlot(_sizeChanged);
 	_painter.registerForwardSlot(_contentChanged);
@@ -35,6 +37,8 @@ ImageStackView::updateOutputs() {
 
 		_sizeChanged();
 	}
+
+	*_currentImage = *(*_stack)[_section];
 }
 
 void
@@ -51,6 +55,7 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->setCurrentSection(_section);
 
 		setDirty(_painter);
+		setDirty(_currentImage);
 	}
 
 	if (signal.key == gui::keys::D) {
@@ -62,6 +67,7 @@ ImageStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->setCurrentSection(_section);
 
 		setDirty(_painter);
+		setDirty(_currentImage);
 	}
 }
 
