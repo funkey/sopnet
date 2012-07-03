@@ -9,9 +9,9 @@ Create a build directory (e.g., ./build), change into it and type
 
   $ cmake [path_to_sopnet_directory (e.g. '..')]
 
-cmake will try to find the required packages and tell you, which ones are
-missing. All packages except for the vigra library can be installed using the
-default Ubuntu repositories.
+cmake will try to find the required packages and tell you which ones are
+missing. All packages except for the vigra library and the Gurobi solver can be
+installed using the default Ubuntu repositories.
 
 To get a recent version of vigra, perform the following steps:
 
@@ -41,3 +41,52 @@ Gurobi Solver
 After cmake finished without errors, run
 
   $ make
+
+
+Usage
+=====
+
+After successful compilation, two executables have been created: 'sopnet' and 
+'graphcut'.
+
+graphcut
+--------
+
+Use this binary to create a set of segmentation hypotheses from membrane 
+probability images. When started, this binary expects a sequence of membrane 
+probability images in a directory "./membranes". You can play with the 
+parameters by adjusting the sliders and walk through the stack by pressing 'a' 
+and 'd'.
+
+When invoked with the argument 'createSequence' (either via command line or 
+config file, see ./graphcut --help), 'graphcut' will create a sequence of 
+segmentations for varying values of the foreground prior. Each segmentation is 
+put in a directory "./sequence" and an average of all sequences for each 
+membrane probability image is put into "./slices". The latter version contains 
+all the relevant information about the extracted hypotheses in its component 
+tree and is the input to 'sopnet'.
+
+sopnet
+------
+
+Sopnet expects four versions of the image stack in four directories: 
+'./membranes' for the membrane probability images, './slices' for the 
+segmentation hypotheses (created by a sequence of graph-cuts), './raw' for the 
+original intensity images, and './groundtruth' for same-intensity-is-same-neuron 
+ground-truth segmentation.
+
+When invoked with the argument 'train' (either via command line or config file, 
+see ./sopnet --help), 'sopnet' will use the ground-truth to train a random 
+forest on neuron slice assignments. The classifier will be stored in 
+'segment_rf.hdf'. Without the argument, 'sopnet' will reconstruct neurons using 
+the trained classifier. For both operations, you can specify a subset of the 
+sections to use from the stack.
+
+Configuration
+=============
+
+All program options can be set either by command line or a config file (for a 
+listing of all available options, type '[name_of_executable] --help').  The 
+default name of the config file is [name_of_executable].conf.  Hence, a symlink 
+'sopnet-train' to the binary 'sopnet' will read its configuration from 
+sopnet-train.conf.
