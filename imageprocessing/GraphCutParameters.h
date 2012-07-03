@@ -23,8 +23,9 @@ struct GraphCutParameters : public pipeline::Data {
 	double contrastSigma;
 
 	// whether to use a four- or eight-neighborhood
-	bool   eightNeighborhood;
+	bool eightNeighborhood;
 
+	// a prior to change the expected number of foreground pixels
 	float foregroundPrior;
 };
 

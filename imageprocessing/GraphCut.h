@@ -1,7 +1,7 @@
 #ifndef IMAGEPROCESSING_GRAPH_CUT_H__
 #define IMAGEPROCESSING_GRAPH_CUT_H__
 
-#include <external/maxflow/graph.h>
+#include <external/dgc/graph.h>
 
 #include <imageprocessing/Image.h>
 #include <pipeline/all.h>
@@ -10,15 +10,37 @@
 #include "GraphCutParameters.h"
 
 
-class GraphCut : public pipeline::ProcessNode {
+class GraphCut : public pipeline::SimpleProcessNode {
 
-	typedef Graph<float,float,float> GraphType;
+	typedef Graph<float,float,float> graph_type;
 
 public:
 
 	GraphCut();
 
 private:
+
+	void updateOutputs();
+
+	void onModifiedImage(const pipeline::Modified& signal);
+
+	void onModifiedGCParameters(const pipeline::Modified& signal);
+
+	void onModifiedPottsImage(const pipeline::Modified& signal);
+
+	void doMaxFlow();
+
+	void setTerminalWeights();
+
+	void setEdgeWeights();
+
+	void getSegmentation();
+
+	float getCapacity(float probability, float foreground);
+
+	int getNodeId(int x, int y);
+
+	double getPairwiseCosts(int x1, int y1, int x2, int y2);
 
 	// the input image (per-pixel foreground probabilities)
 	pipeline::Input<Image>              _image;
@@ -35,51 +57,33 @@ private:
 	// the energy of the result
 	pipeline::Output<double>            _energy;
 
-	// signal to indicate that output is out-of-date
-	signals::Slot<pipeline::Modified>   _modified;
-
-	// signal to ask the sink to update inputs
-	signals::Slot<pipeline::Update>     _updateImage;
-	signals::Slot<pipeline::Update>     _updateGCParameters;
-	signals::Slot<pipeline::Update>     _updatePottsImage;
-
-	// signal to indicate that ouput is up-to-date
-	signals::Slot<pipeline::Updated>    _updated;
-
 	// instantiation of graph
-	GraphType                           _graph;
+	graph_type _graph;
 
 	bool _imageChanged;
+
 	bool _gcParametersChanged;
+
 	bool _pottsImageChanged;
+
+	// indicates that the terminal weights need to be reset
 	bool _setTerminalWeights;
 
-	int _graphHeight;					// number of nodes in the y direction
-	int _graphWidth;					// number of nodes in the x direction
-										// these are used to check if the dimensions of the existing graph matches those of the image
+	// indicates  that the edge weights need to be reset
+	bool _setEdges;
 
+	// size of the current graph
+	int _graphWidth;
+	int _graphHeight;
+
+	// reuse previous solution
+	bool _warmStart;
+
+	// remember the previous parameters
+	GraphCutParameters _prevParameters;
+
+	// segmentation data
 	vigra::MultiArray<2, float> _segmentationData;
-
-	void onModifiedImage(const pipeline::Modified& signal);
-	void onModifiedGCParameters(const pipeline::Modified& signal);
-	void onModifiedPottsImage(const pipeline::Modified& signal);
-	void onUpdatedGCParameters(const pipeline::Updated& signal);
-	void onUpdatedImage(const pipeline::Updated& signal);
-	void onUpdatedPottsImage(const pipeline::Updated& signal);
-	void onUpdateGraphCut(const pipeline::Update& signal);
-
-	void doMaxFlow();
-	void assignEdges();
-	void setTerminalWeights();
-	void getSegmentation();
-
-	float getCapacity(float probability, float foreground);
-
-	int getNodeId(int x, int y);
-
-	bool imageDimensionsDifferGraph();
-
-	double getPairwiseCosts(int x1, int y1, int x2, int y2);
 };
 
 #endif // IMAGEPROCESSING_GRAPH_CUT_H__

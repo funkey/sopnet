@@ -14,7 +14,7 @@ GraphCutDialog::ParametersCollector::ParametersCollector() {
 	registerInput(_contrastWeight,    "contrast-term weight");
 	registerInput(_contrastSigma,     "contrast-term sigma");
 	registerInput(_eightNeighborhood, "eight-neighborhood");
-	registerOutput(_parameters,       "graph-cut parameters");
+	registerOutput(_parameters,       "parameters");
 
 	_pottsWeight.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
 	_pottsWeight.registerBackwardSlot(_update);
@@ -97,7 +97,7 @@ GraphCutDialog::GraphCutDialog() :
 
 	// publish internal outputs
 
-	registerOutput(_parametersCollector->getOutput(), "graph-cut parameters");
+	registerOutput(_parametersCollector->getOutput(), "parameters");
 	registerOutput(_gui->getOutput(), "painter");
 }
 
