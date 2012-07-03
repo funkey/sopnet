@@ -195,7 +195,7 @@ set(CMAKE_CXX_FLAGS_DEBUG   "-g -Wno-deprecated -Wno-invalid-offsetof")
 ###############
 
 file (GLOB_RECURSE sopnetfiles
-  external/maxflow/*.cpp
+  external/dgc/*.cpp
   sopnet/*.cpp
   gui/*.cpp
   imageprocessing/*.cpp
@@ -209,3 +209,5 @@ target_link_libraries(allsopnet util signals pipeline imageprocessing gui ${CORE
 add_executable(sopnet sopnet.cpp)
 target_link_libraries(sopnet allsopnet)
 
+add_executable(graphcut graphcut.cpp)
+target_link_libraries(graphcut allsopnet)
