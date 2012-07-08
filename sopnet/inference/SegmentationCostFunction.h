@@ -69,6 +69,8 @@ private:
 	std::vector<double> _segmentationCosts;
 
 	std::vector<unsigned int> _boundaryLengths;
+
+	SegmentationCostFunctionParameters _prevParameters;
 };
 
 #endif // SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_H__

@@ -240,6 +240,7 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("membranes", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
+		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
 
 		if (optionShowResult) {
 

@@ -32,6 +32,7 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 
 	registerInput(_mser->getInput("image"), "membrane");
 	registerInput(_mserParameters, "mser parameters");
+	registerInput(_converter->getInput("force explanation"), "force explanation");
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_converter->getOutput("linear constraints"), "linear constraints");
 
@@ -63,6 +64,7 @@ SliceExtractor::ComponentTreeConverter::ComponentTreeConverter(unsigned int sect
 	_section(section) {
 
 	registerInput(_componentTree, "component tree");
+	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
 	registerOutput(_slices, "slices");
 	registerOutput(_linearConstraints, "linear constraints");
 }
@@ -139,7 +141,10 @@ SliceExtractor::ComponentTreeConverter::addLinearConstraint() {
 	foreach (unsigned int sliceId, _path)
 		constraint.setCoefficient(sliceId, 1);
 
-	constraint.setRelation(Equal);
+	if (_forceExplanation && *_forceExplanation)
+		constraint.setRelation(Equal);
+	else
+		constraint.setRelation(LessEqual);
 
 	constraint.setValue(1);
 

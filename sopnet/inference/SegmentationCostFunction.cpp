@@ -31,7 +31,8 @@ SegmentationCostFunction::costs(
 
 	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
 
-	if (_segmentationCosts.size() != segmentCosts.size()) {
+	if (_segmentationCosts.size() != segmentCosts.size() ||
+	    _parameters->priorForeground != _prevParameters.priorForeground) {
 
 		LOG_DEBUG(segmentationcostfunctionlog)
 				<< "updating segmentation costs (number of segments: "
@@ -56,6 +57,8 @@ SegmentationCostFunction::costs(
 
 		computeBoundaryLengths(ends, continuations, branches);
 	}
+
+	_prevParameters = *_parameters;
 
 	unsigned int i = 0;
 
@@ -169,10 +172,32 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	// for each pixel in the slice
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
-		double probMembrane = std::max(0.001, std::min(0.999, (*(*_membranes)[section])(pixel.x, pixel.y)/255.0));
-		double probNeuron   = 1.0 - probMembrane;
+		// get the membrane data probability p(x|y=membrane)
+		double probMembrane = (*(*_membranes)[section])(pixel.x, pixel.y)/255.0;
 
-		costs += - log(probMembrane) - log(probNeuron);
+		// get the neuron data probability p(x|y=neuron)
+		double probNeuron = 1.0 - probMembrane;
+
+		// multiply both with the respective prior p(y)
+		probMembrane *= (1.0 - _parameters->priorForeground);
+		probNeuron   *= _parameters->priorForeground;
+
+		// normalize both probabilities, so that we get p(y|x)
+		probMembrane /= probMembrane + probNeuron;
+		probNeuron   /= probMembrane + probNeuron;
+
+		// ensure numerical stability
+		probMembrane = std::max(0.0001, std::min(0.9999, probMembrane));
+		probNeuron   = std::max(0.0001, std::min(0.9999, probNeuron));
+
+		// compute the corresponding costs
+		double costsMembrane = -log(probMembrane);
+		double costsNeuron   = -log(probNeuron);
+
+		// costs for accepting the segmentation is the cost difference between
+		// segmenting the region as background and segmenting the region as
+		// foreground
+		costs += costsNeuron - costsMembrane;
 	}
 
 	return costs;

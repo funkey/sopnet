@@ -70,6 +70,9 @@ private:
 	// parameters of the segmentation cost function
 	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
 
+	// force the explanation of every component tree
+	pipeline::Input<bool> _forceExplanation;
+
 	/***********
 	 * SIGNALS *
 	 ***********/

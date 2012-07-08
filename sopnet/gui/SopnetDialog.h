@@ -5,6 +5,7 @@
 #include <gui/ContainerView.h>
 #include <gui/VerticalPlacing.h>
 #include <gui/Slider.h>
+#include <gui/Switch.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 
 class SopnetDialog : public pipeline::ProcessNode {
@@ -29,12 +30,18 @@ private:
 
 		pipeline::Input<double> _segmentationCostPottsWeight;
 
+		pipeline::Input<double> _segmentationCostPriorForeground;
+
 		pipeline::Output<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
 	};
+
+	boost::shared_ptr<gui::Switch> _forceExplanationSwitch;
 
 	boost::shared_ptr<gui::Slider> _segmentationCostWeightSlider;
 
 	boost::shared_ptr<gui::Slider> _segmentationCostPottsWeightSlider;
+
+	boost::shared_ptr<gui::Slider> _segmentationCostPriorForegroundSlider;
 
 	boost::shared_ptr<gui::ContainerView<gui::VerticalPlacing> > _containerView;
 

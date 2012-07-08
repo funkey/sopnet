@@ -47,6 +47,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerInput(_membranes,   "membranes");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
+	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
@@ -137,7 +138,8 @@ Sopnet::createBasicPipeline() {
 		boost::shared_ptr<SliceExtractor> sliceExtractor = boost::make_shared<SliceExtractor>(section);
 
 		// set its input
-		sliceExtractor->setInput(_membraneExtractor->getOutput(section));
+		sliceExtractor->setInput("membrane", _membraneExtractor->getOutput(section));
+		sliceExtractor->setInput("force explanation", _forceExplanation);
 
 		// store it in the list of all slice extractors
 		_sliceExtractors.push_back(sliceExtractor);

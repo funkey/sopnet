@@ -13,6 +13,9 @@ struct SegmentationCostFunctionParameters : public pipeline::Data {
 
 	// the weight of the potts-term
 	double weightPotts;
+
+	// the prior on the foreground pixels
+	double priorForeground;
 };
 
 #endif // SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_PARAMETERS_H__

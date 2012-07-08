@@ -50,6 +50,7 @@ private:
 		void convert();
 
 		pipeline::Input<ComponentTree>      _componentTree;
+		pipeline::Input<bool>               _forceExplanation;
 		pipeline::Output<Slices>            _slices;
 		pipeline::Output<LinearConstraints> _linearConstraints;
 
