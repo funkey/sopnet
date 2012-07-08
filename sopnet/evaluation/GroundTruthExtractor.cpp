@@ -53,6 +53,7 @@ GroundTruthExtractor::createPipeline() {
 	mserParameters->minDiversity = 0;
 	mserParameters->darkToBright = false;
 	mserParameters->brightToDark = true;
+	mserParameters->sameIntensityComponents = true; // only extract connected components of same intensity
 
 	for (unsigned int section = firstSection; section <= lastSection; section++) {
 

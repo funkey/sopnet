@@ -11,7 +11,8 @@ struct MserParameters : public pipeline::Data {
 		maxVariation(100),
 		minDiversity(0.0),
 		darkToBright(true),
-		brightToDark(false) {}
+		brightToDark(false),
+		sameIntensityComponents(false) {}
 
 	// increase of the intensity level to check for stability
 	int delta;
@@ -31,6 +32,9 @@ struct MserParameters : public pipeline::Data {
 
 	// perform processing from bright to dark pixels
 	bool brightToDark;
+
+	// extract only components of same intensity
+	bool sameIntensityComponents;
 };
 
 #endif // IMAGEPROCESSING_MSER_PARAMETERS_H__

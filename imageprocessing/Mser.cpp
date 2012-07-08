@@ -67,11 +67,38 @@ Mser::allocate() {
 void
 Mser::copyImage() {
 
-	unsigned int i = 0;
-	for (Image::iterator p = _image->begin(); p != _image->end(); i++, p++)
-		_values[i] = (unsigned char)((*p)*255.0);
+	if (!_parameters->sameIntensityComponents) {
 
-	LOG_ALL(mserlog) << i << " pixel values copied" << std::endl;
+		unsigned int i = 0;
+		for (Image::iterator p = _image->begin(); p != _image->end(); i++, p++)
+			_values[i] = (unsigned char)((*p)*255.0);
+
+	} else {
+
+		for (unsigned int x = 0; x < _image->width(); x++)
+			for (unsigned int y = 0; y < _image->height(); y++) {
+
+				unsigned char value = (unsigned char)((*_image)(x, y)*255.0);
+
+				if (x > 0) {
+
+					unsigned char leftValue = (unsigned char)((*_image)(x - 1, y)*255.0);
+
+					if (leftValue != value)
+						value = 0;
+				}
+
+				if (y > 0) {
+
+					unsigned char topValue = (unsigned char)((*_image)(x, y - 1)*255.0);
+
+					if (topValue != value)
+						value = 0;
+				}
+
+				_values[positionToIndex(util::point<unsigned int>(x, y))] = value;
+			}
+	}
 }
 
 void
