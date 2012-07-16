@@ -3,10 +3,10 @@
 
 logger::LogChannel segmentrandomforesttrainerlog("segmentrandomforesttrainerlog", "[SegmentRandomForestTrainer] ");
 
-util::ProgramOption optionNumRandomForests(
+util::ProgramOption optionNumTrees(
 		util::_module           = "sopnet",
-		util::_long_name        = "numRandomForests",
-		util::_description_text = "The number of random forests to use for training.");
+		util::_long_name        = "numTrees",
+		util::_description_text = "The number of trees to use for the random forest.");
 
 SegmentRandomForestTrainer::SegmentRandomForestTrainer() :
 	_randomForest(boost::make_shared<RandomForest>()) {
@@ -57,13 +57,13 @@ SegmentRandomForestTrainer::updateOutputs() {
 	foreach (boost::shared_ptr<BranchSegment> segment, _negativeSamples->getBranches())
 		_randomForest->addSample(_features->get(segment->getId()), 0);
 
-	if (optionNumRandomForests) {
+	if (optionNumTrees) {
 
 		LOG_DEBUG(segmentrandomforesttrainerlog)
-				<< "training using " << optionNumRandomForests.as<int>()
+				<< "training using " << optionNumTrees.as<int>()
 				<< " trees..." << std::endl;
 
-		_randomForest->train(optionNumRandomForests);
+		_randomForest->train(optionNumTrees);
 
 	} else {
 
