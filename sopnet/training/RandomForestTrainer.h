@@ -36,11 +36,11 @@ private:
 
 	void onSegmentsSet(const pipeline::InputSet<Segments>& signal);
 
+	void onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal);
+
 	pipeline::Input<Segments> _groundTruth;
 
 	pipeline::Input<Segments> _allSegments;
-
-	pipeline::Input<LinearConstraints> _linearConstraints;
 
 	pipeline::Input<ImageStack> _rawSections;
 
@@ -49,8 +49,11 @@ private:
 	// finds the closest segements to the given ground truth
 	boost::shared_ptr<GoldStandardExtractor> _goldStandardExtractor;
 
-	// extracts the features for all given segments
+	// extracts the features for all extracted segments
 	boost::shared_ptr<SegmentFeaturesExtractor> _segmentFeaturesExtractor;
+
+	// extracts the features for the ground-truth
+	boost::shared_ptr<SegmentFeaturesExtractor> _gtFeaturesExtractor;
 
 	// trains a random forest give positve and negative samples
 	boost::shared_ptr<SegmentRandomForestTrainer> _rfTrainer;
