@@ -12,6 +12,18 @@
 class GoldStandardExtractor;
 class SegmentFeaturesExtractor;
 
+/**
+ * Sets up a pipeline to train a random forest classifier given some
+ * ground-truth segments.
+ *
+ * Positive samples can be the ground-truth samples itself, or the so-called
+ * "gold-standard": extracted segment hypotheses that are the closest to the
+ * ground-truth. The type of positive samples to use can be selected by the
+ * program option useGroundTruth.
+ *
+ * Negative samples are found by picking extracted segmentation hypotheses that
+ * are in conflict with the gold-standard.
+ */
 class RandomForestTrainer : public pipeline::ProcessNode {
 
 public:
@@ -19,6 +31,8 @@ public:
 	RandomForestTrainer();
 
 private:
+
+	void onGroundTruthSet(const pipeline::InputSet<Segments>& signal);
 
 	void onSegmentsSet(const pipeline::InputSet<Segments>& signal);
 

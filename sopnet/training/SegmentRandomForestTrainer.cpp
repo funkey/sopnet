@@ -1,6 +1,12 @@
+#include <util/ProgramOptions.h>
 #include "SegmentRandomForestTrainer.h"
 
 logger::LogChannel segmentrandomforesttrainerlog("segmentrandomforesttrainerlog", "[SegmentRandomForestTrainer] ");
+
+util::ProgramOption optionNumRandomForests(
+		util::_module           = "sopnet",
+		util::_long_name        = "numRandomForests",
+		util::_description_text = "The number of random forests to use for training.");
 
 SegmentRandomForestTrainer::SegmentRandomForestTrainer() :
 	_randomForest(boost::make_shared<RandomForest>()) {
@@ -51,9 +57,25 @@ SegmentRandomForestTrainer::updateOutputs() {
 	foreach (boost::shared_ptr<BranchSegment> segment, _negativeSamples->getBranches())
 		_randomForest->addSample(_features->get(segment->getId()), 0);
 
-	LOG_DEBUG(segmentrandomforesttrainerlog) << "training..." << std::endl;
+	if (optionNumRandomForests) {
 
-	_randomForest->train();
+		LOG_DEBUG(segmentrandomforesttrainerlog)
+				<< "training using " << optionNumRandomForests.as<int>()
+				<< " trees..." << std::endl;
 
-	LOG_DEBUG(segmentrandomforesttrainerlog) << "done" << std::endl;
+		_randomForest->train(optionNumRandomForests);
+
+	} else {
+
+		LOG_DEBUG(segmentrandomforesttrainerlog)
+				<< "training (with auto-selection of number of trees)"
+				<< std::endl;
+
+		_randomForest->train();
+	}
+
+	LOG_DEBUG(segmentrandomforesttrainerlog)
+			<< "training finished with OOB: "
+			<< _randomForest->getOutOfBagError()
+			<< std::endl;
 }

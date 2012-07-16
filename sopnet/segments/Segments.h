@@ -62,6 +62,12 @@ public:
 	void addAll(boost::shared_ptr<Segments> segments);
 
 	/**
+	 * Add a vector of segments of type SegmentType to this set of segments.
+	 */
+	template <typename SegmentType>
+	void addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments);
+
+	/**
 	 * Get all end segments in the given inter-section interval.
 	 */
 	std::vector<boost::shared_ptr<EndSegment> > getEnds(int interval = -1);
@@ -170,9 +176,6 @@ private:
 			return meanCenter.y;
 		}
 	};
-
-	template <typename SegmentType>
-	void addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments);
 
 	// one end-segment kd-tree per inter-section interval
 	std::vector<end_tree_type*> _endTrees;
