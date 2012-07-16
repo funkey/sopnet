@@ -14,6 +14,8 @@ void
 ComponentTreeHdf5Writer::write() {
 
 	updateInputs();
+
+	writeComponentTree();
 }
 
 void
