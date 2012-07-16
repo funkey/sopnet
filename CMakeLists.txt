@@ -211,3 +211,6 @@ target_link_libraries(sopnet allsopnet)
 
 add_executable(graphcut graphcut.cpp)
 target_link_libraries(graphcut allsopnet)
+
+add_executable(componenttreewriter componenttreewriter.cpp)
+target_link_libraries(componenttreewriter allsopnet)
