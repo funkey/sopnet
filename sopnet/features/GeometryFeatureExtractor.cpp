@@ -31,31 +31,33 @@ GeometryFeatureExtractor::updateOutputs() {
 
 	_features->clear();
 
-	// try to read features from file
-	boost::filesystem::path cachefile("./geometry_features.dat");
+	// don't use the cache -- there are some inconsistencies
+	_useCache = false;
+	//// try to read features from file
+	//boost::filesystem::path cachefile("./geometry_features.dat");
 
-	LOG_DEBUG(geometryfeatureextractorlog) << "trying to use cache " << cachefile << std::endl;
+	//LOG_DEBUG(geometryfeatureextractorlog) << "trying to use cache " << cachefile << std::endl;
 
-	if (boost::filesystem::exists(cachefile)) {
+	//if (boost::filesystem::exists(cachefile)) {
 
-		LOG_DEBUG(geometryfeatureextractorlog) << "reading features from file..." << std::endl;
+		//LOG_DEBUG(geometryfeatureextractorlog) << "reading features from file..." << std::endl;
 
-		std::ifstream in(cachefile.string().c_str());
+		//std::ifstream in(cachefile.string().c_str());
 
-		boost::archive::binary_iarchive archive(in);
+		//boost::archive::binary_iarchive archive(in);
 
-		archive >> *_features;
+		//archive >> *_features;
 
-		_useCache = true;
+		//_useCache = true;
 
-		LOG_DEBUG(geometryfeatureextractorlog) << "done." << std::endl;
+		//LOG_DEBUG(geometryfeatureextractorlog) << "done." << std::endl;
 
-	} else {
+	//} else {
 
-		LOG_DEBUG(geometryfeatureextractorlog) << "cache file does not exist" << std::endl;
+		//LOG_DEBUG(geometryfeatureextractorlog) << "cache file does not exist" << std::endl;
 
-		_useCache = false;
-	}
+		//_useCache = false;
+	//}
 
 	_numChecked = 0;
 
@@ -103,20 +105,20 @@ GeometryFeatureExtractor::updateOutputs() {
 	}
 
 	// write results to cache file
-	if (!_useCache) {
+	//if (!_useCache) {
 
-		LOG_DEBUG(geometryfeatureextractorlog) << "writing features to file..." << std::endl;
+		//LOG_DEBUG(geometryfeatureextractorlog) << "writing features to file..." << std::endl;
 
-		LOG_ALL(geometryfeatureextractorlog) << "features for segment 14 are " << (*_features).get(14) << std::endl;
+		//LOG_ALL(geometryfeatureextractorlog) << "features for segment 14 are " << (*_features).get(14) << std::endl;
 
-		std::ofstream out(cachefile.string().c_str());
+		//std::ofstream out(cachefile.string().c_str());
 
-		boost::archive::binary_oarchive archive(out);
+		//boost::archive::binary_oarchive archive(out);
 
-		archive << *_features;
+		//archive << *_features;
 
-		LOG_DEBUG(geometryfeatureextractorlog) << "done." << std::endl;
-	}
+		//LOG_DEBUG(geometryfeatureextractorlog) << "done." << std::endl;
+	//}
 
 	LOG_ALL(geometryfeatureextractorlog) << "found features: " << *_features << std::endl;
 

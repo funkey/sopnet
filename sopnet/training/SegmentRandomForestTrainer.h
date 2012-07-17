@@ -6,6 +6,9 @@
 #include <sopnet/features/Features.h>
 #include <sopnet/segments/Segments.h>
 
+/**
+ * Trains a Random Forest on positive and negative samples of segments.
+ */
 class SegmentRandomForestTrainer : public pipeline::SimpleProcessNode {
 
 public:
@@ -16,12 +19,19 @@ private:
 
 	void updateOutputs();
 
+	// the positive segments
 	pipeline::Input<Segments> _positiveSamples;
 
+	// the negative segments
 	pipeline::Input<Segments> _negativeSamples;
 
-	pipeline::Input<Features> _features;
+	// the features of the positive segments
+	pipeline::Input<Features> _positiveFeatures;
 
+	// the features of the negative segments
+	pipeline::Input<Features> _negativeFeatures;
+
+	// the learnt random forest classifier
 	pipeline::Output<RandomForest> _randomForest;
 };
 
