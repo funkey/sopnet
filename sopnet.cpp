@@ -61,6 +61,11 @@ util::ProgramOption optionLastSection(
 util::ProgramOption optionShowResult(
 		_module           = "sopnet",
 		_long_name        = "showResult",
+		_description_text = "Show the result.");
+
+util::ProgramOption optionShowResult3d(
+		_module           = "sopnet",
+		_long_name        = "showResult3d",
 		_description_text = "Show a 3D view of the result.");
 
 util::ProgramOption optionShowGroundTruth(
@@ -241,6 +246,7 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("membranes", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
+		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
 
 		if (optionShowResult) {
@@ -256,6 +262,19 @@ int main(int optionc, char** optionv) {
 			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
 			rotateView->setInput(overlay->getOutput());
+			namedView->setInput(rotateView->getOutput());
+
+			segmentsContainer->addInput(namedView->getOutput());
+		}
+
+		if (optionShowResult3d) {
+
+			boost::shared_ptr<SegmentsView> resultView   = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<RotateView>   rotateView   = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
+
+			resultView->setInput(sopnet->getOutput("solution"));
+			rotateView->setInput(resultView->getOutput());
 			namedView->setInput(rotateView->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
