@@ -36,6 +36,9 @@ private:
 	// find a random color for all slices of one neuron
 	void assignColors();
 
+	// add a slice to the same-neuron lookup table
+	void addSlice(unsigned int slice);
+
 	// merge the slices of the neurons belonging to slice1 and slice2
 	void mergeSlices(unsigned int slice1, unsigned int slice2);
 
@@ -66,7 +69,7 @@ private:
 	// a lookup table for slice colors
 	std::map<unsigned int, boost::array<double, 3> > _colors;
 
-	// a loopup table for slices of the same neuron
+	// a lookup table for slices of the same neuron
 	std::map<unsigned int, std::set<unsigned int> > _slices;
 };
 

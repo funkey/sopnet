@@ -35,7 +35,7 @@ SegmentsStackPainter::assignColors() {
 
 	// collect all end slices
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
-		_slices[end->getSlice()->getId()] = std::set<unsigned int>();
+		addSlice(end->getSlice()->getId());
 
 	// identify slices belonging to the same neuron
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
@@ -82,15 +82,32 @@ SegmentsStackPainter::assignColors() {
 }
 
 void
+SegmentsStackPainter::addSlice(unsigned int slice) {
+
+	_slices[slice].insert(slice);
+}
+
+void
 SegmentsStackPainter::mergeSlices(unsigned int slice1, unsigned int slice2) {
 
-	_slices[slice1].insert(slice2);
+	// make sure we have partner sets for the given slices
+	addSlice(slice1);
+	addSlice(slice2);
+
+	// get all partners of slice2 and add them to the partners of slice1
 	foreach (unsigned int id, _slices[slice2])
 		_slices[slice1].insert(id);
 
-	_slices[slice2].insert(slice1);
-	foreach (unsigned int id, _slices[slice1])
-		_slices[slice2].insert(id);
+	// slice1 is now the only one, who knows all its partners
+
+	// the partners of slice1 might not know about slice2 or any of its partners
+
+	// for each partner of slice1, add all partners of slice1 to the partner list
+	foreach (unsigned int id, _slices[slice1]) {
+
+		foreach (unsigned int partner, _slices[slice1])
+			_slices[id].insert(partner);
+	}
 }
 
 void
