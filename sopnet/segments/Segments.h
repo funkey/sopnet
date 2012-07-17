@@ -65,7 +65,11 @@ public:
 	 * Add a vector of segments of type SegmentType to this set of segments.
 	 */
 	template <typename SegmentType>
-	void addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments);
+	void addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments) {
+
+		foreach (boost::shared_ptr<SegmentType> segment, segments)
+			add(segment);
+	}
 
 	/**
 	 * Get all end segments in the given inter-section interval.

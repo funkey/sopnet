@@ -5,14 +5,13 @@
 #include <gui/Texture.h>
 #include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
+#include "SliceTextures.h"
 
 class SegmentsPainter : public gui::RecordablePainter {
 
 public:
 
 	SegmentsPainter();
-
-	~SegmentsPainter();
 
 	/**
 	 * Set the image stack that should be used to texture the segments.
@@ -52,8 +51,6 @@ private:
 
 	void drawSlice(boost::shared_ptr<Slice> slice, double red, double green, double blue);
 
-	void deleteTextures();
-
 	boost::shared_ptr<ImageStack> _imageStack;
 
 	boost::shared_ptr<Segments> _segments;
@@ -64,7 +61,7 @@ private:
 	double _zScale;
 
 	// slice textures from slice ids
-	std::map<unsigned int, gui::Texture*> _textures;
+	SliceTextures _textures;
 
 	// which side of the faces to draw
 	bool _leftSide;

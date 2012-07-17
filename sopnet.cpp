@@ -26,6 +26,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/gui/SegmentsView.h>
+#include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
@@ -244,13 +245,17 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowResult) {
 
-			boost::shared_ptr<SegmentsView> resultView = boost::make_shared<SegmentsView>();
-			boost::shared_ptr<RotateView>   rotateView = boost::make_shared<RotateView>();
-			boost::shared_ptr<NamedView>    namedView  = boost::make_shared<NamedView>("Result:");
+			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
+			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>();
+			boost::shared_ptr<RotateView>                     rotateView   = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("Result:");
 
 			resultView->setInput(sopnet->getOutput("solution"));
-			resultView->setInput("raw sections", rawSectionsReader->getOutput());
-			rotateView->setInput(resultView->getOutput());
+			sectionsView->setInput(rawSectionsReader->getOutput());
+			overlay->addInput(sectionsView->getOutput());
+			overlay->addInput(resultView->getOutput());
+			rotateView->setInput(overlay->getOutput());
 			namedView->setInput(rotateView->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
