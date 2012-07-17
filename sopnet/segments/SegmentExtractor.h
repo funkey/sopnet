@@ -16,6 +16,10 @@ public:
 
 private:
 
+	void onSlicesModified(const pipeline::Modified& signal);
+
+	void onLinearConstraintsModified(const pipeline::Modified& signal);
+
 	void updateOutputs();
 
 	void extractSegments();
@@ -52,6 +56,10 @@ private:
 
 	// a map from slice ids to segments (ids) they are used in
 	std::map<unsigned int, std::vector<unsigned int> > _sliceSegments;
+
+	bool _slicesChanged;
+
+	bool _linearCosntraintsChanged;
 };
 
 #endif // CELLTRACKER_TRACKLET_EXTRACTOR_H__

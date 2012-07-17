@@ -16,11 +16,6 @@ SegmentsPainter::SegmentsPainter() :
 	_showContinuations(true),
 	_showBranches(true) {}
 
-SegmentsPainter::~SegmentsPainter() {
-
-	deleteTextures();
-}
-
 void
 SegmentsPainter::setImageStack(boost::shared_ptr<ImageStack> imageStack) {
 
@@ -96,7 +91,7 @@ SegmentsPainter::loadTextures() {
 
 	LOG_DEBUG(segmentspainterlog) << "loading textures..." << std::endl;
 
-	deleteTextures();
+	_textures.clear();
 
 	if (_showEnds)
 		foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
@@ -137,49 +132,7 @@ SegmentsPainter::loadTextures(const BranchSegment& branch) {
 void
 SegmentsPainter::loadTexture(const Slice& slice) {
 
-	if (_textures.count(slice.getId()))
-		return;
-
-	// create image data
-	const util::rect<double> bb = slice.getComponent()->getBoundingBox();
-
-	LOG_ALL(segmentspainterlog) << "loading texture of size " << bb << std::endl;
-
-	util::point<unsigned int> size(bb.maxX - bb.minX + 2, bb.maxY - bb.minY + 2);
-	util::point<unsigned int> offset(bb.minX, bb.minY);
-
-	// rgba data
-	std::vector<boost::array<float, 4> > pixels;
-
-	// fill with opaque value
-
-	boost::array<float, 4> opaque;
-	opaque[0] = 0.0;
-	opaque[1] = 0.0;
-	opaque[2] = 0.0;
-	opaque[3] = 0.0;
-	pixels.resize(size.x*size.y, opaque);
-
-	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
-
-		unsigned int index = (pixel.x - offset.x) + (pixel.y - offset.y)*size.x;
-
-		float value = 1.0;
-
-		if (_imageStack)
-			value = (*(*_imageStack)[slice.getSection()])(pixel.x, pixel.y);
-
-		pixels[index][0] = value;
-		pixels[index][1] = value;
-		pixels[index][2] = value;
-		pixels[index][3] = 0.5;
-	}
-
-	gui::Texture* texture = new gui::Texture(size.x, size.y, GL_RGBA);
-
-	texture->loadData(pixels.begin());
-
-	_textures[slice.getId()] = texture;
+	_textures.load(slice, _imageStack);
 }
 
 void
@@ -283,14 +236,14 @@ SegmentsPainter::draw(const ContinuationSegment& continuation) {
 
 	glCheck(glDisable(GL_TEXTURE_2D));
 
-	glCheck(glBegin(GL_LINES));
+	glBegin(GL_LINES);
 
 	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
 	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
 
 	glCheck(glEnd());
 
-	glCheck(glBegin(GL_POINTS));
+	glBegin(GL_POINTS);
 
 	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
 	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
@@ -317,31 +270,31 @@ SegmentsPainter::draw(const BranchSegment& branch) {
 
 	glCheck(glDisable(GL_TEXTURE_2D));
 
-	glCheck(glBegin(GL_LINES));
+	glBegin(GL_LINES);
 
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
-
-	glCheck(glEnd());
-
-	glCheck(glBegin(GL_POINTS));
-
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center2.x, center2.y, section2*_zScale);
 
 	glCheck(glEnd());
 
-	glCheck(glBegin(GL_LINES));
+	glBegin(GL_POINTS);
 
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center3.x, center3.y, section3*_zScale));
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center2.x, center2.y, section2*_zScale);
 
 	glCheck(glEnd());
 
-	glCheck(glBegin(GL_POINTS));
+	glBegin(GL_LINES);
 
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center3.x, center3.y, section3*_zScale));
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center3.x, center3.y, section3*_zScale);
+
+	glCheck(glEnd());
+
+	glBegin(GL_POINTS);
+
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center3.x, center3.y, section3*_zScale);
 
 	glCheck(glEnd());
 }
@@ -361,9 +314,9 @@ SegmentsPainter::drawSlice(
 
 	glCheck(glColor4f(red, green, blue, 1.0));
 
-	_textures[slice->getId()]->bind();
+	_textures.get(slice->getId())->bind();
 
-	glCheck(glBegin(GL_QUADS));
+	glBegin(GL_QUADS);
 
 	const util::rect<double>& bb = slice->getComponent()->getBoundingBox();
 
@@ -398,20 +351,4 @@ SegmentsPainter::drawSlice(
 		_size.maxX = std::max(_size.maxX, bb.maxX);
 		_size.maxY = std::max(_size.maxY, bb.maxY);
 	}
-}
-
-void
-SegmentsPainter::deleteTextures() {
-
-	LOG_ALL(segmentspainterlog) << "deleting previous textures" << std::endl;
-
-	unsigned int id;
-	gui::Texture* texture;
-	foreach (boost::tie(id, texture), _textures)
-		if (texture)
-			delete texture;
-
-	_textures.clear();
-
-	LOG_ALL(segmentspainterlog) << "deleted previous textures" << std::endl;
 }

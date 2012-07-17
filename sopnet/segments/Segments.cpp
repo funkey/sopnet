@@ -96,14 +96,6 @@ Segments::addAll(boost::shared_ptr<Segments> segments) {
 	addAll(segments->getBranches());
 }
 
-template <typename SegmentType>
-void
-Segments::addAll(const std::vector<boost::shared_ptr<SegmentType> >& segments) {
-
-	foreach (boost::shared_ptr<SegmentType> segment, segments)
-		add(segment);
-}
-
 std::vector<boost::shared_ptr<EndSegment> >
 Segments::getEnds(int interval) {
 

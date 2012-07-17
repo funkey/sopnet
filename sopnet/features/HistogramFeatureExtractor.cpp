@@ -24,6 +24,8 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 void
 HistogramFeatureExtractor::updateOutputs() {
 
+	_features->clear();
+
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 		_features->add(segment->getId(), getFeatures(*segment));
 
