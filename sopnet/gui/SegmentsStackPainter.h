@@ -1,6 +1,9 @@
 #ifndef SOPNET_GUI_SEGMENTS_STACK_PAINTER_H__
 #define SOPNET_GUI_SEGMENTS_STACK_PAINTER_H__
 
+#include <set>
+
+#include <boost/array.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <gui/Painter.h>
@@ -30,6 +33,12 @@ private:
 	// add the given slice's bounding box to the current size
 	util::rect<double> sizeAddSlice(const util::rect<double>& currentSize, const Slice& slice);
 
+	// find a random color for all slices of one neuron
+	void assignColors();
+
+	// merge the slices of the neurons belonging to slice1 and slice2
+	void mergeSlices(unsigned int slice1, unsigned int slice2);
+
 	void drawSlice(
 		const Slice& slice,
 		double z,
@@ -53,6 +62,12 @@ private:
 
 	// the distance between sections
 	double _zScale;
+
+	// a lookup table for slice colors
+	std::map<unsigned int, boost::array<double, 3> > _colors;
+
+	// a loopup table for slices of the same neuron
+	std::map<unsigned int, std::set<unsigned int> > _slices;
 };
 
 #endif // SOPNET_GUI_SEGMENTS_STACK_PAINTER_H__

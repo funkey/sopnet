@@ -15,9 +15,82 @@ SegmentsStackPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
 	_segments = segments;
 
+	assignColors();
+
 	_textures.clear();
 
 	setCurrentSection(_section);
+}
+
+void
+SegmentsStackPainter::assignColors() {
+
+	LOG_DEBUG(segmentsstackpainterlog) << "assigning colors" << std::endl;
+
+	_colors.clear();
+
+	// identify connected segments
+
+	_slices.clear();
+
+	// collect all end slices
+	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
+		_slices[end->getSlice()->getId()] = std::set<unsigned int>();
+
+	// identify slices belonging to the same neuron
+	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
+
+		mergeSlices(
+				continuation->getSourceSlice()->getId(),
+				continuation->getTargetSlice()->getId());
+	}
+
+	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
+
+		mergeSlices(
+				branch->getSourceSlice()->getId(),
+				branch->getTargetSlice1()->getId());
+
+		mergeSlices(
+				branch->getSourceSlice()->getId(),
+				branch->getTargetSlice2()->getId());
+
+		mergeSlices(
+				branch->getTargetSlice1()->getId(),
+				branch->getTargetSlice2()->getId());
+	}
+
+	// assign colors to all connected sets of slices
+
+	unsigned int sliceId;
+	std::set<unsigned int> sameNeuronSlices;
+
+	foreach (boost::tie(sliceId, sameNeuronSlices), _slices) {
+
+		// draw a random color
+		double r = (double)rand()/RAND_MAX;
+		double g = (double)rand()/RAND_MAX;
+		double b = (double)rand()/RAND_MAX;
+
+		_colors[sliceId] = { { r, g, b } };
+
+		foreach (unsigned int id, sameNeuronSlices)
+			_colors[id] = { { r, g, b } };
+	 }
+
+	LOG_DEBUG(segmentsstackpainterlog) << "done" << std::endl;
+}
+
+void
+SegmentsStackPainter::mergeSlices(unsigned int slice1, unsigned int slice2) {
+
+	_slices[slice1].insert(slice2);
+	foreach (unsigned int id, _slices[slice2])
+		_slices[slice1].insert(id);
+
+	_slices[slice2].insert(slice1);
+	foreach (unsigned int id, _slices[slice1])
+		_slices[slice2].insert(id);
 }
 
 void
@@ -259,7 +332,9 @@ SegmentsStackPainter::drawSlice(
 
 	double section = slice.getSection();
 
-	glCheck(glColor4f(red, green, blue, alpha));
+	boost::array<double, 3> color = _colors[slice.getId()];
+
+	glCheck(glColor4f(color[0], color[1], color[2], alpha));
 
 	_textures.get(slice.getId())->bind();
 

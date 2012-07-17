@@ -4,10 +4,13 @@
 static logger::LogChannel segmentsstackviewlog("segmentsstackviewlog", "[SegmentsStackView] ");
 
 SegmentsStackView::SegmentsStackView() :
-	_section(0) {
+	_section(0),
+	_segmentsModified(true) {
 
 	registerInput(_segments, "segments");
 	registerOutput(_painter, "painter");
+
+	_segments.registerBackwardCallback(&SegmentsStackView::onSegmentsModified, this);
 
 	_painter.registerForwardSlot(_sizeChanged);
 	_painter.registerForwardSlot(_contentChanged);
@@ -15,11 +18,22 @@ SegmentsStackView::SegmentsStackView() :
 }
 
 void
+SegmentsStackView::onSegmentsModified(const pipeline::Modified& signal) {
+
+	_segmentsModified = true;
+}
+
+void
 SegmentsStackView::updateOutputs() {
 
 	util::rect<double> oldSize = _painter->getSize();
 
-	_painter->setSegments(_segments);
+	if (_segmentsModified) {
+
+		_painter->setSegments(_segments);
+
+		_segmentsModified = false;
+	}
 
 	util::rect<double> newSize = _painter->getSize();
 

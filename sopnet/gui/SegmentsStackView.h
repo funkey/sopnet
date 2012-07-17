@@ -12,6 +12,8 @@ public:
 
 private:
 
+	void onSegmentsModified(const pipeline::Modified& signal);
+
 	void updateOutputs();
 
 	void onKeyDown(gui::KeyDown& signal);
@@ -30,4 +32,7 @@ private:
 
 	// the section to show
 	int _section;
+
+	// indicates that the segments modified
+	bool _segmentsModified;
 };
