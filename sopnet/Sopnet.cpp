@@ -12,6 +12,7 @@
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunction.h>
+#include <sopnet/inference/PriorCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/segments/SegmentExtractor.h>
@@ -36,6 +37,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
 	_randomForestCostFunction(boost::make_shared<RandomForestCostFunction>()),
 	_segmentationCostFunction(boost::make_shared<SegmentationCostFunction>()),
+	_priorCostFunction(boost::make_shared<PriorCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
@@ -47,12 +49,15 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerInput(_membranes,   "membranes");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
+	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
+	_priorCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
+	_forceExplanation.registerBackwardCallback(&Sopnet::onParametersSet, this);
 
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
@@ -100,7 +105,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters) {
+	if (!_membranes || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -182,11 +187,13 @@ Sopnet::createInferencePipeline() {
 	_randomForestCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
 	_segmentationCostFunction->setInput("membranes", _membranes);
 	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
+	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
 
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
 	_objectiveGenerator->addInput("cost functions", _randomForestCostFunction->getOutput("cost function"));
 	_objectiveGenerator->addInput("cost functions", _segmentationCostFunction->getOutput("cost function"));
+	_objectiveGenerator->addInput("cost functions", _priorCostFunction->getOutput("cost function"));
 
 	// feed objective and linear constraints to ilp creator
 	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());

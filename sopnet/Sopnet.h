@@ -4,6 +4,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <pipeline/all.h>
+#include <sopnet/inference/PriorCostFunctionParameters.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 
 // forward declarations
@@ -13,6 +14,7 @@ class ImageStack;
 class LinearSolver;
 class ObjectiveGenerator;
 class ProblemAssembler;
+class PriorCostFunction;
 class RandomForestHdf5Reader;
 class Reconstructor;
 class SectionSelector;
@@ -70,6 +72,9 @@ private:
 	// parameters of the segmentation cost function
 	pipeline::Input<SegmentationCostFunctionParameters> _segmentationCostFunctionParameters;
 
+	// parameters of the prior cost function
+	pipeline::Input<PriorCostFunctionParameters> _priorCostFunctionParameters;
+
 	// force the explanation of every component tree
 	pipeline::Input<bool> _forceExplanation;
 
@@ -114,6 +119,9 @@ private:
 
 	// a segment evaluator that provides a cost function for slices
 	boost::shared_ptr<SegmentationCostFunction>       _segmentationCostFunction;
+
+	// a segment evaluator that provides a cost function for segment types
+	boost::shared_ptr<PriorCostFunction>              _priorCostFunction;
 
 	// the objective generator that computes the costs for each segment
 	boost::shared_ptr<ObjectiveGenerator>             _objectiveGenerator;

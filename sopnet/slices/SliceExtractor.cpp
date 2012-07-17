@@ -28,13 +28,14 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 	_mser(boost::make_shared<Mser>()),
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
-	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
+	_converter(boost::make_shared<ComponentTreeConverter>(section)),
+	_filter(boost::make_shared<LinearConstraintsFilter>()) {
 
 	registerInput(_mser->getInput("image"), "membrane");
 	registerInput(_mserParameters, "mser parameters");
-	registerInput(_converter->getInput("force explanation"), "force explanation");
+	registerInput(_filter->getInput("force explanation"), "force explanation");
 	registerOutput(_converter->getOutput("slices"), "slices");
-	registerOutput(_converter->getOutput("linear constraints"), "linear constraints");
+	registerOutput(_filter->getOutput("linear constraints"), "linear constraints");
 
 	_mserParameters.registerBackwardCallback(&SliceExtractor::onInputSet, this);
 
@@ -48,6 +49,7 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 	_mser->setInput("parameters", _defaultMserParameters);
 	_downSampler->setInput(_mser->getOutput());
 	_converter->setInput(_downSampler->getOutput());
+	_filter->setInput("linear constraints", _converter->getOutput("linear constraints"));
 }
 
 void
@@ -64,7 +66,6 @@ SliceExtractor::ComponentTreeConverter::ComponentTreeConverter(unsigned int sect
 	_section(section) {
 
 	registerInput(_componentTree, "component tree");
-	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
 	registerOutput(_slices, "slices");
 	registerOutput(_linearConstraints, "linear constraints");
 }
@@ -141,12 +142,9 @@ SliceExtractor::ComponentTreeConverter::addLinearConstraint() {
 	foreach (unsigned int sliceId, _path)
 		constraint.setCoefficient(sliceId, 1);
 
-	if (_forceExplanation && *_forceExplanation)
-		constraint.setRelation(Equal);
-	else
-		constraint.setRelation(LessEqual);
-
 	constraint.setValue(1);
+
+	// the relation will be set later
 
 	LOG_ALL(sliceextractorlog) << "add constraint " << constraint << std::endl;
 
@@ -157,3 +155,24 @@ SliceExtractor::ComponentTreeConverter::addLinearConstraint() {
 
 unsigned int SliceExtractor::ComponentTreeConverter::NextSliceId = 0;
 boost::mutex SliceExtractor::ComponentTreeConverter::SliceIdMutex;
+
+SliceExtractor::LinearConstraintsFilter::LinearConstraintsFilter() {
+
+	registerInput(_linearConstraints, "linear constraints");
+	registerInput(_forceExplanation, "force explanation");
+	registerOutput(_filtered, "linear constraints");
+}
+
+void
+SliceExtractor::LinearConstraintsFilter::updateOutputs() {
+
+	*_filtered = *_linearConstraints;
+
+	foreach (LinearConstraint& linearConstraint, *_filtered) {
+
+		if (_forceExplanation && *_forceExplanation)
+			linearConstraint.setRelation(Equal);
+		else
+			linearConstraint.setRelation(LessEqual);
+	}
+}

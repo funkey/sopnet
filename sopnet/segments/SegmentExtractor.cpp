@@ -19,7 +19,9 @@ util::ProgramOption optionDistanceThreshold(
 		util::_description_text = "The maximal center distance between slices to consider them for segment hypotheses.",
 		util::_default_value    = 50);
 
-SegmentExtractor::SegmentExtractor() {
+SegmentExtractor::SegmentExtractor() :
+	_slicesChanged(true),
+	_linearCosntraintsChanged(true) {
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
@@ -29,14 +31,39 @@ SegmentExtractor::SegmentExtractor() {
 
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
+
+	_prevSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
+	_nextSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
+	_prevLinearConstraints.registerBackwardCallback(&SegmentExtractor::onLinearConstraintsModified, this);
+	_nextLinearConstraints.registerBackwardCallback(&SegmentExtractor::onLinearConstraintsModified, this);
+}
+
+void
+SegmentExtractor::onSlicesModified(const pipeline::Modified& signal) {
+
+	_slicesChanged = true;
+}
+
+void
+SegmentExtractor::onLinearConstraintsModified(const pipeline::Modified& signal) {
+
+	_linearCosntraintsChanged = true;
 }
 
 void
 SegmentExtractor::updateOutputs() {
 
-	extractSegments();
+	if (_slicesChanged) {
 
-	assembleLinearConstraints();
+		extractSegments();
+		_slicesChanged = false;
+	}
+
+	if (_linearCosntraintsChanged) {
+
+		assembleLinearConstraints();
+		_linearCosntraintsChanged = false;
+	}
 }
 
 struct CoordAccessor {

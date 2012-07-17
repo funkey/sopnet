@@ -19,6 +19,7 @@ void
 Features::clear(){
 
 	_features.clear();
+	_featureNames.clear();
 	_segmentIdsMap.clear();
 }
 

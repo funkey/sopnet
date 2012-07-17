@@ -50,7 +50,6 @@ private:
 		void convert();
 
 		pipeline::Input<ComponentTree>      _componentTree;
-		pipeline::Input<bool>               _forceExplanation;
 		pipeline::Output<Slices>            _slices;
 		pipeline::Output<LinearConstraints> _linearConstraints;
 
@@ -58,6 +57,22 @@ private:
 		std::deque<unsigned int> _path;
 
 		unsigned int _section;
+	};
+
+	// modifies the linear constraints according to the parameter 'force explanation'
+	class LinearConstraintsFilter : public pipeline::SimpleProcessNode {
+
+	public:
+
+		LinearConstraintsFilter();
+
+	private:
+
+		void updateOutputs();
+
+		pipeline::Input<LinearConstraints>  _linearConstraints;
+		pipeline::Input<bool>               _forceExplanation;
+		pipeline::Output<LinearConstraints> _filtered;
 	};
 
 	void onInputSet(const pipeline::InputSet<MserParameters>& signal);
@@ -71,6 +86,7 @@ private:
 	boost::shared_ptr<MserParameters>           _defaultMserParameters;
 	boost::shared_ptr<ComponentTreeDownSampler> _downSampler;
 	boost::shared_ptr<ComponentTreeConverter>   _converter;
+	boost::shared_ptr<LinearConstraintsFilter>  _filter;
 };
 
 #endif // SOPNET_SLICE_EXTRACTOR_H__
