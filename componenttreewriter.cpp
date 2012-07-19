@@ -104,11 +104,6 @@ int main(int optionc, char** optionv) {
 			// create image reader
 			// boost::shared_ptr<ImageReader> reader = boost::make_shared<ImageReader>(imagename);
 
-			// create Mser
-			boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
-
-			// create down sampler
-			boost::shared_ptr<ComponentTreeDownSampler> downsampler = boost::make_shared<ComponentTreeDownSampler>();
             
             // create image extractor
             boost::shared_ptr<ImageExtractor> imageExtractor = boost::make_shared<ImageExtractor>();
@@ -124,24 +119,30 @@ int main(int optionc, char** optionv) {
                 // create hdf5 writer
                 boost::shared_ptr<ComponentTreeHdf5Writer> hdf5Writer = boost::make_shared<ComponentTreeHdf5Writer>(componentGroupSection);
 
+                // create Mser
+                boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
+
+                // create down sampler
+                boost::shared_ptr<ComponentTreeDownSampler> downsampler = boost::make_shared<ComponentTreeDownSampler>();
+
                 // connect image reader to mser
                 //mser->setInput("image", membranesReader->getOutput());
                 mser->setInput("image", imageExtractor->getOutput(section));
 
                 // set default parameters
-                boost::shared_ptr<MserParameters> defaultParameters = boost::make_shared<MserParameters>();
+                /*boost::shared_ptr<MserParameters> defaultParameters = boost::make_shared<MserParameters>();
                 mser->setInput("parameters", defaultParameters);
-/*
-	boost::shared_ptr<MserParameters> mserParameters = boost::make_shared<MserParameters>();
-	mserParameters->delta        = 1;
-	mserParameters->minArea      = 50; // this is to avoid this tiny annotation that mess up the result
-	mserParameters->maxArea      = 10000000;
-	mserParameters->maxVariation = 100;
-	mserParameters->minDiversity = 0;
-	mserParameters->darkToBright = false;
-	mserParameters->brightToDark = true;
-	mserParameters->sameIntensityComponents = true; // only extract connected components of same intensity
-    */
+                */
+                boost::shared_ptr<MserParameters> mserParameters = boost::make_shared<MserParameters>();
+                mserParameters->delta        = 1;
+                mserParameters->minArea      = 10; // this is to avoid this tiny annotation that mess up the result
+                mserParameters->maxArea      = 10000000;
+                mserParameters->maxVariation = 100;
+                mserParameters->minDiversity = 0;
+                mserParameters->darkToBright = false;
+                mserParameters->brightToDark = true;
+                mserParameters->sameIntensityComponents = false; // only extract connected components of same intensity
+                mser->setInput("parameters", mserParameters);
 
                 if (optionDownsample) {
                     
