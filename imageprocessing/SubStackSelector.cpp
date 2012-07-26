@@ -24,21 +24,21 @@ SubStackSelector::updateOutputs() {
 			<< ", last section is " << _lastImage
 			<< std::endl;
 
-	unsigned int lastImage = (_lastImage < 0 ? _stack->size() - 1 : _lastImage);
+	unsigned int lastImage = (_lastImage < 0 ? (int)_stack->size() - 1 : _lastImage);
 
 	LOG_ALL(substackselectorlog)
 			<< "set last section to " << lastImage
 			<< std::endl;
 
-	if (lastImage > _stack->size() - 1) {
+	if (lastImage >= _stack->size()) {
+
+		lastImage = std::max(0, (int)_stack->size() - 1);
 
 		LOG_ERROR(substackselectorlog)
-				<< "parameter last section (" << lastImage << ") "
+				<< "parameter last section "
 				<< "is bigger than number of images in given stack -- "
-				<< "will use " << (_stack->size() - 1) << " instead"
+				<< "will use " << lastImage << " instead"
 				<< std::endl;
-
-		lastImage = _stack->size() - 1;
 	}
 
 	for (int i = _firstImage; i <= lastImage; i++)
