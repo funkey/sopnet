@@ -199,6 +199,7 @@ file (GLOB_RECURSE sopnetfiles
   sopnet/*.cpp
   gui/*.cpp
   imageprocessing/*.cpp
+  imageprocessing/io/*.cpp
   io/*.cpp
   inference/*.cpp
   toys/*.cpp)
@@ -214,3 +215,6 @@ target_link_libraries(graphcut allsopnet)
 
 add_executable(componenttreewriter componenttreewriter.cpp)
 target_link_libraries(componenttreewriter allsopnet)
+
+add_executable(sopnetsegment sopnetsegment.cpp)
+target_link_libraries(sopnetsegment allsopnet)
