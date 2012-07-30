@@ -9,7 +9,7 @@ SegmentsHdf5Writer::SegmentsHdf5Writer(const H5::Group& group) :
 
 	registerInput(_segments, "segments");
     registerInput(_costFunction, "cost function");
-    
+
 }
     
 void
@@ -51,10 +51,14 @@ SegmentsHdf5Writer::write() {
     std::vector<double> costs;
     (*_costFunction)(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), costs);
 
+	std::cout << "costs size: " << costs.size() << std::endl;
+
 	std::vector<unsigned int> dims;
 	dims.push_back(costs.size());
 
     hdf5::write(_group, "costs", costs, dims );
+    
+    
 
 }
 
