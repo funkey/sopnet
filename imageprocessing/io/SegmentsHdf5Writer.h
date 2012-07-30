@@ -3,6 +3,8 @@
 
 #include <pipeline/all.h>
 #include <util/hdf5.h>
+#include <boost/function.hpp>
+#include <vector>
 
 #include <sopnet/segments/EndSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
@@ -27,14 +29,14 @@ public:
 
 private:
 
-	void writeEnd();
-    void writeContinuation();
-    void writeBranch();
+	void writeEnd(boost::shared_ptr<EndSegment> end);
+    void writeContinuation(boost::shared_ptr<ContinuationSegment> continuation);
+    void writeBranch(boost::shared_ptr<BranchSegment> branch);
 
-    void outputOutputs();
+	void updateOutputs();
 
 	pipeline::Input<Segments> _segments;
-    pipeline::Input<boost::function<costs_function_type> > _costFunction;
+    pipeline::Input<costs_function_type> _costFunction;
     
 	H5::Group _group;
 };

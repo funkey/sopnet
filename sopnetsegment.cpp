@@ -188,7 +188,7 @@ int main(int optionc, char** optionv) {
 		}
 
         // write segments to hdf
-        if (optionDumpSegments) {
+        if (optionHDF5) {
             // ...
             
 			// get hdf5 file name
@@ -214,6 +214,7 @@ int main(int optionc, char** optionv) {
 			segmentsWriter->setInput("segments", sopnet->getOutput("segments"));
             segmentsWriter->setInput("cost function", sopnet->getOutput("cost function"));
 			segmentsWriter->write();
+
 
             hdf5file.close();
 

@@ -66,6 +66,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
 	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
+	registerOutput(_randomForestCostFunction->getOutput("cost function"), "cost function");
 }
 
 void

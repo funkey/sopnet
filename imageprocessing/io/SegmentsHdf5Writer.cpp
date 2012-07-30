@@ -45,13 +45,16 @@ SegmentsHdf5Writer::write() {
     }
     
     foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
-        writeContinuation(branch);
+        writeBranch(branch);
     }
     
     std::vector<double> costs;
     (*_costFunction)(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), costs);
 
-    hdf5::write(group, "costs", costs, costs.size() );
+	std::vector<unsigned int> dims;
+	dims.push_back(costs.size());
+
+    hdf5::write(_group, "costs", costs, dims );
 
 }
 
