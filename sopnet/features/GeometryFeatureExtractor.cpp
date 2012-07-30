@@ -213,7 +213,9 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 	features[0] = distance;
 	features[1] = setDifference;
 	features[2] = setDifferenceRatio;
-	features[3] = Features::None;
+	features[3] =
+			(continuation.getSourceSlice()->getComponent()->getSize() +
+			 continuation.getTargetSlice()->getComponent()->getSize())*0.5;
 
 	return features;
 }
@@ -242,7 +244,10 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch) {
 	features[0] = distance;
 	features[1] = setDifference;
 	features[2] = setDifferenceRatio;
-	features[3] = Features::None;
+	features[3] =
+			(branch.getSourceSlice()->getComponent()->getSize() +
+			 branch.getTargetSlice1()->getComponent()->getSize() +
+			 branch.getTargetSlice2()->getComponent()->getSize())/3.0;
 
 	return features;
 }
