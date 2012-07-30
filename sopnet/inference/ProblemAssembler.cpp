@@ -22,9 +22,12 @@ ProblemAssembler::updateOutputs() {
 
 	collectSegments();
 
-	addConsistencyConstraints();
+	if (_allLinearConstraints) {
 
-	collectLinearConstraints();
+		addConsistencyConstraints();
+
+		collectLinearConstraints();
+	}
 }
 
 void
