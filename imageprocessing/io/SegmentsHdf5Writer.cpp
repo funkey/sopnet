@@ -53,6 +53,9 @@ SegmentsHdf5Writer::write() {
 
 	std::cout << "costs size: " << costs.size() << std::endl;
 
+	std::vector<unsigned int> test;
+	test.push_back(2);
+
 	std::vector<unsigned int> dims;
 	dims.push_back(costs.size());
 

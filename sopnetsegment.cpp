@@ -176,6 +176,10 @@ int main(int optionc, char** optionv) {
         boost::shared_ptr<PriorCostFunctionParameters> priorcostparams = boost::make_shared<PriorCostFunctionParameters>();
 		sopnet->setInput("segmentation cost parameters", segcostparms);
 		sopnet->setInput("prior cost parameters", priorcostparams);
+		
+		boost::shared_ptr< pipeline::Wrap<bool> > forceExplanation = boost::make_shared< pipeline::Wrap<bool> >(false);
+		sopnet->setInput("force explanation", forceExplanation);
+
 
 		if (optionTraining) {
 
