@@ -6,11 +6,11 @@
 
 static logger::LogChannel sliceextractorlog("sliceextractorlog", "[SliceExtractor] ");
 
-util::ProgramOption optionInvertMembraneMaps(
+util::ProgramOption optionInvertSliceMaps(
 		util::_module           = "sopnet",
-		util::_long_name        = "invertMembraneMaps",
-		util::_description_text = "Invert the meaning of the membrane map. The default "
-		                          "(not inverting) is: bright pixel = hight membrane probability.");
+		util::_long_name        = "invertSliceMaps",
+		util::_description_text = "Invert the meaning of the slice map. The default "
+		                          "(not inverting) is: bright area = neuron hypotheses.");
 
 util::ProgramOption optionMinSliceSize(
 		util::_module           = "sopnet",
@@ -40,8 +40,8 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 	_mserParameters.registerBackwardCallback(&SliceExtractor::onInputSet, this);
 
 	// set default mser parameters from program options
-	_defaultMserParameters->darkToBright =  optionInvertMembraneMaps;
-	_defaultMserParameters->brightToDark = !optionInvertMembraneMaps;
+	_defaultMserParameters->darkToBright =  optionInvertSliceMaps;
+	_defaultMserParameters->brightToDark = !optionInvertSliceMaps;
 	_defaultMserParameters->minArea      =  optionMinSliceSize;
 	_defaultMserParameters->maxArea      =  optionMaxSliceSize;
 

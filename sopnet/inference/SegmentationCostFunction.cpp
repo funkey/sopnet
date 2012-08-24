@@ -4,8 +4,15 @@
 #include <sopnet/segments/ContinuationSegment.h>
 #include <sopnet/segments/BranchSegment.h>
 #include <sopnet/slices/Slice.h>
+#include <util/ProgramOptions.h>
 
 logger::LogChannel segmentationcostfunctionlog("segmentationcostfunctionlog", "[SegmentationCostFunction] ");
+
+util::ProgramOption optionInvertMembraneMaps(
+		util::_module           = "sopnet",
+		util::_long_name        = "invertMembraneMaps",
+		util::_description_text = "Invert the meaning of the membrane map. The default "
+		                          "(not inverting) is: bright pixel = hight membrane probability.");
 
 SegmentationCostFunction::SegmentationCostFunction() :
 	_costFunction(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4)) {
@@ -174,6 +181,9 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 
 		// get the membrane data probability p(x|y=membrane)
 		double probMembrane = (*(*_membranes)[section])(pixel.x, pixel.y)/255.0;
+
+		if (optionInvertMembraneMaps)
+			probMembrane = 1.0 - probMembrane;
 
 		// get the neuron data probability p(x|y=neuron)
 		double probNeuron = 1.0 - probMembrane;

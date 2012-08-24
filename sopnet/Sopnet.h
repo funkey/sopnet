@@ -42,6 +42,8 @@ private:
 
 	void onMembranesSet(const pipeline::InputSet<ImageStack>& signal);
 
+	void onSlicesSet(const pipeline::InputSet<ImageStack>& signal);
+
 	void onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal);
 
 	void onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal);
@@ -65,6 +67,9 @@ private:
 
 	// the membrane classification output for the slices
 	pipeline::Input<ImageStack> _membranes;
+
+	// the segmentation hypotheses for the slices
+	pipeline::Input<ImageStack> _slices;
 
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
@@ -92,8 +97,8 @@ private:
 	 * basic part
 	 */
 
-	// an image stack to image converter for the membranes
-	boost::shared_ptr<ImageExtractor>                 _membraneExtractor;
+	// an image stack to image converter for the slice images
+	boost::shared_ptr<ImageExtractor>                 _sliceImageExtractor;
 
 	// a slice extractor for each section
 	std::vector<boost::shared_ptr<SliceExtractor> >   _sliceExtractors;

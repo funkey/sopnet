@@ -243,7 +243,8 @@ int main(int optionc, char** optionv) {
 
 		// set input to sopnet pipeline
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
-		sopnet->setInput("membranes", slicesReader->getOutput());
+		sopnet->setInput("membranes", membranesReader->getOutput());
+		sopnet->setInput("slices", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));

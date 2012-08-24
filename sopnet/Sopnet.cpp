@@ -31,7 +31,7 @@ util::ProgramOption optionRandomForestFile(
 
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_projectDirectory(projectDirectory),
-	_membraneExtractor(boost::make_shared<ImageExtractor>()),
+	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
@@ -47,12 +47,14 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes,   "membranes");
+	registerInput(_slices,      "slices");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
+	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -72,6 +74,14 @@ void
 Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>& signal) {
 
 	LOG_DEBUG(sopnetlog) << "membranes set" << std::endl;
+
+	createPipeline();
+}
+
+void
+Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>& signal) {
+
+	LOG_DEBUG(sopnetlog) << "slices set" << std::endl;
 
 	createPipeline();
 }
@@ -105,7 +115,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (!_membranes || !_slices || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -130,12 +140,12 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("linear constraints");
 
 	// let the internal image extractor know where to look for the image stack
-	_membraneExtractor->setInput(_membranes.getAssignedOutput());
+	_sliceImageExtractor->setInput(_slices.getAssignedOutput());
 
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << _membranes->size() << " sections" << std::endl;
+	LOG_DEBUG(sopnetlog) << "creating pipeline for " << _slices->size() << " sections" << std::endl;
 
 	// for every section
-	for (int section = 0; section < _membranes->size(); section++) {
+	for (int section = 0; section < _slices->size(); section++) {
 
 		LOG_DEBUG(sopnetlog) << "creating pipeline for section " << section << std::endl;
 
@@ -143,7 +153,7 @@ Sopnet::createBasicPipeline() {
 		boost::shared_ptr<SliceExtractor> sliceExtractor = boost::make_shared<SliceExtractor>(section);
 
 		// set its input
-		sliceExtractor->setInput("membrane", _membraneExtractor->getOutput(section));
+		sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));
 		sliceExtractor->setInput("force explanation", _forceExplanation);
 
 		// store it in the list of all slice extractors
@@ -162,7 +172,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == _membranes->size() - 1) // only for the last pair of slices
+		if (section == _slices->size() - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);
