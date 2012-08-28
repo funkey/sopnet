@@ -38,7 +38,8 @@ ImageStackView::updateOutputs() {
 		_sizeChanged();
 	}
 
-	*_currentImage = *(*_stack)[_section];
+	if (_stack->size() > _section)
+		*_currentImage = *(*_stack)[_section];
 }
 
 void

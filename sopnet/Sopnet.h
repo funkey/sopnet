@@ -71,8 +71,8 @@ private:
 	// the segmentation hypotheses for the slices
 	pipeline::Input<ImageStack> _slices;
 
-	// the name of the slice stacks directory
-	pipeline::Input<std::string> _sliceStacksDirectory;
+	// the names of the slice stacks directories
+	pipeline::Input<std::vector<std::string> > _sliceStackDirectories;
 
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;

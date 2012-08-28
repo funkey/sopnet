@@ -18,6 +18,9 @@ ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 void
 ImageStackPainter::setCurrentSection(unsigned int section) {
 
+	if (!_stack || _stack->size() == 0)
+		return;
+
 	_section = std::min(section, _stack->size() - 1);
 
 	_imagePainter.setImage((*_stack)[_section]);

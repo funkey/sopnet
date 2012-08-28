@@ -32,12 +32,6 @@ util::ProgramOption optionRandomForestFile(
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
 
-util::ProgramOption optionSlicesFromStacks(
-		util::_module           = "sopnet",
-		util::_long_name        = "slicesFromStacks",
-		util::_description_text = "Indicate that the 'slices' directory contains black/white image stacks (directories) of "
-		                          "slice segmentation hypotheses.");
-
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_projectDirectory(projectDirectory),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
@@ -57,7 +51,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes, "membranes");
 	registerInput(_slices, "slices");
-	registerInput(_sliceStacksDirectory, "slice stacks directory");
+	registerInput(_sliceStackDirectories, "slice stack directories");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
@@ -65,7 +59,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_sliceStacksDirectory.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_sliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -126,7 +120,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !(_slices || _sliceStacksDirectory) || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -150,59 +144,42 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
-	// let the internal image extractor know where to look for the image stack
-	_sliceImageExtractor->setInput(_slices.getAssignedOutput());
+	unsigned int numSections = (_sliceStackDirectories ? _sliceStackDirectories->size() : _slices->size());
 
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << _slices->size() << " sections" << std::endl;
+	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
 
-	if (optionSlicesFromStacks) {
+	if (_sliceStackDirectories) {
 
-		if (!_sliceStacksDirectory)
-			BOOST_THROW_EXCEPTION(Exception() << error_message("no slice stack directory given"));
-
-		boost::filesystem::path dir(*_sliceStacksDirectory);
-
-		if (!boost::filesystem::exists(dir))
-			BOOST_THROW_EXCEPTION(IOError() << error_message(*_sliceStacksDirectory + " does not exist"));
-
-		if (!boost::filesystem::is_directory(dir))
-			BOOST_THROW_EXCEPTION(IOError() << error_message(*_sliceStacksDirectory + " is not a directory"));
-
-		// get a sorted list of the directory contents
-		std::vector<boost::filesystem::path> sorted;
-		std::copy(
-				boost::filesystem::directory_iterator(dir),
-				boost::filesystem::directory_iterator(),
-				back_inserter(sorted));
-		std::sort(sorted.begin(), sorted.end());
-
-		LOG_DEBUG(sopnetlog) << "slice stack directory contains " << sorted.size() << " entries" << std::endl;
-
-		// for every image directory in the given directory
-		foreach (boost::filesystem::path directory, sorted) {
+		// for every stack directory
+		foreach (std::string directory, *_sliceStackDirectories) {
 
 			if (boost::filesystem::is_directory(directory)) {
 
 				LOG_DEBUG(sopnetlog) << "creating stack reader for " << directory << std::endl;
 
 				// create a new image stack reader
-				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory.string());
+				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory);
 
 				stackSliceReaders.push_back(reader);
 			}
 		}
+
+	} else {
+
+		// let the internal image extractor know where to look for the image stack
+		_sliceImageExtractor->setInput(_slices.getAssignedOutput());
 	}
 
 	// for every section
-	for (int section = 0; section < _slices->size(); section++) {
+	for (int section = 0; section < numSections; section++) {
 
 		boost::shared_ptr<ProcessNode> sliceExtractor;
 
 		LOG_DEBUG(sopnetlog) << "creating pipeline for section " << section << std::endl;
 
-		if (optionSlicesFromStacks) {
+		if (_sliceStackDirectories) {
 
 			// create image stack slice extractor
 			sliceExtractor = boost::make_shared<StackSliceExtractor>(section);
@@ -237,7 +214,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == _slices->size() - 1) // only for the last pair of slices
+		if (section == numSections - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);
