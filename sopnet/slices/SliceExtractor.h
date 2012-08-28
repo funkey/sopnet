@@ -4,7 +4,6 @@
 #include <deque>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
@@ -14,6 +13,7 @@
 
 // forward declaration
 class ComponentTreeDownSampler;
+class ComponentTreeConverter;
 class Mser;
 class MserParameters;
 
@@ -24,40 +24,6 @@ public:
 	SliceExtractor(unsigned int section);
 
 private:
-
-	class ComponentTreeConverter : public pipeline::SimpleProcessNode, public ComponentTree::Visitor {
-
-	public:
-
-		ComponentTreeConverter(unsigned int _section);
-
-		void visitNode(boost::shared_ptr<ComponentTree::Node> node);
-
-		void leaveNode(boost::shared_ptr<ComponentTree::Node> node);
-
-	private:
-
-		void addLinearConstraint();
-
-		static unsigned int getNextSliceId();
-
-		static unsigned int NextSliceId;
-
-		static boost::mutex SliceIdMutex;
-
-		void updateOutputs();
-
-		void convert();
-
-		pipeline::Input<ComponentTree>      _componentTree;
-		pipeline::Output<Slices>            _slices;
-		pipeline::Output<LinearConstraints> _linearConstraints;
-
-		// the path to the currently visited component
-		std::deque<unsigned int> _path;
-
-		unsigned int _section;
-	};
 
 	// modifies the linear constraints according to the parameter 'force explanation'
 	class LinearConstraintsFilter : public pipeline::SimpleProcessNode {

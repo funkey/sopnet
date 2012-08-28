@@ -71,6 +71,9 @@ private:
 	// the segmentation hypotheses for the slices
 	pipeline::Input<ImageStack> _slices;
 
+	// the name of the slice stacks directory
+	pipeline::Input<std::string> _sliceStacksDirectory;
+
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
 
@@ -101,7 +104,7 @@ private:
 	boost::shared_ptr<ImageExtractor>                 _sliceImageExtractor;
 
 	// a slice extractor for each section
-	std::vector<boost::shared_ptr<SliceExtractor> >   _sliceExtractors;
+	std::vector<boost::shared_ptr<ProcessNode> >      _sliceExtractors;
 
 	// a segment extractor for each pair of timesteps
 	std::vector<boost::shared_ptr<SegmentExtractor> > _segmentExtractors;

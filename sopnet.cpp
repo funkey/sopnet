@@ -189,7 +189,7 @@ int main(int optionc, char** optionv) {
 		if (!optionProjectName) {
 
 			// if no project filename was given, try to read from default
-			// directoryies
+			// directory
 			rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
 			membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
 			slicesReader      = boost::make_shared<ImageStackDirectoryReader>("./slices/");
@@ -245,6 +245,7 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
 		sopnet->setInput("membranes", membranesReader->getOutput());
 		sopnet->setInput("slices", slicesReader->getOutput());
+		sopnet->setInput("slice stacks directory", boost::make_shared<pipeline::Wrap<std::string> >("./slices"));
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
