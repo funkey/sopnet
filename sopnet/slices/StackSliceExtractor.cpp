@@ -101,6 +101,9 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 	}
 
 	LOG_DEBUG(stacksliceextractorlog) << _allSlices->size() << " slices found" << std::endl;
+	LOG_ALL(stacksliceextractorlog)
+			<< "slices cover an area of at most (0, 0, "
+			<< width << ", " << height << ")" << std::endl;
 
 	/*
 	 * extract linear consistency constraints
@@ -113,7 +116,7 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 	std::vector<id_map> sliceIds(_slices.size());
 
 	// initialise images
-	foreach (id_map map, sliceIds)
+	foreach (id_map& map, sliceIds)
 		map.reshape(id_map::size_type(width, height), -1);
 
 	LOG_ALL(stacksliceextractorlog) << "writing slice ids..." << std::endl;
@@ -128,16 +131,27 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 			LOG_ALL(stacksliceextractorlog) << "processing slice " << slice->getId() << std::endl;
 			LOG_ALL(stacksliceextractorlog) << "slice is of size " << slice->getComponent()->getSize() << std::endl;
 
-			foreach (util::point<unsigned int> pixel, slice->getComponent()->getPixels())
-				sliceIds[level](pixel.x, pixel.y) = slice->getId();
+			foreach (util::point<unsigned int> pixel, slice->getComponent()->getPixels()) {
+
+				if (pixel.x >= width || pixel.y >= height) {
+
+					LOG_ERROR(stacksliceextractorlog)
+							<< "trying to write to invalid position " << pixel << std::endl;
+					LOG_ERROR(stacksliceextractorlog)
+							<< "only positions up to (" << width << ", " << height << " are allowed" << std::endl;
+
+				} else {
+
+					sliceIds[level](pixel.x, pixel.y) = slice->getId();
+				}
+			}
 		}
 	}
 
 	LOG_ALL(stacksliceextractorlog) << "checking for overlap..." << std::endl;
 
 	// create consistency constraints
-	for (unsigned int level = 0; level < _slices.size(); level++) {
-
+	for (unsigned int level = 0; level < _slices.size(); level++) { 
 		LOG_ALL(stacksliceextractorlog) << "entering level " << level << std::endl;
 
 		foreach (boost::shared_ptr<Slice> slice, *_slices[level]) {
@@ -149,6 +163,10 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 
 			// set of ids of already processed conflicting slices
 			std::set<unsigned int> processed;
+
+			// used to communicate pair-conflicts to the Slices data structure
+			std::vector<unsigned int> conflicts(2);
+			conflicts[0] = slice->getId();
 
 			for (unsigned int subLevel = level + 1; subLevel < _slices.size(); subLevel++) {
 
@@ -169,6 +187,9 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 						linearConstraint.setValue(1.0);
 
 						_linearConstraints->add(linearConstraint);
+
+						conflicts[1] = static_cast<unsigned int>(value);
+						_allSlices->addConflicts(conflicts);
 
 						numConstraints++;
 
