@@ -1,5 +1,3 @@
-#include <external/kdtree++/kdtree.hpp>
-
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/Mser.h>
 #include <sopnet/features/Overlap.h>
@@ -87,41 +85,22 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 
 	LOG_DEBUG(stacksliceextractorlog) << "collecting all slices..." << std::endl;
 
-	foreach (boost::shared_ptr<Slices> slices, _slices)
-		_allSlices->addAll(slices);
+	unsigned int width  = 0;
+	unsigned int height = 0;
 
-	LOG_DEBUG(stacksliceextractorlog) << _allSlices->size() << " slices found" << std::endl;
-
-	/*
-	 * create kd-trees for faster slice look-up
-	 */
-
-	LOG_DEBUG(stacksliceextractorlog) << "creating kd-trees for faster slice lookup..." << std::endl;
-
-	typedef KDTree::KDTree<
-			2,
-			boost::shared_ptr<Slice>,
-			boost::function<double(boost::shared_ptr<Slice>, size_t)> >
-		slice_tree_type;
-
-	// a kd-tree for each set of slices
-	std::vector<slice_tree_type*> sliceTrees;
-
-	// a coordinate accessor function
-	SliceCoordinates sliceCoordinates;
-
-	// create and fill trees
 	foreach (boost::shared_ptr<Slices> slices, _slices) {
 
-		slice_tree_type* sliceTree = new slice_tree_type(sliceCoordinates);
+		_allSlices->addAll(slices);
 
-		foreach (boost::shared_ptr<Slice> slice, *slices)
-			sliceTree->insert(slice);
+		// get the width and height of the area covered by the slices
+		foreach (boost::shared_ptr<Slice> slice, *slices) {
 
-		sliceTrees.push_back(sliceTree);
+			width  = std::max(static_cast<unsigned int>(slice->getComponent()->getBoundingBox().maxX + 1), width);
+			height = std::max(static_cast<unsigned int>(slice->getComponent()->getBoundingBox().maxY + 1), height);
+		}
 	}
 
-	LOG_DEBUG(stacksliceextractorlog) << sliceTrees.size() << " kd-trees created" << std::endl;
+	LOG_DEBUG(stacksliceextractorlog) << _allSlices->size() << " slices found" << std::endl;
 
 	/*
 	 * extract linear consistency constraints
@@ -129,72 +108,93 @@ StackSliceExtractor::SliceCollector::updateOutputs() {
 
 	LOG_DEBUG(stacksliceextractorlog) << "extracting consistency constraints..." << std::endl;
 
-	// for every set of slices
-	for (int i = 0; i < _slices.size(); i++) {
+	// create a slice id image per slice-level
+	typedef vigra::MultiArray<2, double> id_map;
+	std::vector<id_map> sliceIds(_slices.size());
 
-		// for every slice in this set
-		foreach (boost::shared_ptr<Slice> slice, *_slices[i]) {
+	// initialise images
+	foreach (id_map map, sliceIds)
+		map.reshape(id_map::size_type(width, height), -1);
 
-			unsigned int numConflicts = 0;
+	LOG_ALL(stacksliceextractorlog) << "writing slice ids..." << std::endl;
 
-			// for every subsequent set of slices
-			for (int j = i + 1; j < _slices.size(); j++) {
+	// store slice ids in these images
+	for (unsigned int level = 0; level < _slices.size(); level++) {
 
-				unsigned int numCloseSlices = sliceTrees[j]->count_within_range(slice, optionMaxSliceComparisonDistance);
+		LOG_ALL(stacksliceextractorlog) << "entering level " << level << std::endl;
 
-				std::vector<boost::shared_ptr<Slice> > closeSlices;
-				closeSlices.reserve(numCloseSlices);
-				sliceTrees[j]->find_within_range(slice, optionMaxSliceComparisonDistance, std::back_inserter(closeSlices));
+		foreach (boost::shared_ptr<Slice> slice, *_slices[level]) {
 
-				// for all close slices to the current slice
-				foreach (boost::shared_ptr<Slice> closeSlice, closeSlices) {
+			LOG_ALL(stacksliceextractorlog) << "processing slice " << slice->getId() << std::endl;
+			LOG_ALL(stacksliceextractorlog) << "slice is of size " << slice->getComponent()->getSize() << std::endl;
 
-					Overlap overlap;
-					unsigned int conflict[2];
+			foreach (util::point<unsigned int> pixel, slice->getComponent()->getPixels())
+				sliceIds[level](pixel.x, pixel.y) = slice->getId();
+		}
+	}
 
-					// if they overlap
-					if (overlap(*slice, *closeSlice, false, false) > 0) {
+	LOG_ALL(stacksliceextractorlog) << "checking for overlap..." << std::endl;
+
+	// create consistency constraints
+	for (unsigned int level = 0; level < _slices.size(); level++) {
+
+		LOG_ALL(stacksliceextractorlog) << "entering level " << level << std::endl;
+
+		foreach (boost::shared_ptr<Slice> slice, *_slices[level]) {
+
+			LOG_ALL(stacksliceextractorlog) << "processing slice " << slice->getId() << std::endl;
+			LOG_ALL(stacksliceextractorlog) << "slice is of size " << slice->getComponent()->getSize() << std::endl;
+
+			unsigned int numConstraints = 0;
+
+			// set of ids of already processed conflicting slices
+			std::set<unsigned int> processed;
+
+			for (unsigned int subLevel = level + 1; subLevel < _slices.size(); subLevel++) {
+
+				LOG_ALL(stacksliceextractorlog) << "entering sub-level " << subLevel << std::endl;
+
+				foreach (util::point<unsigned int> pixel, slice->getComponent()->getPixels()) {
+
+					double value = sliceIds[subLevel](pixel.x, pixel.y);
+
+					if (value >= 0 && !processed.count(static_cast<unsigned int>(value))) {
+
+						LOG_ALL(stacksliceextractorlog) << "adding constraint for slice " << value << std::endl;
 
 						LinearConstraint linearConstraint;
-
-						// add constraint: slice + closeSlice ≤ 1
+						linearConstraint.setCoefficient(static_cast<unsigned int>(value), 1.0);
 						linearConstraint.setCoefficient(slice->getId(), 1.0);
-						linearConstraint.setCoefficient(closeSlice->getId(), 1.0);
 						linearConstraint.setRelation(LessEqual);
 						linearConstraint.setValue(1.0);
 
 						_linearConstraints->add(linearConstraint);
 
-						// remember the conflict in the set of all slices
-						std::vector<unsigned int> conflict(2);
-						conflict[0] = slice->getId();
-						conflict[1] = closeSlice->getId();
-						_allSlices->addConflicts(conflict);
+						numConstraints++;
 
-						numConflicts++;
+						processed.insert(static_cast<unsigned int>(value));
 					}
 				}
 			}
 
-			// if no conflict was found for a slice, add a linear constraint
-			// manually to ensure it will be picked at most once:
-			LinearConstraint linearConstraint;
+			LOG_ALL(stacksliceextractorlog) << "found " << numConstraints << " constraints" << std::endl;
 
-			linearConstraint.setCoefficient(slice->getId(), 1.0);
-			linearConstraint.setRelation(LessEqual);
-			linearConstraint.setValue(1.0);
+			if (numConstraints == 0) {
 
-			_linearConstraints->add(linearConstraint);
+				LOG_ALL(stacksliceextractorlog) << "manually adding 'at most one' constraint" << std::endl;
+
+				// if no conflict was found for a slice, add a linear constraint
+				// manually to ensure it will be picked at most once:
+				LinearConstraint linearConstraint;
+				linearConstraint.setCoefficient(slice->getId(), 1.0);
+				linearConstraint.setRelation(LessEqual);
+				linearConstraint.setValue(1.0);
+
+				_linearConstraints->add(linearConstraint);
+			}
 		}
 	}
 
 	LOG_DEBUG(stacksliceextractorlog) << _linearConstraints->size() << " consistency constraints found" << std::endl;
-
-	/*
-	 * clean up
-	 */
-
-	foreach (slice_tree_type* sliceTree, sliceTrees)
-		delete sliceTree;
 }
 
