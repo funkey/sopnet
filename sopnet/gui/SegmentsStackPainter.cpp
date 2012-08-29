@@ -72,10 +72,16 @@ SegmentsStackPainter::assignColors() {
 		double g = (double)rand()/RAND_MAX;
 		double b = (double)rand()/RAND_MAX;
 
-		_colors[sliceId] = { { r, g, b } };
+		_colors[sliceId][0] = r;
+		_colors[sliceId][1] = g;
+		_colors[sliceId][2] = b;
 
-		foreach (unsigned int id, sameNeuronSlices)
-			_colors[id] = { { r, g, b } };
+		foreach (unsigned int id, sameNeuronSlices) {
+
+			_colors[id][0] = r;
+			_colors[id][1] = g;
+			_colors[id][2] = b;
+		}
 	 }
 
 	LOG_DEBUG(segmentsstackpainterlog) << "done" << std::endl;
