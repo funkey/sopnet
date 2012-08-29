@@ -6,119 +6,110 @@
 double
 Overlap::operator()(const Slice& slice1, const Slice& slice2, bool normalized, bool align) {
 
-	const util::rect<double>& bb = slice1.getComponent()->getBoundingBox();
+	// values to add to slice2's pixel positions
+	util::point<unsigned int> offset2(0, 0);
 
-	util::point<unsigned int> offset(static_cast<unsigned int>(bb.minX), static_cast<unsigned int>(bb.minY));
-	util::point<unsigned int> size(static_cast<unsigned int>(bb.width() + 2), static_cast<unsigned int>(bb.height() + 2));
-
-	std::vector<bool> pixels(size.x*size.y, false);
-
-	foreach (const util::point<unsigned int>& pixel, slice1.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-
-	util::point<double> centerOffset(0, 0);
+	// ...only non-zero if we want to align both slices
 	if (align)
-		centerOffset = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
+		offset2 = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
 
 	unsigned int numOverlap = overlap(
-			slice1.getComponent()->getSize(),
-			pixels,
-			size,
-			centerOffset,
-			offset,
-			slice2);
+			*slice1.getComponent(),
+			*slice2.getComponent(),
+			offset2);
 
-	if (normalized)
-		return static_cast<double>(numOverlap)/(slice1.getComponent()->getSize() + slice2.getComponent()->getSize());
-	else
+	if (normalized) {
+
+		unsigned int maxSize = std::max(slice1.getComponent()->getSize(), slice2.getComponent()->getSize());
+
+		return static_cast<double>(numOverlap)/maxSize;
+
+	} else {
+
 		return numOverlap;
+	}
 }
 
 double
 Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, bool normalized, bool align) {
 
-	const util::rect<double>& bba = slice1a.getComponent()->getBoundingBox();
-	const util::rect<double>& bbb = slice1b.getComponent()->getBoundingBox();
+	// values to add to slice2's pixel positions
+	util::point<unsigned int> offset2(0, 0);
 
-	util::rect<double> bb(std::min(bba.minX, bbb.minX), std::min(bba.minY, bbb.minY), std::max(bba.maxX, bbb.maxX), std::max(bba.maxY, bbb.maxY));
+	// ...only non-zero if we want to align slice2 to both slice1s
+	if (align) {
 
-	util::point<unsigned int> offset(static_cast<unsigned int>(bb.minX), static_cast<unsigned int>(bb.minY));
-	util::point<unsigned int> size(static_cast<unsigned int>(bb.width() + 2), static_cast<unsigned int>(bb.height() + 2));
-
-	std::vector<bool> pixels(size.x*size.y, false);
-
-	foreach (const util::point<unsigned int>& pixel, slice1a.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-	foreach (const util::point<unsigned int>& pixel, slice1b.getComponent()->getPixels()) {
-
-		unsigned int x = pixel.x - offset.x;
-		unsigned int y = pixel.y - offset.y;
-
-		pixels[x + y*size.x] = true;
-	}
-
-	util::point<double> centerOffset(0, 0);
-	if (align)
-		centerOffset =
+		// the mean pixel location of slice1a and slice1b
+		util::point<double> center1 = 
 				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
 				 +
 				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
 				/
-				(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize())
-				-
-				slice2.getComponent()->getCenter();
+				(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize());
 
-	unsigned int numOverlap = overlap(
-			slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize(),
-			pixels,
-			size,
-			centerOffset,
-			offset,
-			slice2);
+		offset2 = center1 - slice2.getComponent()->getCenter();
+	}
 
-	if (normalized)
-		return static_cast<double>(numOverlap)/(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize());
-	else
+	unsigned int numOverlapa = overlap(
+			*slice1a.getComponent(),
+			*slice2.getComponent(),
+			offset2);
+	unsigned int numOverlapb = overlap(
+			*slice1b.getComponent(),
+			*slice2.getComponent(),
+			offset2);
+
+	unsigned int numOverlap = numOverlapa + numOverlapb;
+
+	if (normalized) {
+
+		unsigned int maxSize = std::max(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize(), slice2.getComponent()->getSize());
+
+		return static_cast<double>(numOverlap)/maxSize;
+
+	} else {
+
 		return numOverlap;
+	}
 }
 
 unsigned int
 Overlap::overlap(
-		unsigned int size1,
-		const std::vector<bool>& pixels,
-		const util::point<unsigned int>& size,
-		const util::point<double>& centerOffset,
-		const util::point<double>& offset,
-		const Slice& slice2) {
+		const ConnectedComponent& c1,
+		const ConnectedComponent& c2,
+		const util::point<unsigned int>& offset2) {
 
-	// number of pixels that are both in 1 and 2
-	unsigned int shared  = 0;
+	if (!c1.getBoundingBox().intersects(c2.getBoundingBox() + offset2))
+		return 0;
 
-	foreach (const util::point<unsigned int>& pixel, slice2.getComponent()->getPixels()) {
+	unsigned int numOverlap = 0;
 
-		unsigned int x = pixel.x - centerOffset.x - offset.x;
-		unsigned int y = pixel.y - centerOffset.x - offset.y;
+	const ConnectedComponent& smaller = (c1 < c2 ? c1 : c2);
+	const ConnectedComponent& bigger  = (c1 < c2 ? c2 : c1);
 
-		// not even close
-		if (x < 0 || x >= size.x || y < 0 || y >= size.y)
-			continue;
+	const ConnectedComponent::bitmap_type& biggerBitmap = (c1 < c2 ? c2.getBitmap() : c1.getBitmap());
 
-		// within bounding box
-		if (pixels[x + y*size.x] == true)
-			// both in 1 and 2
-			shared++;
+	// the offset from the smaller component to the bigger component
+	util::point<unsigned int> smallerToBigger = (c1 < c2 ? -offset2 : offset2);
+
+	// the same, but to the pixel positions in the bigger component's bitmap
+	util::point<unsigned int> toBitmap = smallerToBigger - util::point<unsigned int>(bigger.getBoundingBox().minX, bigger.getBoundingBox().minY);
+
+	// width and height of the bigger bounding box
+	unsigned int width  = bigger.getBoundingBox().width();
+	unsigned int height = bigger.getBoundingBox().height();
+
+	// iterate over all pixels in the smaller component
+	foreach (const util::point<unsigned int>& pixel, smaller.getPixels()) {
+
+		// add offset from smaller to bigger pixel positions in the bitmap
+		util::point<unsigned int> inBitmap = pixel + toBitmap;
+
+		if (inBitmap.x >= 0 && inBitmap.y >= 0 && inBitmap.x < width && inBitmap.y < height)
+			if (biggerBitmap(inBitmap.x, inBitmap.y))
+				numOverlap++;
 	}
 
-	return shared;
+	return numOverlap;
 }
 

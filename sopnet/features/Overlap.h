@@ -31,12 +31,9 @@ struct Overlap {
 private:
 
 	unsigned int overlap(
-			unsigned int size1,
-			const std::vector<bool>& pixels,
-			const util::point<unsigned int>& size,
-			const util::point<double>& centerOffset,
-			const util::point<double>& offset,
-			const Slice& slice2);
+			const ConnectedComponent& c1,
+			const ConnectedComponent& c2,
+			const util::point<unsigned int>& offset2);
 };
 
 #endif // SOPNET_OVERLAP_H__

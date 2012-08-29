@@ -14,10 +14,16 @@
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
 
 util::ProgramOption optionDistanceThreshold(
-		util::_module           = "sopnet",
-		util::_long_name        = "segmentDistanceThreshold",
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "distanceThreshold",
 		util::_description_text = "The maximal center distance between slices to consider them for segment hypotheses.",
 		util::_default_value    = 50);
+
+util::ProgramOption optionOverlapThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "overlapThreshold",
+		util::_description_text = "The minimal normalized overlap between slices to consider them for segment hypotheses.",
+		util::_default_value    = 0.5);
 
 SegmentExtractor::SegmentExtractor() :
 	_slicesChanged(true),
@@ -222,6 +228,22 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 void
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
 
+	LOG_ALL(segmentextractorlog)
+			<< "overlap between slice " << prevSlice->getId()
+			<< " and " << nextSlice->getId() << " is "
+			<< _overlap(*prevSlice, *nextSlice, false, false)
+			<< ", normalized by the slice sizes (" << prevSlice->getComponent()->getSize()
+			<< " and " << nextSlice->getComponent()->getSize() << ") this is "
+			<< _overlap(*prevSlice, *nextSlice, true, false) << std::endl;
+
+	if (_overlap(*prevSlice, *nextSlice, true, false) < optionOverlapThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
+		return;
+	}
+
+	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
+
 	boost::shared_ptr<ContinuationSegment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
 
 	_segments->add(segment);
@@ -236,6 +258,24 @@ SegmentExtractor::extractSegment(
 		boost::shared_ptr<Slice> target1,
 		boost::shared_ptr<Slice> target2,
 		Direction direction) {
+
+	LOG_ALL(segmentextractorlog)
+			<< "overlap between slice " << source->getId()
+			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
+			<< _overlap(*target1, *target2, *source, false, false)
+			<< "(" << _overlap(*target1, *source, false, false) << " + "
+			<< _overlap(*target2, *source, false, false) << ")"
+			<< ", normalized by the slice sizes (" << source->getComponent()->getSize()
+			<< " and " << target1->getComponent()->getSize() << " and " << target2->getComponent()->getSize()
+			<< ") this is " << _overlap(*target1, *target2, *source, true, false) << std::endl;
+
+	if (_overlap(*target1, *target2, *source, true, false) < optionOverlapThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
+		return;
+	}
+
+	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
 
 	boost::shared_ptr<BranchSegment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
 

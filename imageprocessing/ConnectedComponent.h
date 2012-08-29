@@ -14,29 +14,61 @@ class ConnectedComponent : public pipeline::Data {
 public:
 
 	typedef std::vector<util::point<unsigned int> > pixel_list_type;
+	typedef vigra::MultiArray<2, bool>              bitmap_type;
 	typedef pixel_list_type::iterator               iterator;
 	typedef pixel_list_type::const_iterator         const_iterator;
 
 	ConnectedComponent();
 
-	ConnectedComponent(boost::shared_ptr<Image> source, double value, boost::shared_ptr<pixel_list_type> pixelList, unsigned int begin, unsigned int end);
+	ConnectedComponent(
+			boost::shared_ptr<Image> source,
+			double value,
+			boost::shared_ptr<pixel_list_type> pixelList,
+			unsigned int begin,
+			unsigned int end);
 
+	/**
+	 * Get the intensity value that was assigned to this component.
+	 */
 	double getValue() const;
 
-	void addPixel(const util::point<unsigned int>& pixel);
-
-	void addPixels(const std::vector<util::point<unsigned int> >& pixels);
-
+	/**
+	 * Get a begin and end iterator to the pixels that belong to this component.
+	 */
 	const std::pair<const_iterator, const_iterator> getPixels() const;
 
+	/**
+	 * Get the pixel list this component is using.
+	 */
 	const boost::shared_ptr<pixel_list_type> getPixelList() const;
 
+	/**
+	 * Get the number of pixels of this component.
+	 */
 	const unsigned int getSize() const;
 
+	/**
+	 * Get the mean pixel location of this component.
+	 */
 	const util::point<double>& getCenter() const;
 
+	/**
+	 * Get the bounding box of this component.
+	 */
 	const util::rect<double>& getBoundingBox() const;
 
+	/**
+	 * Get a bitmap of the size of the bounding box with values 'true' for every
+	 * pixel that belongs to this component.
+	 */
+	const bitmap_type& getBitmap() const;
+
+	/**
+	 * Compare the sizes of two connected components.
+	 *
+	 * @param other Another component.
+	 * @return true, if the other component is bigger.
+	 */
 	bool operator<(const ConnectedComponent& other) const;
 
 private:
@@ -61,6 +93,10 @@ private:
 	// be all of them, if the pixel lists are not shared)
 	iterator _begin;
 	iterator _end;
+
+	// a binary map of the size of the bounding box to indicate which pixels
+	// belong to this component
+	bitmap_type _bitmap;
 };
 
 #endif // IMAGEPROCESSING_CONNECTED_COMPONENT_H__
