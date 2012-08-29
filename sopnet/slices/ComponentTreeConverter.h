@@ -1,6 +1,8 @@
 #ifndef SOPNET_COMPONENT_TREE_CONVERTER_H__
 #define SOPNET_COMPONENT_TREE_CONVERTER_H__
 
+#include <deque>
+
 #include <boost/shared_ptr.hpp>
 #include <boost/thread.hpp>
 
