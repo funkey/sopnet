@@ -91,6 +91,11 @@ public:
 	};
 
 	/**
+	 * Default constructor.
+	 */
+	ComponentTree();
+
+	/**
 	 * Remove all nodes from the tree.
 	 */
 	void clear();
@@ -181,7 +186,7 @@ private:
 
 	boost::shared_ptr<Node> _root;
 
-	util::rect<double>  _boundingBox;
+	util::rect<double> _boundingBox;
 };
 
 #endif // IMAGEPROCESSING_COMPONENT_TREE_H__
