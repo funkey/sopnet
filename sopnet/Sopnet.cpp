@@ -144,9 +144,7 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
-	unsigned int numSections = (_sliceStackDirectories ? _sliceStackDirectories->size() : _slices->size());
-
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
+	unsigned int numSections = 0;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
 
@@ -156,6 +154,8 @@ Sopnet::createBasicPipeline() {
 		foreach (std::string directory, *_sliceStackDirectories) {
 
 			if (boost::filesystem::is_directory(directory)) {
+
+				numSections++;
 
 				LOG_DEBUG(sopnetlog) << "creating stack reader for " << directory << std::endl;
 
@@ -168,9 +168,13 @@ Sopnet::createBasicPipeline() {
 
 	} else {
 
+		numSections = _slices->size();
+
 		// let the internal image extractor know where to look for the image stack
 		_sliceImageExtractor->setInput(_slices.getAssignedOutput());
 	}
+
+	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
 
 	// for every section
 	for (int section = 0; section < numSections; section++) {
