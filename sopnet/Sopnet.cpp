@@ -59,7 +59,9 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
 	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_slices.registerBackwardSlot(_update);
 	_sliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_sliceStackDirectories.registerBackwardSlot(_update);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -147,6 +149,9 @@ Sopnet::createBasicPipeline() {
 	unsigned int numSections = 0;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
+
+	// make sure relevant input information is available
+	_update();
 
 	if (_sliceStackDirectories) {
 
