@@ -15,11 +15,68 @@ class SegmentsStackPainter : public gui::Painter {
 
 public:
 
-	SegmentsStackPainter();
+	/**
+	 * @param onlyOneSegment Start with the painter in only-one-segment mode,
+	 *                       i.e., show only one segment at a time.
+	 */
+	SegmentsStackPainter(bool onlyOneSegment = false);
 
+	/**
+	 * Set a new set of segments.
+	 */
 	void setSegments(boost::shared_ptr<Segments> segments);
 
+	/**
+	 * Change the currently visible section.
+	 */
 	void setCurrentSection(unsigned int section);
+
+	/**
+	 * Toggle between showing only one segment and all segments.
+	 *
+	 * @return The new state.
+	 */
+	bool toggleShowOnlyOneSegment();
+
+	/**
+	 * Show segments to the previous section.
+	 */
+	void showPrev(bool show);
+
+	/**
+	 * Show segments to the next section.
+	 */
+	void showNext(bool show);
+
+	/**
+	 * Show end segments.
+	 */
+	void showEnds(bool show);
+
+	/**
+	 * Show continuation segments.
+	 */
+	void showContinuations(bool show);
+
+	/**
+	 * Show branch segments.
+	 */
+	void showBranches(bool show);
+
+	/**
+	 * Set the focus in the only-one-segment mode.
+	 */
+	void setFocus(const util::point<double>& position);
+
+	/**
+	 * Show the next segment in the only-one-segment mode.
+	 */
+	void nextSegment();
+
+	/**
+	 * Show the previous segment in the only-one-segment mode.
+	 */
+	void prevSegment();
 
 	/**
 	 * Overwritten from painter.
@@ -27,6 +84,11 @@ public:
 	virtual void draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
+
+	/**
+	 * Returns true if the painter is in the only-one-segment mode.
+	 */
+	bool onlyOneSegment();
 
 private:
 
@@ -41,6 +103,9 @@ private:
 
 	// merge the slices of the neurons belonging to slice1 and slice2
 	void mergeSlices(unsigned int slice1, unsigned int slice2);
+
+	// fill the sets of prev/next segments
+	void updateVisibleSegments();
 
 	void drawSlice(
 		const Slice& slice,
@@ -57,11 +122,42 @@ private:
 	// the next segments of the currently selected section
 	boost::shared_ptr<Segments> _nextSegments;
 
+	// the closest previous segments to the current focus
+	std::vector<boost::shared_ptr<EndSegment> >          _closestPrevEndSegments;
+	std::vector<boost::shared_ptr<ContinuationSegment> > _closestPrevContinuationSegments;
+	std::vector<boost::shared_ptr<BranchSegment> >       _closestPrevBranchSegments;
+
+	// the closest next segments to the current focus
+	std::vector<boost::shared_ptr<EndSegment> >          _closestNextEndSegments;
+	std::vector<boost::shared_ptr<ContinuationSegment> > _closestNextContinuationSegments;
+	std::vector<boost::shared_ptr<BranchSegment> >       _closestNextBranchSegments;
+
+	// the closest previous segment to show currently
+	unsigned int _closestPrevSegment;
+
+	// the closest next segment to show currently
+	unsigned int _closestNextSegment;
+
 	// the textures of the slices to draw
 	SliceTextures _textures;
 
 	// the section to draw
 	unsigned int _section;
+
+	// show only one segment at a time
+	bool _onlyOneSegment;
+
+	// show segments in certain directions
+	bool _showPrev;
+	bool _showNext;
+
+	// show certain types of segments
+	bool _showEnds;
+	bool _showContinuations;
+	bool _showBranches;
+
+	// the focus for the only-one-segment mode
+	util::point<double> _focus;
 
 	// the distance between sections
 	double _zScale;

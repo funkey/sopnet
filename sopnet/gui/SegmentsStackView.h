@@ -1,6 +1,7 @@
 #include <pipeline/all.h>
 #include <sopnet/segments/Segments.h>
 #include <gui/Keys.h>
+#include <gui/Buttons.h>
 #include <gui/Signals.h>
 #include "SegmentsStackPainter.h"
 
@@ -8,7 +9,10 @@ class SegmentsStackView : public pipeline::SimpleProcessNode {
 
 public:
 
-	SegmentsStackView();
+	/**
+	 * @param onlyOneSegment Start with only-one-segment mode enabled.
+	 */
+	SegmentsStackView(bool onlyOneSegment = false);
 
 private:
 
@@ -17,6 +21,8 @@ private:
 	void updateOutputs();
 
 	void onKeyDown(gui::KeyDown& signal);
+
+	void onMouseDown(gui::MouseDown& signal);
 
 	// the segments to show
 	pipeline::Input<Segments> _segments;
