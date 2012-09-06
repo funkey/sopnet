@@ -3,9 +3,11 @@
 Segment::Segment(
 		unsigned int id,
 		Direction direction,
+		const util::point<double>& center,
 		unsigned int interSectionInterval) :
 	_id(id),
 	_direction(direction),
+	_center(center),
 	_interSectionInterval(interSectionInterval) {}
 
 unsigned int
