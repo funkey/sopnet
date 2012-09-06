@@ -64,6 +64,11 @@ util::ProgramOption optionLastSection(
 		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
 		_default_value    = -1);
 
+util::ProgramOption optionShowAllSegments(
+		_module           = "sopnet",
+		_long_name        = "showAllSegments",
+		_description_text = "Show all segment hypotheses.");
+
 util::ProgramOption optionShowResult(
 		_module           = "sopnet",
 		_long_name        = "showResult",
@@ -304,6 +309,24 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
+
+		if (optionShowAllSegments) {
+
+			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
+			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>(true);
+			boost::shared_ptr<RotateView>                     rotateView   = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("All Segments:");
+
+			resultView->setInput(sopnet->getOutput("segments"));
+			sectionsView->setInput(rawSectionsReader->getOutput());
+			overlay->addInput(sectionsView->getOutput());
+			overlay->addInput(resultView->getOutput());
+			rotateView->setInput(overlay->getOutput());
+			namedView->setInput(rotateView->getOutput());
+
+			segmentsContainer->addInput(namedView->getOutput());
+		}
 
 		if (optionShowResult) {
 
