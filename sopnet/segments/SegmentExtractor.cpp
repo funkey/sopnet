@@ -1,7 +1,5 @@
 #include <boost/function.hpp>
 
-#include <external/kdtree++/kdtree.hpp>
-
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include <util/ProgramOptions.h>
@@ -121,28 +119,7 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
-	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for next slices..." << std::endl;
-
-	// put all next slices in a kd-tree
-	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
-	CoordAccessor coordAccessor;
-	tree_type nextKDTree(coordAccessor);
-
-	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
-		nextKDTree.insert(nextSlice);
-	nextKDTree.optimise();
-
-	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for prev slices..." << std::endl;
-
-	// put all prev slices in a kd-tree
-	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
-	tree_type prevKDTree(coordAccessor);
-
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices)
-		prevKDTree.insert(prevSlice);
-	prevKDTree.optimise();
-
-	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "extracting continuations and bisections to next section..." << std::endl;
 
 	double distanceThreshold;
 
@@ -155,28 +132,13 @@ SegmentExtractor::extractSegments() {
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
+		std::vector<boost::shared_ptr<Slice> > closeNextSlices = _nextSlices->find(prevSlice->getComponent()->getCenter(), distanceThreshold);
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
 		// ...and all next slices within a threshold distance
 		foreach (boost::shared_ptr<Slice> nextSlice, closeNextSlices)
 			extractSegment(prevSlice, nextSlice);
-	}
-
-	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-	oldSize = _segments->size();
-
-	LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
-
-	// for all slices in previous section...
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
-
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
-
-		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
 		// ...and all pairs of next slices within a threshold distance
 		foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
@@ -194,8 +156,7 @@ SegmentExtractor::extractSegments() {
 	// for all slices in next section...
 	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
-		std::vector<boost::shared_ptr<Slice> > closePrevSlices;
-		prevKDTree.find_within_range(nextSlice, distanceThreshold, std::back_inserter(closePrevSlices));
+		std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold);
 
 		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 

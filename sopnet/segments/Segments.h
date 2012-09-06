@@ -2,7 +2,6 @@
 #define CELLTRACKER_TRACKLETS_H__
 
 #include <external/nanoflann/nanoflann.hpp>
-#include <external/kdtree++/kdtree.hpp>
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
