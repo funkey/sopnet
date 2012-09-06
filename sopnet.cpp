@@ -312,18 +312,16 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowAllSegments) {
 
-			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
-			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
-			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>(true);
-			boost::shared_ptr<RotateView>                     rotateView   = boost::make_shared<RotateView>();
-			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("All Segments:");
+			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ImageStackView>                  sectionsView = boost::make_shared<ImageStackView>(3);
+			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>(true);
+			boost::shared_ptr<NamedView>                       namedView    = boost::make_shared<NamedView>("All Segments:");
 
 			resultView->setInput(sopnet->getOutput("segments"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
 			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
-			rotateView->setInput(overlay->getOutput());
-			namedView->setInput(rotateView->getOutput());
+			namedView->setInput(overlay->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
 		}

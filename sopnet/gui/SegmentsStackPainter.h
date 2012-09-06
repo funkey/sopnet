@@ -162,6 +162,9 @@ private:
 	// the distance between sections
 	double _zScale;
 
+	// the height of the section
+	double _sectionHeight;
+
 	// a lookup table for slice colors
 	std::map<unsigned int, boost::array<double, 3> > _colors;
 

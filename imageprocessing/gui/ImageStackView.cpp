@@ -3,7 +3,8 @@
 
 static logger::LogChannel imagestackviewlog("imagestackviewlog", "[ImageStackView] ");
 
-ImageStackView::ImageStackView() :
+ImageStackView::ImageStackView(unsigned int numImages) :
+	_painter(boost::make_shared<ImageStackPainter>(numImages)),
 	_section(0),
 	_currentImage(boost::make_shared<Image>()) {
 

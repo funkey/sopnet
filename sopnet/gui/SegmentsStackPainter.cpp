@@ -370,6 +370,18 @@ SegmentsStackPainter::setCurrentSection(unsigned int section) {
 		_textures.load(*branch->getTargetSlice2());
 	}
 
+	_sectionHeight = size.height();
+
+	// for the only-one-segment mode, we show the segment partner slices above
+	// and below the current section -- therefor we are three times bigger
+	if (_onlyOneSegment) {
+
+		unsigned int height = size.height();
+
+		size.minY -= height;
+		size.maxY += height;
+	}
+
 	setSize(size);
 
 	LOG_DEBUG(segmentsstackpainterlog) << "current section set to " << _section << std::endl;
@@ -611,6 +623,8 @@ SegmentsStackPainter::drawSlice(
 		color[1] = green;
 		color[2] = blue;
 
+		alpha = 0.9;
+
 	} else {
 	
 		color = _colors[slice.getId()];
@@ -624,17 +638,33 @@ SegmentsStackPainter::drawSlice(
 
 	const util::rect<double>& bb = slice.getComponent()->getBoundingBox();
 
+	double offset = 0;
+
+	if (_onlyOneSegment) {
+
+		if (z < 0) {
+
+			offset = _sectionHeight;
+			z = 0;
+
+		} else if (z > 0) {
+
+			offset = -_sectionHeight;
+			z = 0;
+		}
+	}
+
 	// left side
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.minY, z);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.maxY, z);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.maxY, z);
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.minY, z);
+	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.minY + offset, z);
+	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.maxY + offset, z);
+	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.maxY + offset, z);
+	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.minY + offset, z);
 
 	// right side
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY, z);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY, z);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY, z);
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY, z);
+	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY + offset, z);
+	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY + offset, z);
+	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY + offset, z);
+	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, z);
 
 	glCheck(glEnd());
 }

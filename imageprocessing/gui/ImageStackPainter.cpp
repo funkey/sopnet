@@ -2,8 +2,13 @@
 
 static logger::LogChannel imagestackpainterlog("imagestackpainterlog", "[ImageStackPainter] ");
 
-ImageStackPainter::ImageStackPainter() :
-	_section(0) {}
+ImageStackPainter::ImageStackPainter(unsigned int numImages) :
+	_numImages(numImages),
+	_section(0) {
+
+	for (int i = 0; i < _numImages; i++)
+		_imagePainters.push_back(boost::make_shared<gui::ImagePainter<Image> >());
+}
 
 void
 ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
@@ -18,15 +23,29 @@ ImageStackPainter::setImageStack(boost::shared_ptr<ImageStack> stack) {
 void
 ImageStackPainter::setCurrentSection(unsigned int section) {
 
-	if (!_stack || _stack->size() == 0)
+	if (!_stack || _stack->size() == 0 || _imagePainters.size() == 0)
 		return;
 
 	_section = std::min(section, _stack->size() - 1);
 
-	_imagePainter.setImage((*_stack)[_section]);
-	_imagePainter.update();
+	for (int i = 0; i < _numImages; i++) {
 
-	setSize(_imagePainter.getSize());
+		int imageIndex = std::max(std::min(static_cast<int>(_section) + static_cast<int>(i - _numImages/2), static_cast<int>(_stack->size()) - 1), 0);
+
+		LOG_ALL(imagestackpainterlog) << "index for image " << i << " is " << imageIndex << std::endl;
+
+		_imagePainters[i]->setImage((*_stack)[imageIndex]);
+		_imagePainters[i]->update();
+	}
+
+	util::rect<double> size = _imagePainters[0]->getSize();
+
+	_imageHeight = size.height();
+
+	size.minY -= _numImages/2*_imageHeight;
+	size.maxY += (_numImages/2 - (_numImages + 1)%2)*_imageHeight;
+
+	setSize(size);
 
 	LOG_DEBUG(imagestackpainterlog) << "current section set to " << _section << std::endl;
 }
@@ -38,5 +57,14 @@ ImageStackPainter::draw(
 
 	LOG_ALL(imagestackpainterlog) << "redrawing section " << _section << std::endl;
 
-	_imagePainter.draw(roi, resolution);
+	for (int i = 0; i < _numImages; i++) {
+
+		int offset = i - _numImages/2;
+
+		glTranslated(0, -offset*_imageHeight, 0);
+
+		_imagePainters[i]->draw(roi - util::point<double>(static_cast<double>(0), -offset*_imageHeight), resolution);
+
+		glTranslated(0,  offset*_imageHeight, 0);
+	}
 }
