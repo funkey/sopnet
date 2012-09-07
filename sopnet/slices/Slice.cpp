@@ -2,12 +2,13 @@
 
 #include <vigra/functorexpression.hxx>
 #include <vigra/distancetransform.hxx>
+#include <vigra/transformimage.hxx>
 
 #include <imageprocessing/ConnectedComponent.h>
-#include <util/ProgramOptions.h>
 #include "Slice.h"
 
-util::ProgramOption optionMaxDistanceMapValue(
+util::ProgramOption
+Slice::optionMaxDistanceMapValue(
 		util::_module           = "sopnet.slices",
 		util::_long_name        = "maxDistanceMapValue",
 		util::_description_text = "The maximal Euclidean distance value to consider for point-to-slice comparisons. Points further away than this value will have this value.",
@@ -46,6 +47,8 @@ void
 Slice::intersect(const Slice& other) {
 
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->intersect(*other.getComponent()));
+
+	computeDistanceMap();
 }
 
 void
@@ -89,7 +92,6 @@ Slice::computeDistanceMap() {
 	vigra::distanceTransform(srcImageRange(objectImage), destImage(_distanceMap), 0.0, 2);
 
 	using namespace vigra::functor;
-	using namespace vigra;
 
 	// cut values to maxDistance
 	vigra::transformImage(srcImageRange(_distanceMap), destImage(_distanceMap), min(Arg1(), Param(maxDistance)));

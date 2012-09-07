@@ -23,9 +23,23 @@ util::ProgramOption optionOverlapThreshold(
 		util::_description_text = "The minimal normalized overlap between slices to consider them for segment hypotheses.",
 		util::_default_value    = 0.5);
 
+util::ProgramOption optionSliceDistanceThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "sliceDistanceThreshold",
+		util::_description_text = "The maximal slice distance between slices to consider them for segment hypotheses."
+		                          "The slice distance is the average minimal distance of a pixel from one slice to any "
+		                          "pixel of another slice.",
+		util::_default_value    = 10);
+
 SegmentExtractor::SegmentExtractor() :
+	_distance(Slice::optionMaxDistanceMapValue.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
+
+	LOG_DEBUG(segmentextractorlog)
+			<< "created distance functor with max value of "
+			<< Slice::optionMaxDistanceMapValue.as<double>()
+			<< std::endl;
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
@@ -230,9 +244,24 @@ SegmentExtractor::extractSegment(
 			<< " and " << target1->getComponent()->getSize() << " and " << target2->getComponent()->getSize()
 			<< ") this is " << _overlap(*target1, *target2, *source, true, false) << std::endl;
 
+	double avgSliceDistance, maxSliceDistance;
+
+	_distance(*target1, *target2, *source, true, false, avgSliceDistance, maxSliceDistance);
+
+	LOG_ALL(segmentextractorlog)
+			<< "average symmetric distance between slice " << source->getId()
+			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
+			<< avgSliceDistance << ", max is " << maxSliceDistance << std::endl;
+
 	if (_overlap(*target1, *target2, *source, true, false) < optionOverlapThreshold.as<double>()) {
 
-		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (overlap too small)" << std::endl;
+		return;
+	}
+
+	if (maxSliceDistance >= optionSliceDistanceThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (slice distance too big)" << std::endl;
 		return;
 	}
 

@@ -104,7 +104,7 @@ ConnectedComponent::intersect(const ConnectedComponent& other) {
 
 	bitmap_type::size_type size = _bitmap.shape();
 
-	foreach (const util::point<unsigned int>& pixel, *other.getPixelList())
+	foreach (const util::point<unsigned int>& pixel, other.getPixels())
 		if (_boundingBox.contains(pixel)) {
 
 			unsigned int x = pixel.x - _boundingBox.minX;

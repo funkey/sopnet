@@ -5,6 +5,7 @@
 
 #include <vigra/multi_array.hxx>
 
+#include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 
 // forward declaration
@@ -44,10 +45,26 @@ public:
 	boost::shared_ptr<ConnectedComponent> getComponent() const;
 
 	/**
+	 * Get the distance map of this slice. Up to a certain distance, this shows
+	 * the minimal distance of a pixel to any pixel of the slice.
+	 */
+	const distance_map_type& getDistanceMap() const { return _distanceMap; }
+
+	/**
+	 * Get the bounding box of the distance map.
+	 */
+	const util::rect<unsigned int>& getDistanceMapBoundingBox() const { return _distanceMapSize; }
+
+	/**
 	 * Intersect this slice with another one. Note that the result might not be
 	 * a single connected component any longer.
 	 */
 	void intersect(const Slice& other);
+
+	/**
+	 * Provide access to this program option to other modules.
+	 */
+	static util::ProgramOption optionMaxDistanceMapValue;
 
 private:
 

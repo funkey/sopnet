@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include <sopnet/features/Overlap.h>
+#include <sopnet/features/Distance.h>
 #include <sopnet/slices/Slices.h>
 #include <sopnet/segments/Segments.h>
 
@@ -60,6 +61,9 @@ private:
 
 	// functor to compute the number of overlapping pixels between slices
 	Overlap _overlap;
+
+	// functor to compute the distance between slices
+	Distance _distance;
 
 	bool _slicesChanged;
 

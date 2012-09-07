@@ -143,8 +143,6 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 	// for all levels
 	for (unsigned int level = 0; level < slices.size(); level++) { 
 
-		LOG_ALL(stacksliceextractorlog) << "processing level " << level << std::endl;
-
 		// for each slice
 		foreach (boost::shared_ptr<Slice> slice, slices[level]) {
 
@@ -152,8 +150,6 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 
 			// for all sub-levels
 			for (unsigned int subLevel = level + 1; subLevel < slices.size(); subLevel++) {
-
-				LOG_ALL(stacksliceextractorlog) << "processing sub-level " << subLevel << std::endl;
 
 				std::vector<boost::shared_ptr<Slice> > toBeRemoved;
 
@@ -175,8 +171,23 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 			}
 
 			// replace slice and duplicates by their intersection
-			foreach (boost::shared_ptr<Slice> duplicate, duplicates)
+			foreach (boost::shared_ptr<Slice> duplicate, duplicates) {
+
+				LOG_ALL(stacksliceextractorlog)
+						<< "intersecting " << slice->getId()
+						<< " and " << duplicate->getId()
+						<< std::endl;
+
+				LOG_ALL(stacksliceextractorlog)
+						<< "previous size was " << slice->getComponent()->getSize()
+						<< std::endl;
+
 				slice->intersect(*duplicate);
+
+				LOG_ALL(stacksliceextractorlog)
+						<< "new size is " << slice->getComponent()->getSize()
+						<< std::endl;
+			}
 		}
 	}
 
