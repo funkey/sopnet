@@ -3,10 +3,16 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <vigra/multi_array.hxx>
+
+#include <util/rect.hpp>
+
 // forward declaration
 class ConnectedComponent;
 
 class Slice {
+
+	typedef vigra::MultiArray<2, float> distance_map_type;
 
 public:
 
@@ -45,11 +51,19 @@ public:
 
 private:
 
+	void computeDistanceMap();
+
 	unsigned int _id;
 
 	unsigned int _section;
 
 	boost::shared_ptr<ConnectedComponent> _component;
+
+	// a distance map for pixels surrounding this slice
+	distance_map_type _distanceMap;
+
+	// the upper left corner and extends of the distance map in the section
+	util::rect<unsigned int> _distanceMapSize;
 };
 
 #endif // CELLTRACKER_CELL_H__
