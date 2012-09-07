@@ -77,6 +77,16 @@ private:
 
 		void updateOutputs();
 
+		unsigned int countSlices(const std::vector<Slices>& slices);
+
+		std::vector<Slices> removeDuplicates(const std::vector<Slices>& slices);
+
+		std::vector<Slices> removeDuplicatesPass(const std::vector<Slices>& allSlices);
+
+		void extractSlices(const std::vector<Slices>& slices);
+
+		void extractConstraints(const std::vector<Slices>& slices);
+
 		pipeline::Inputs<Slices> _slices;
 
 		pipeline::Output<Slices> _allSlices;
@@ -84,25 +94,7 @@ private:
 		pipeline::Output<LinearConstraints> _linearConstraints;
 	};
 
-	/**
-	 * Functor to access slice coordinates in the kd-tree.
-	 */
-	struct SliceCoordinates {
-
-		double operator()(boost::shared_ptr<Slice> slice, size_t i) {
-
-			const util::point<double>& center = slice->getComponent()->getCenter();
-
-			if (i == 0)
-				return center.x;
-
-			return center.y;
-		}
-	};
-
 	void onInputSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void extractSlices();
 
 	// the number of the section this extractor was build for
 	unsigned int _section;

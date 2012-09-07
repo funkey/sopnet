@@ -1,3 +1,6 @@
+#include <boost/lexical_cast.hpp>
+
+#include <gui/TextPainter.h>
 #include "SegmentsStackPainter.h"
 
 static logger::LogChannel segmentsstackpainterlog("segmentsstackpainterlog", "[SegmentsStackPainter] ");
@@ -462,27 +465,6 @@ SegmentsStackPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-	// set up lighting
-	GLfloat ambient[4] = { 0, 0, 0, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_AMBIENT, ambient));
-	GLfloat diffuse[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse));
-	GLfloat specular[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_SPECULAR, specular));
-
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular));
-	GLfloat emission[4] = { 0, 0, 0, 1 };
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
-
-	// enable alpha blending
-	glCheck(glEnable(GL_BLEND));
-	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-	glCheck(glEnable(GL_CULL_FACE));
-	glCheck(glEnable(GL_LIGHTING));
-	glCheck(glEnable(GL_LIGHT0));
-	glCheck(glEnable(GL_COLOR_MATERIAL));
-
 	LOG_ALL(segmentsstackpainterlog) << "redrawing section " << _section << std::endl;
 
 	// from previous section
@@ -493,7 +475,7 @@ SegmentsStackPainter::draw(
 
 			LOG_ALL(segmentsstackpainterlog) << "drawing an end..." << std::endl;
 
-			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75);
+			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75, roi, resolution);
 
 			LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 		}
@@ -507,13 +489,15 @@ SegmentsStackPainter::draw(
 				*continuation->getSourceSlice(),
 				(continuation->getDirection() == Right ? -_zScale : 0.0),
 				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Right ? 0.25 : 0.75));
+				(continuation->getDirection() == Right ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*continuation->getTargetSlice(),
 				(continuation->getDirection() == Left  ? -_zScale : 0.0),
 				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Left  ? 0.25 : 0.75));
+				(continuation->getDirection() == Left  ? 0.25 : 0.75),
+				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 	}
@@ -526,19 +510,22 @@ SegmentsStackPainter::draw(
 				*branch->getSourceSlice(),
 				(branch->getDirection() == Right ? -_zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75));
+				(branch->getDirection() == Right ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice1(),
 				(branch->getDirection() == Left  ? -_zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75));
+				(branch->getDirection() == Left ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice2(),
 				(branch->getDirection() == Left  ? -_zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75));
+				(branch->getDirection() == Left ? 0.25 : 0.75),
+				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 	}
@@ -551,7 +538,7 @@ SegmentsStackPainter::draw(
 
 			LOG_ALL(segmentsstackpainterlog) << "drawing an end..." << std::endl;
 
-			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75);
+			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75, roi, resolution);
 
 			LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 		}
@@ -565,13 +552,15 @@ SegmentsStackPainter::draw(
 				*continuation->getSourceSlice(),
 				(continuation->getDirection() == Left ? _zScale : 0.0),
 				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Left ? 0.25 : 0.75));
+				(continuation->getDirection() == Left ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*continuation->getTargetSlice(),
 				(continuation->getDirection() == Right ? _zScale : 0.0),
 				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Right ? 0.25 : 0.75));
+				(continuation->getDirection() == Right ? 0.25 : 0.75),
+				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 	}
@@ -584,26 +573,25 @@ SegmentsStackPainter::draw(
 				*branch->getSourceSlice(),
 				(branch->getDirection() == Left  ? _zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75));
+				(branch->getDirection() == Left ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice1(),
 				(branch->getDirection() == Right ? _zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75));
+				(branch->getDirection() == Right ? 0.25 : 0.75),
+				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice2(),
 				(branch->getDirection() == Right ? _zScale : 0.0),
 				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75));
+				(branch->getDirection() == Right ? 0.25 : 0.75),
+				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 	}
-
-	glCheck(glDisable(GL_BLEND));
-	glCheck(glDisable(GL_LIGHTING));
-	glCheck(glDisable(GL_CULL_FACE));
 }
 
 void
@@ -611,7 +599,28 @@ SegmentsStackPainter::drawSlice(
 		const Slice& slice,
 		double z,
 		double red, double green, double blue,
-		double alpha) {
+		double alpha,
+		const util::rect<double>&  roi,
+		const util::point<double>& resolution) {
+
+	// set up lighting
+	GLfloat ambient[4] = { 0, 0, 0, 1 };
+	glCheck(glLightfv(GL_LIGHT0, GL_AMBIENT, ambient));
+	GLfloat diffuse[4] = { 0.1, 0.1, 0.1, 1 };
+	glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse));
+	GLfloat specular[4] = { 0.1, 0.1, 0.1, 1 };
+	glCheck(glLightfv(GL_LIGHT0, GL_SPECULAR, specular));
+	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)); GLfloat emission[4] = { 0, 0, 0, 1 };
+	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
+
+	// enable alpha blending
+	glCheck(glEnable(GL_BLEND));
+	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+	glCheck(glEnable(GL_CULL_FACE));
+	glCheck(glEnable(GL_LIGHTING));
+	glCheck(glEnable(GL_LIGHT0));
+	glCheck(glEnable(GL_COLOR_MATERIAL));
 
 	double section = slice.getSection();
 
@@ -667,6 +676,22 @@ SegmentsStackPainter::drawSlice(
 	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, z);
 
 	glCheck(glEnd());
+
+	glCheck(glDisable(GL_BLEND));
+	glCheck(glDisable(GL_LIGHTING));
+	glCheck(glDisable(GL_CULL_FACE));
+
+	// draw slice id
+	gui::TextPainter idPainter(boost::lexical_cast<std::string>(slice.getId()));
+	idPainter.setTextSize(10.0);
+	idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
+
+	double x = slice.getComponent()->getCenter().x;
+	double y = slice.getComponent()->getCenter().y + offset;
+
+	glTranslatef(x, y, z);
+	idPainter.draw(roi - util::point<double>(x, y), resolution);
+	glTranslatef(-x, -y, -z);
 }
 
 bool

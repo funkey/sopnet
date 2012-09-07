@@ -97,3 +97,25 @@ ConnectedComponent::operator<(const ConnectedComponent& other) const {
 	return getSize() < other.getSize();
 }
 
+ConnectedComponent
+ConnectedComponent::intersect(const ConnectedComponent& other) {
+
+	boost::shared_ptr<pixel_list_type> intersection = boost::make_shared<pixel_list_type>();
+
+	bitmap_type::size_type size = _bitmap.shape();
+
+	foreach (const util::point<unsigned int>& pixel, *other.getPixelList())
+		if (_boundingBox.contains(pixel)) {
+
+			unsigned int x = pixel.x - _boundingBox.minX;
+			unsigned int y = pixel.y - _boundingBox.minY;
+
+			if (x >= size[0] || y >= size[1])
+				continue;
+
+			if (_bitmap(x, y))
+				intersection->push_back(pixel);
+		}
+
+	return ConnectedComponent(_source, _value, intersection, 0, intersection->size());
+}

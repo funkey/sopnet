@@ -111,7 +111,9 @@ private:
 		const Slice& slice,
 		double z,
 		double red, double green, double blue,
-		double alpha);
+		double alpha,
+		const util::rect<double>&  roi,
+		const util::point<double>& resolution);
 
 	// the segments
 	boost::shared_ptr<Segments> _segments;

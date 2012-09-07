@@ -20,9 +20,9 @@ Overlap::operator()(const Slice& slice1, const Slice& slice2, bool normalized, b
 
 	if (normalized) {
 
-		unsigned int maxSize = std::max(slice1.getComponent()->getSize(), slice2.getComponent()->getSize());
+		unsigned int totalSize = slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
 
-		return static_cast<double>(numOverlap)/maxSize;
+		return static_cast<double>(numOverlap)/totalSize;
 
 	} else {
 
@@ -63,9 +63,9 @@ Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& sli
 
 	if (normalized) {
 
-		unsigned int maxSize = std::max(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize(), slice2.getComponent()->getSize());
+		unsigned int totalSize = slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
 
-		return static_cast<double>(numOverlap)/maxSize;
+		return static_cast<double>(numOverlap)/totalSize;
 
 	} else {
 

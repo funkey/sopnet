@@ -2,7 +2,32 @@
 
 Slices::Slices() :
 	_kdTree(0),
+	_adaptor(0),
 	_kdTreeDirty(true) {}
+
+Slices::Slices(const Slices& other) :
+	_slices(other._slices),
+	_conflicts(other._conflicts),
+	_kdTree(0),
+	_adaptor(0),
+	_kdTreeDirty(true) {}
+
+Slices&
+Slices::operator=(const Slices& other) {
+
+	if (_kdTree)
+		delete _kdTree;
+
+	if (_adaptor)
+		delete _adaptor;
+
+	_kdTree = 0;
+	_adaptor = 0;
+	_kdTreeDirty = true;
+
+	_slices = other._slices;
+	_conflicts = other._conflicts;
+}
 
 Slices::~Slices() {
 
@@ -29,11 +54,24 @@ Slices::add(boost::shared_ptr<Slice> slice) {
 }
 
 void
-Slices::addAll(boost::shared_ptr<Slices> slices) {
+Slices::addAll(const Slices& slices) {
 
-	_slices.insert(_slices.end(), slices->begin(), slices->end());
+	_slices.insert(_slices.end(), slices.begin(), slices.end());
 
 	_kdTreeDirty = true;
+}
+
+void
+Slices::remove(boost::shared_ptr<Slice> slice) {
+
+	for (int i = 0; i < _slices.size(); i++)
+		if (_slices[i] == slice) {
+
+			_slices.erase(_slices.begin() + i);
+			return;
+		}
+
+	return;
 }
 
 bool

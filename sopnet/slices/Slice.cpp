@@ -1,3 +1,6 @@
+#include <boost/make_shared.hpp>
+
+#include <imageprocessing/ConnectedComponent.h>
 #include "Slice.h"
 
 Slice::Slice(
@@ -24,4 +27,10 @@ boost::shared_ptr<ConnectedComponent>
 Slice::getComponent() const {
 
 	return _component;
+}
+
+void
+Slice::intersect(const Slice& other) {
+
+	_component = boost::make_shared<ConnectedComponent>(getComponent()->intersect(*other.getComponent()));
 }

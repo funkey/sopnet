@@ -87,9 +87,22 @@ public:
 
 	typedef slices_type::const_iterator const_iterator;
 
+	/**
+	 * Create a new set of slices.
+	 */
 	Slices();
 
+	/**
+	 * Copy constructor.
+	 */
+	Slices(const Slices& other);
+
 	~Slices();
+
+	/**
+	 * Assignment operator.
+	 */
+	Slices& operator=(const Slices& other);
 
 	/**
 	 * Remove all slices.
@@ -104,7 +117,12 @@ public:
 	/**
 	 * Add a set of slices to this set of slices.
 	 */
-	void addAll(boost::shared_ptr<Slices> slices);
+	void addAll(const Slices& slices);
+
+	/**
+	 * Remove the given slice.
+	 */
+	void remove(boost::shared_ptr<Slice> slice);
 
 	/**
 	 * Add information about conflicting slices, e.g., slices that are
@@ -138,7 +156,7 @@ public:
 
 	iterator end() { return _slices.end(); }
 
-	unsigned int size() { return _slices.size(); }
+	unsigned int size() const { return _slices.size(); }
 
 	/**
 	 * Find all slices within distance to the given center.

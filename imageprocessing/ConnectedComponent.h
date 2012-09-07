@@ -71,6 +71,14 @@ public:
 	 */
 	bool operator<(const ConnectedComponent& other) const;
 
+	/**
+	 * Intersect this connected component with another one.	 *
+	 *
+	 * @param other The component to intersect with.
+	 * @return The intersection of this and another component.
+	 */
+	ConnectedComponent intersect(const ConnectedComponent& other);
+
 private:
 
 	// a list of pixel locations that belong to this component (can be shared
