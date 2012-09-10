@@ -3,8 +3,10 @@
 
 #include <pipeline/all.h>
 #include <sopnet/segments/Segments.h>
-#include "SetDifference.h"
+#include "Distance.h"
 #include "Features.h"
+#include "Overlap.h"
+#include "SetDifference.h"
 
 class GeometryFeatureExtractor : public pipeline::SimpleProcessNode {
 
@@ -30,6 +32,10 @@ private:
 	pipeline::Output<Features> _features;
 
 	SetDifference _setDifference;
+
+	Overlap _overlap;
+
+	Distance _distance;
 
 	// number of cache hits
 	unsigned int _numChecked;
