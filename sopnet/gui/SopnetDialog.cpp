@@ -25,6 +25,7 @@ SopnetDialog::SopnetDialog() :
 	_parameterAssembler->setInput("prior continuation", _priorContinuationSlider->getOutput("value"));
 	_parameterAssembler->setInput("prior branch", _priorBranchSlider->getOutput("value"));
 
+	_containerView->setAlign(gui::VerticalPlacing::Left);
 	_containerView->addInput(_forceExplanationSwitch->getOutput("painter"));
 	_containerView->addInput(_segmentationCostWeightSlider->getOutput("painter"));
 	_containerView->addInput(_segmentationCostPottsWeightSlider->getOutput("painter"));
