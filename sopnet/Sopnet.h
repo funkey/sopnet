@@ -11,6 +11,7 @@
 class GroundTruthExtractor;
 class ImageExtractor;
 class ImageStack;
+class LemonGraphWriter;
 class LinearSolver;
 class ObjectiveGenerator;
 class ProblemAssembler;
@@ -35,8 +36,9 @@ public:
 	 * from and to HDF5 files in the given project directory.
 	 *
 	 * @param projectDirectory The directory to read and write the data from and to.
+	 * @param dumpLemonGraph Dump the problem as a lemon graph.
 	 */
-	Sopnet(const std::string& projectDirectory);
+	Sopnet(const std::string& projectDirectory, bool dumpLemonGraph = false);
 
 private:
 
@@ -141,6 +143,9 @@ private:
 	// solution
 	boost::shared_ptr<Reconstructor>                  _reconstructor;
 
+	// a writer to dump the problemas a lemon graph
+	boost::shared_ptr<LemonGraphWriter>               _lemonGraphWriter;
+
 	/*
 	 * training part
 	 */
@@ -157,6 +162,9 @@ private:
 
 	// the project directory
 	std::string _projectDirectory;
+
+	// dump the problem as a lemon graph
+	bool _dumpLemonGraph;
 };
 
 #endif // CELLTRACKER_CELLTRACKER_H__

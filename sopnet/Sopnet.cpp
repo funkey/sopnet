@@ -10,6 +10,7 @@
 #include <util/ProgramOptions.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
+#include <sopnet/inference/LemonGraphWriter.h>
 #include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
@@ -32,8 +33,11 @@ util::ProgramOption optionRandomForestFile(
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
 
-Sopnet::Sopnet(const std::string& projectDirectory) :
+Sopnet::Sopnet(
+		const std::string& projectDirectory,
+		bool dumpLemonGraph) :
 	_projectDirectory(projectDirectory),
+	_dumpLemonGraph(dumpLemonGraph),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
@@ -231,6 +235,15 @@ Sopnet::createBasicPipeline() {
 		// add segments and linear constraints to problem assembler
 		_problemAssembler->addInput("segments", segmentExtractor->getOutput("segments"));
 		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
+	}
+
+	if (_dumpLemonGraph) {
+
+		_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
+
+		_lemonGraphWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+		_lemonGraphWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+		_lemonGraphWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
 	}
 }
 
