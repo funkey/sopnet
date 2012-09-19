@@ -60,6 +60,10 @@ util::ProgramOption optionTraining(
 		_short_name       = "t",
 		_description_text = "Train the segment random forest classifier.");
 
+util::ProgramOption optionDumpLemonGraph(
+		_long_name        = "dumpLemonGraph",
+		_description_text = "Dump the problem as a lemon graph.");
+
 util::ProgramOption optionFirstSection(
 		_module           = "sopnet",
 		_long_name        = "firstSection",
@@ -338,7 +342,7 @@ int main(int optionc, char** optionv) {
 		groundTruthView->setInput(groundTruthReader->getOutput());
 
 		// create sopnet pipeline
-		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
+		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented", optionDumpLemonGraph);
 
 		// set input to sopnet pipeline
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
