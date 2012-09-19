@@ -184,12 +184,16 @@ set(CORELIBS
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/modules)
+include_directories(${PROJECT_SOURCE_DIR}/external)
+include_directories(${PROJECT_SOURCE_DIR}/external/lemon)
+include_directories(${PROJECT_BINARY_DIR}/external/lemon)
 
 add_subdirectory(modules/util)
 add_subdirectory(modules/signals)
 add_subdirectory(modules/pipeline)
 add_subdirectory(modules/imageprocessing)
 add_subdirectory(modules/gui)
+add_subdirectory(external/lemon)
 
 #####################
 # compiler settings #
@@ -212,7 +216,7 @@ file (GLOB_RECURSE sopnetfiles
   toys/*.cpp)
 
 add_library(allsopnet ${sopnetfiles})
-target_link_libraries(allsopnet signals pipeline imageprocessing gui util ${CORELIBS})
+target_link_libraries(allsopnet signals pipeline imageprocessing gui util lemon ${CORELIBS})
 
 add_executable(sopnet sopnet.cpp)
 target_link_libraries(sopnet allsopnet)

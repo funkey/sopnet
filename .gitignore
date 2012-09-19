@@ -2,3 +2,5 @@ build
 *.sw[pmno]
 .cproject
 .project
+.hg
+.hgignore
