@@ -196,6 +196,7 @@ add_subdirectory(modules/pipeline)
 add_subdirectory(modules/imageprocessing)
 add_subdirectory(modules/gui)
 add_subdirectory(external/lemon)
+add_subdirectory(external/embryonic)
 
 #####################
 # compiler settings #
@@ -218,7 +219,7 @@ file (GLOB_RECURSE sopnetfiles
   toys/*.cpp)
 
 add_library(allsopnet ${sopnetfiles})
-target_link_libraries(allsopnet util signals pipeline imageprocessing gui lemon ${CORELIBS})
+target_link_libraries(allsopnet util signals pipeline imageprocessing gui lemon embryonic ${CORELIBS})
 
 add_executable(sopnet sopnet.cpp)
 target_link_libraries(sopnet allsopnet)
