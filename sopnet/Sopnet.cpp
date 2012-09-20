@@ -236,15 +236,6 @@ Sopnet::createBasicPipeline() {
 		_problemAssembler->addInput("segments", segmentExtractor->getOutput("segments"));
 		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
 	}
-
-	if (_dumpLemonGraph) {
-
-		_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
-
-		_lemonGraphWriter->setInput("segments", _problemAssembler->getOutput("segments"));
-		_lemonGraphWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
-		_lemonGraphWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
-	}
 }
 
 void
@@ -277,6 +268,19 @@ Sopnet::createInferencePipeline() {
 	// feed solution and segments to reconstructor
 	_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
 	_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+
+	if (_dumpLemonGraph) {
+
+		_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
+
+		_lemonGraphWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+		_lemonGraphWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+		_lemonGraphWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
+
+		_lemonGraphWriter->setInput("slice cost function", _segmentationCostFunction->getOutput("slice cost function"));
+		_lemonGraphWriter->addInput("segment cost functions", _randomForestCostFunction->getOutput("cost function"));
+		_lemonGraphWriter->addInput("segment cost functions", _priorCostFunction->getOutput("cost function"));
+	}
 }
 
 void
