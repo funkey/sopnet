@@ -20,6 +20,8 @@ class SegmentationCostFunction : public pipeline::SimpleProcessNode<> {
 			 std::vector<double>& costs)>
 			costs_function_type;
 
+	typedef boost::function<double (const Slice&)> slice_cost_function_type;
+
 public:
 
 	SegmentationCostFunction();
@@ -28,6 +30,10 @@ private:
 
 	void updateOutputs();
 
+	// the cost for a single slice
+	double sliceCost(const Slice& slice);
+
+	// the costs for all given segments
 	void costs(
 			const std::vector<boost::shared_ptr<EndSegment> >&          ends,
 			const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
@@ -65,6 +71,8 @@ private:
 	pipeline::Input<SegmentationCostFunctionParameters> _parameters;
 
 	pipeline::Output<costs_function_type> _costFunction;
+
+	pipeline::Output<slice_cost_function_type> _sliceCostFunction;
 
 	std::vector<double> _segmentationCosts;
 
