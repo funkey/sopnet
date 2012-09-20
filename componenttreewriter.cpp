@@ -43,6 +43,25 @@ util::ProgramOption optionDownsample(
 		_short_name       = "d",
 		_description_text = "Whether to downsample the component tree before writing. Downsampling removes all single children of the component tree.");
 
+void handleException(boost::exception& e) {
+
+	LOG_ERROR(out) << "[window thread] caught exception: ";
+
+	if (boost::get_error_info<error_message>(e))
+		LOG_ERROR(out) << *boost::get_error_info<error_message>(e);
+
+	if (boost::get_error_info<stack_trace>(e))
+		LOG_ERROR(out) << *boost::get_error_info<stack_trace>(e);
+
+	LOG_ERROR(out) << std::endl;
+
+	LOG_ERROR(out) << "[window thread] details: " << std::endl
+	               << boost::diagnostic_information(e)
+	               << std::endl;
+
+	exit(-1);
+}
+
 int main(int optionc, char** optionv) {
 
 	try {
@@ -170,16 +189,6 @@ int main(int optionc, char** optionv) {
 
 	} catch (Exception& e) {
 
-		std::cerr << "[main] caught exception: " << typeName(e) << std::endl;
-
-		if (boost::get_error_info<error_message>(e))
-
-			std::cerr << "[main] message: "
-			          << *boost::get_error_info<error_message>(e)
-			          << std::endl;
-
-		std::cerr << "[main] details: " << std::endl
-		          << boost::diagnostic_information(e)
-		          << std::endl;
+		handleException(e);
 	}
 }
