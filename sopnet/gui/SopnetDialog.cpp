@@ -7,9 +7,9 @@ SopnetDialog::SopnetDialog() :
 	_segmentationCostWeightSlider(boost::make_shared<gui::Slider>("segmentation cost weight", 0.0, 100.0, 1.0)),
 	_segmentationCostPottsWeightSlider(boost::make_shared<gui::Slider>("segmentation cost potts weight", -100, 100, 1.0)),
 	_segmentationCostPriorForegroundSlider(boost::make_shared<gui::Slider>("segmentation cost prior foreground", 0, 1, 0.5)),
-	_priorEndSlider(boost::make_shared<gui::Slider>("prior end", -100000, 100000.0, 0.0)),
-	_priorContinuationSlider(boost::make_shared<gui::Slider>("prior continuation", -100000.0, 100000.0, 0.0)),
-	_priorBranchSlider(boost::make_shared<gui::Slider>("prior branch", -100000.0, 100000.0, 0.0)),
+	_priorEndSlider(boost::make_shared<gui::Slider>("prior end", -10000000, 10000000.0, PriorCostFunctionParameters::optionPriorEnds.as<double>())),
+	_priorContinuationSlider(boost::make_shared<gui::Slider>("prior continuation", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorContinuations.as<double>())),
+	_priorBranchSlider(boost::make_shared<gui::Slider>("prior branch", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorBranches.as<double>())),
 	_containerView(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >()),
 	_parameterAssembler(boost::make_shared<ParameterAssembler>()) {
 
@@ -25,6 +25,7 @@ SopnetDialog::SopnetDialog() :
 	_parameterAssembler->setInput("prior continuation", _priorContinuationSlider->getOutput("value"));
 	_parameterAssembler->setInput("prior branch", _priorBranchSlider->getOutput("value"));
 
+	_containerView->setAlign(gui::VerticalPlacing::Left);
 	_containerView->addInput(_forceExplanationSwitch->getOutput("painter"));
 	_containerView->addInput(_segmentationCostWeightSlider->getOutput("painter"));
 	_containerView->addInput(_segmentationCostPottsWeightSlider->getOutput("painter"));

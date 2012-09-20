@@ -3,7 +3,8 @@
 
 static logger::LogChannel segmentsstackviewlog("segmentsstackviewlog", "[SegmentsStackView] ");
 
-SegmentsStackView::SegmentsStackView() :
+SegmentsStackView::SegmentsStackView(bool onlyOneSegment) :
+	_painter(boost::make_shared<SegmentsStackPainter>(onlyOneSegment)),
 	_section(0),
 	_segmentsModified(true) {
 
@@ -15,6 +16,7 @@ SegmentsStackView::SegmentsStackView() :
 	_painter.registerForwardSlot(_sizeChanged);
 	_painter.registerForwardSlot(_contentChanged);
 	_painter.registerForwardCallback(&SegmentsStackView::onKeyDown, this);
+	_painter.registerForwardCallback(&SegmentsStackView::onMouseDown, this);
 }
 
 void
@@ -77,5 +79,65 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 
 		setDirty(_painter);
 	}
+
+	if (signal.key == gui::keys::O) {
+
+		_painter->toggleShowOnlyOneSegment();
+
+		setDirty(_painter);
+	}
+
+	if (signal.key == gui::keys::E) {
+
+		_painter->showEnds(true);
+		_painter->showContinuations(false);
+		_painter->showBranches(false);
+
+		setDirty(_painter);
+	}
+
+	if (signal.key == gui::keys::C) {
+
+		_painter->showEnds(false);
+		_painter->showContinuations(true);
+		_painter->showBranches(false);
+
+		setDirty(_painter);
+	}
+
+	if (signal.key == gui::keys::B) {
+
+		_painter->showEnds(false);
+		_painter->showContinuations(false);
+		_painter->showBranches(true);
+
+		setDirty(_painter);
+	}
+
+	if (signal.key == gui::keys::S) {
+
+		_painter->showEnds(true);
+		_painter->showContinuations(true);
+		_painter->showBranches(true);
+
+		setDirty(_painter);
+	}
 }
 
+void
+SegmentsStackView::onMouseDown(gui::MouseDown& signal) {
+
+	if (_painter->onlyOneSegment()) {
+
+		if (signal.button == gui::buttons::Left)
+			_painter->setFocus(signal.position);
+
+		if (signal.button == gui::buttons::WheelDown)
+			_painter->nextSegment();
+
+		if (signal.button == gui::buttons::WheelUp)
+			_painter->prevSegment();
+
+		setDirty(_painter);
+	}
+}

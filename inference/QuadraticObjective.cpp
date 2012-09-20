@@ -1,6 +1,8 @@
 #include "QuadraticObjective.h"
 
-QuadraticObjective::QuadraticObjective(unsigned int size) {
+QuadraticObjective::QuadraticObjective(unsigned int size) :
+	_sense(Minimize),
+	_constant(0) {
 
 	resize(size);
 }

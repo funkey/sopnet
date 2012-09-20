@@ -41,6 +41,12 @@ util::ProgramOption optionProjectName(
 		_short_name       = "p",
 		_description_text = "The HDF5 project file.");
 
+util::ProgramOption optionSlicesFromStacks(
+		_module           = "sopnet",
+		_long_name        = "slicesFromStacks",
+		_description_text = "Indicate that the 'slices' directory contains black/white image stacks (directories) of "
+		                    "slice segmentation hypotheses.");
+
 util::ProgramOption optionTraining(
 		_long_name        = "train",
 		_short_name       = "t",
@@ -57,6 +63,11 @@ util::ProgramOption optionLastSection(
 		_long_name        = "lastSection",
 		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
 		_default_value    = -1);
+
+util::ProgramOption optionShowAllSegments(
+		_module           = "sopnet",
+		_long_name        = "showAllSegments",
+		_description_text = "Show all segment hypotheses.");
 
 util::ProgramOption optionShowResult(
 		_module           = "sopnet",
@@ -185,15 +196,40 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<pipeline::ProcessNode> slicesReader;
 		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
+		boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > sliceStackDirectories = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+
 		// create image stack readers
 		if (!optionProjectName) {
 
 			// if no project filename was given, try to read from default
-			// directoryies
+			// directory
 			rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
 			membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
 			slicesReader      = boost::make_shared<ImageStackDirectoryReader>("./slices/");
 			groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
+
+			// list all directories under ./slices for the image stack option
+			boost::filesystem::path dir("./slices/");
+
+			if (!boost::filesystem::exists(dir))
+				BOOST_THROW_EXCEPTION(IOError() << error_message(dir.string() + " does not exist"));
+
+			if (!boost::filesystem::is_directory(dir))
+				BOOST_THROW_EXCEPTION(IOError() << error_message(dir.string() + " is not a directory"));
+
+			// get a sorted list of the directory contents
+			std::vector<boost::filesystem::path> sorted;
+			std::copy(
+					boost::filesystem::directory_iterator(dir),
+					boost::filesystem::directory_iterator(),
+					back_inserter(sorted));
+			std::sort(sorted.begin(), sorted.end());
+
+			LOG_DEBUG(out) << "slice stack directory contains " << sorted.size() << " entries" << std::endl;
+
+			// for every image directory in the given directory
+			foreach (boost::filesystem::path directory, sorted)
+				sliceStackDirectories->get().push_back(directory.string());
 
 		} else {
 
@@ -216,20 +252,41 @@ int main(int optionc, char** optionv) {
 			// create section selectors
 			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 			boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-			boost::shared_ptr<SubStackSelector> slicesSelector      = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 			boost::shared_ptr<SubStackSelector> groundTruthSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 
 			// set their inputs to the outputs of the section readers
 			rawSelector->setInput(rawSectionsReader->getOutput());
 			membranesSelector->setInput(membranesReader->getOutput());
-			slicesSelector->setInput(slicesReader->getOutput());
 			groundTruthSelector->setInput(groundTruthReader->getOutput());
 
 			// sneakily pretend the selectors are the readers
 			rawSectionsReader = rawSelector;
 			membranesReader   = membranesSelector;
-			slicesReader      = slicesSelector;
 			groundTruthReader = groundTruthSelector;
+
+			// special case: select a subset of the slice hypotheses
+			if (optionSlicesFromStacks) {
+
+				if (firstSection >= sliceStackDirectories->get().size())
+					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
+
+				if (lastSection >= sliceStackDirectories->get().size())
+					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
+
+				boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+				std::copy(
+						sliceStackDirectories->get().begin() + firstSection,
+						sliceStackDirectories->get().begin() + lastSection + 1,
+						back_inserter(tmp->get()));
+				sliceStackDirectories = tmp;
+
+			} else {
+
+				// do the same as with the other image stacks
+				boost::shared_ptr<SubStackSelector> slicesSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+				slicesSelector->setInput(slicesReader->getOutput());
+				slicesReader = slicesSelector;
+			}
 		}
 
 		// set input for image stack views
@@ -243,11 +300,31 @@ int main(int optionc, char** optionv) {
 
 		// set input to sopnet pipeline
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
-		sopnet->setInput("membranes", slicesReader->getOutput());
+		sopnet->setInput("membranes", membranesReader->getOutput());
+		if (optionSlicesFromStacks)
+			sopnet->setInput("slice stack directories", sliceStackDirectories);
+		else
+			sopnet->setInput("slices", slicesReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
+
+		if (optionShowAllSegments) {
+
+			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ImageStackView>                  sectionsView = boost::make_shared<ImageStackView>(3);
+			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>(true);
+			boost::shared_ptr<NamedView>                       namedView    = boost::make_shared<NamedView>("All Segments:");
+
+			resultView->setInput(sopnet->getOutput("segments"));
+			sectionsView->setInput(rawSectionsReader->getOutput());
+			overlay->addInput(sectionsView->getOutput());
+			overlay->addInput(resultView->getOutput());
+			namedView->setInput(overlay->getOutput());
+
+			segmentsContainer->addInput(namedView->getOutput());
+		}
 
 		if (optionShowResult) {
 

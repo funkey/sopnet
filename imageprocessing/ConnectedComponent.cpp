@@ -7,7 +7,13 @@ ConnectedComponent::ConnectedComponent() :
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0) {}
 
-ConnectedComponent::ConnectedComponent(boost::shared_ptr<Image> source, double value, boost::shared_ptr<pixel_list_type> pixelList, unsigned int begin, unsigned int end) :
+ConnectedComponent::ConnectedComponent(
+		boost::shared_ptr<Image> source,
+		double value,
+		boost::shared_ptr<pixel_list_type> pixelList,
+		unsigned int begin,
+		unsigned int end) :
+
 	_value(value),
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
@@ -36,6 +42,11 @@ ConnectedComponent::ConnectedComponent(boost::shared_ptr<Image> source, double v
 	}
 
 	_center /= getSize();
+
+	_bitmap.reshape(bitmap_type::size_type(_boundingBox.width(), _boundingBox.height()), false);
+
+	foreach (const util::point<unsigned int>& pixel, getPixels())
+		_bitmap(pixel.x - _boundingBox.minX, pixel.y - _boundingBox.minY) = true;
 }
 
 double
@@ -44,55 +55,10 @@ ConnectedComponent::getValue() const {
 	return _value;
 }
 
-void
-ConnectedComponent::addPixel(const util::point<unsigned int>& pixel) {
-
-	if (!_pixels)
-		_pixels = boost::make_shared<pixel_list_type>();
-
-	if (_end != _pixels->end())
-		BOOST_THROW_EXCEPTION(
-				InvalidOperation()
-						<< error_message("Cannot add pixels to connected components with shared pixel lists")
-						<< STACK_TRACE);
-
-	// update the size of the bounding box
-	if (getSize() == 0) {
-
-		_boundingBox.minX = pixel.x;
-		_boundingBox.maxX = pixel.x + 1;
-		_boundingBox.minY = pixel.y;
-		_boundingBox.maxY = pixel.y + 1;
-
-	} else {
-
-		_boundingBox.minX = std::min(_boundingBox.minX, (double)pixel.x);
-		_boundingBox.maxX = std::max(_boundingBox.maxX, (double)pixel.x + 1);
-		_boundingBox.minY = std::min(_boundingBox.minY, (double)pixel.y);
-		_boundingBox.maxY = std::max(_boundingBox.maxY, (double)pixel.y + 1);
-	}
-
-	// update the center
-	_center = (_center*getSize() + pixel)/(getSize() + 1);
-
-	// add the pixel
-	_pixels->push_back(pixel);
-
-	// remember the new end
-	_end++;
-}
-
 const util::point<double>&
 ConnectedComponent::getCenter() const {
 
 	return _center;
-}
-
-void
-ConnectedComponent::addPixels(const std::vector<util::point<unsigned int> >& pixels) {
-
-	for (int i = 0; i < pixels.size(); i++)
-		addPixel(pixels[i]);
 }
 
 const std::pair<ConnectedComponent::const_iterator, ConnectedComponent::const_iterator>
@@ -119,9 +85,37 @@ ConnectedComponent::getBoundingBox() const {
 	return _boundingBox;
 }
 
+const ConnectedComponent::bitmap_type&
+ConnectedComponent::getBitmap() const {
+
+	return _bitmap;
+}
+
 bool
 ConnectedComponent::operator<(const ConnectedComponent& other) const {
 
 	return getSize() < other.getSize();
 }
 
+ConnectedComponent
+ConnectedComponent::intersect(const ConnectedComponent& other) {
+
+	boost::shared_ptr<pixel_list_type> intersection = boost::make_shared<pixel_list_type>();
+
+	bitmap_type::size_type size = _bitmap.shape();
+
+	foreach (const util::point<unsigned int>& pixel, other.getPixels())
+		if (_boundingBox.contains(pixel)) {
+
+			unsigned int x = pixel.x - _boundingBox.minX;
+			unsigned int y = pixel.y - _boundingBox.minY;
+
+			if (x >= size[0] || y >= size[1])
+				continue;
+
+			if (_bitmap(x, y))
+				intersection->push_back(pixel);
+		}
+
+	return ConnectedComponent(_source, _value, intersection, 0, intersection->size());
+}

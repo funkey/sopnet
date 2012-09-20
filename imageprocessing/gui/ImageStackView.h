@@ -11,7 +11,7 @@ class ImageStackView : public pipeline::SimpleProcessNode {
 
 public:
 
-	ImageStackView();
+	ImageStackView(unsigned int numImages = 1);
 
 private:
 

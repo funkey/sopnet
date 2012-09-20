@@ -24,7 +24,7 @@ SubStackSelector::updateOutputs() {
 			<< ", last section is " << _lastImage
 			<< std::endl;
 
-	unsigned int lastImage = (_lastImage < 0 ? (int)_stack->size() - 1 : _lastImage);
+	unsigned int lastImage = (_lastImage <= 0 ? _stack->size() - 1 + _lastImage : _lastImage);
 
 	LOG_ALL(substackselectorlog)
 			<< "set last section to " << lastImage

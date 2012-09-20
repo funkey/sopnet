@@ -1,3 +1,4 @@
+#include <imageprocessing/ConnectedComponent.h>
 #include "ContinuationSegment.h"
 
 ContinuationSegment::ContinuationSegment(
@@ -5,7 +6,13 @@ ContinuationSegment::ContinuationSegment(
 		Direction direction,
 		boost::shared_ptr<Slice> sourceSlice,
 		boost::shared_ptr<Slice> targetSlice) :
-	Segment(id, direction, sourceSlice->getSection() + (direction == Left ? 0 : 1)),
+	Segment(
+			id,
+			direction,
+			(sourceSlice->getComponent()->getCenter()*sourceSlice->getComponent()->getSize() +
+			 targetSlice->getComponent()->getCenter()*targetSlice->getComponent()->getSize())/
+			 (sourceSlice->getComponent()->getSize() + targetSlice->getComponent()->getSize()),
+			sourceSlice->getSection() + (direction == Left ? 0 : 1)),
 	_sourceSlice(sourceSlice),
 	_targetSlice(targetSlice) {}
 

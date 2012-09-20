@@ -8,6 +8,13 @@ class SubStackSelector : public pipeline::SimpleProcessNode {
 
 public:
 
+	/**
+	 * Create a new sub stack selector.
+	 *
+	 * @param firstImage The first image to use.
+	 * @param lastImage The last image to use. If this number is less or equal
+	 *                  zero, the last |lastImage| images will be excluded.
+	 */
 	SubStackSelector(int firstImage, int lastImage);
 
 private:

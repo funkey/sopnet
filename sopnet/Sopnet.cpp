@@ -1,7 +1,9 @@
 #include <boost/make_shared.hpp>
+#include <boost/filesystem.hpp>
 
 #include <imageprocessing/ImageStack.h>
 #include <imageprocessing/ImageExtractor.h>
+#include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearSolver.h>
 #include <util/foreach.h>
@@ -17,6 +19,7 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/segments/SegmentExtractor.h>
 #include <sopnet/slices/SliceExtractor.h>
+#include <sopnet/slices/StackSliceExtractor.h>
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/RandomForestTrainer.h>
 #include "Sopnet.h"
@@ -31,7 +34,7 @@ util::ProgramOption optionRandomForestFile(
 
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_projectDirectory(projectDirectory),
-	_membraneExtractor(boost::make_shared<ImageExtractor>()),
+	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
@@ -46,13 +49,19 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
-	registerInput(_membranes,   "membranes");
+	registerInput(_membranes, "membranes");
+	registerInput(_slices, "slices");
+	registerInput(_sliceStackDirectories, "slice stack directories");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
+	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_slices.registerBackwardSlot(_update);
+	_sliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_sliceStackDirectories.registerBackwardSlot(_update);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -73,6 +82,14 @@ void
 Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>& signal) {
 
 	LOG_DEBUG(sopnetlog) << "membranes set" << std::endl;
+
+	createPipeline();
+}
+
+void
+Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>& signal) {
+
+	LOG_DEBUG(sopnetlog) << "slices set" << std::endl;
 
 	createPipeline();
 }
@@ -106,7 +123,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -130,21 +147,65 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
-	// let the internal image extractor know where to look for the image stack
-	_membraneExtractor->setInput(_membranes.getAssignedOutput());
+	unsigned int numSections = 0;
 
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << _membranes->size() << " sections" << std::endl;
+	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
+
+	// make sure relevant input information is available
+	_update();
+
+	if (_sliceStackDirectories) {
+
+		// for every stack directory
+		foreach (std::string directory, *_sliceStackDirectories) {
+
+			if (boost::filesystem::is_directory(directory)) {
+
+				numSections++;
+
+				LOG_DEBUG(sopnetlog) << "creating stack reader for " << directory << std::endl;
+
+				// create a new image stack reader
+				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory);
+
+				stackSliceReaders.push_back(reader);
+			}
+		}
+
+	} else {
+
+		numSections = _slices->size();
+
+		// let the internal image extractor know where to look for the image stack
+		_sliceImageExtractor->setInput(_slices.getAssignedOutput());
+	}
+
+	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
 
 	// for every section
-	for (int section = 0; section < _membranes->size(); section++) {
+	for (int section = 0; section < numSections; section++) {
+
+		boost::shared_ptr<ProcessNode> sliceExtractor;
 
 		LOG_DEBUG(sopnetlog) << "creating pipeline for section " << section << std::endl;
 
-		// create a slice extractor
-		boost::shared_ptr<SliceExtractor> sliceExtractor = boost::make_shared<SliceExtractor>(section);
+		if (_sliceStackDirectories) {
 
-		// set its input
-		sliceExtractor->setInput("membrane", _membraneExtractor->getOutput(section));
+			// create image stack slice extractor
+			sliceExtractor = boost::make_shared<StackSliceExtractor>(section);
+
+			// set its input
+			sliceExtractor->setInput("slices", stackSliceReaders[section]->getOutput());
+
+		} else {
+
+			// create a single image slice extractor
+			sliceExtractor = boost::make_shared<SliceExtractor>(section);
+
+			// set its input
+			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));
+		}
+
 		sliceExtractor->setInput("force explanation", _forceExplanation);
 
 		// store it in the list of all slice extractors
@@ -154,7 +215,7 @@ Sopnet::createBasicPipeline() {
 			continue;
 
 		// get the previous slice file reader
-		boost::shared_ptr<SliceExtractor> prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
+		boost::shared_ptr<ProcessNode> prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
 
 		// create a segment extractor
 		boost::shared_ptr<SegmentExtractor> segmentExtractor = boost::make_shared<SegmentExtractor>();
@@ -163,7 +224,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == _membranes->size() - 1) // only for the last pair of slices
+		if (section == numSections - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);

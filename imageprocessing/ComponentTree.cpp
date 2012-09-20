@@ -35,6 +35,9 @@ ComponentTree::Node::getComponent() {
 	return _component;
 }
 
+ComponentTree::ComponentTree() :
+	_boundingBox(0, 0, 0, 0) {}
+
 void
 ComponentTree::clear() {
 

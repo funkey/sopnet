@@ -9,7 +9,7 @@ class ImageStackPainter : public gui::Painter {
 
 public:
 
-	ImageStackPainter();
+	ImageStackPainter(unsigned int numImages = 1);
 
 	void setImageStack(boost::shared_ptr<ImageStack> stack);
 
@@ -27,11 +27,17 @@ private:
 	// the whole stack
 	boost::shared_ptr<ImageStack> _stack;
 
-	// the image painter for the currently visible section
-	gui::ImagePainter<Image> _imagePainter;
+	// the image painters for the currently visible sections
+	std::vector<boost::shared_ptr<gui::ImagePainter<Image> > > _imagePainters;
+
+	// the number of images to show at the same time
+	unsigned int _numImages;
 
 	// the section to draw
 	unsigned int _section;
+
+	// the height of the images to show
+	double _imageHeight;
 };
 
 #endif // IMAGEPROCESSING_GUI_IMAGE_STACK_PAINTER_H__

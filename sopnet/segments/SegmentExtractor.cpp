@@ -1,7 +1,5 @@
 #include <boost/function.hpp>
 
-#include <external/kdtree++/kdtree.hpp>
-
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/foreach.h>
 #include <util/ProgramOptions.h>
@@ -14,14 +12,34 @@
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
 
 util::ProgramOption optionDistanceThreshold(
-		util::_module           = "sopnet",
-		util::_long_name        = "segmentDistanceThreshold",
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "distanceThreshold",
 		util::_description_text = "The maximal center distance between slices to consider them for segment hypotheses.",
 		util::_default_value    = 50);
 
+util::ProgramOption optionOverlapThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "overlapThreshold",
+		util::_description_text = "The minimal normalized overlap between slices to consider them for segment hypotheses.",
+		util::_default_value    = 0.5);
+
+util::ProgramOption optionSliceDistanceThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "sliceDistanceThreshold",
+		util::_description_text = "The maximal slice distance between slices to consider them for segment hypotheses."
+		                          "The slice distance is the average minimal distance of a pixel from one slice to any "
+		                          "pixel of another slice.",
+		util::_default_value    = 10);
+
 SegmentExtractor::SegmentExtractor() :
+	_distance(Slice::optionMaxDistanceMapValue.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
+
+	LOG_DEBUG(segmentextractorlog)
+			<< "created distance functor with max value of "
+			<< Slice::optionMaxDistanceMapValue.as<double>()
+			<< std::endl;
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
@@ -115,28 +133,7 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
-	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for next slices..." << std::endl;
-
-	// put all next slices in a kd-tree
-	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
-	CoordAccessor coordAccessor;
-	tree_type nextKDTree(coordAccessor);
-
-	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices)
-		nextKDTree.insert(nextSlice);
-	nextKDTree.optimise();
-
-	LOG_DEBUG(segmentextractorlog) << "creating kd-tree for prev slices..." << std::endl;
-
-	// put all prev slices in a kd-tree
-	typedef KDTree::KDTree<2, boost::shared_ptr<Slice>, boost::function<double(boost::shared_ptr<Slice>,size_t)> > tree_type;
-	tree_type prevKDTree(coordAccessor);
-
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices)
-		prevKDTree.insert(prevSlice);
-	prevKDTree.optimise();
-
-	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "extracting continuations and bisections to next section..." << std::endl;
 
 	double distanceThreshold;
 
@@ -149,28 +146,13 @@ SegmentExtractor::extractSegments() {
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
+		std::vector<boost::shared_ptr<Slice> > closeNextSlices = _nextSlices->find(prevSlice->getComponent()->getCenter(), distanceThreshold);
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
 		// ...and all next slices within a threshold distance
 		foreach (boost::shared_ptr<Slice> nextSlice, closeNextSlices)
 			extractSegment(prevSlice, nextSlice);
-	}
-
-	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-	oldSize = _segments->size();
-
-	LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
-
-	// for all slices in previous section...
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
-
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices;
-		nextKDTree.find_within_range(prevSlice, distanceThreshold, std::back_inserter(closeNextSlices));
-
-		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
 		// ...and all pairs of next slices within a threshold distance
 		foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
@@ -188,8 +170,7 @@ SegmentExtractor::extractSegments() {
 	// for all slices in next section...
 	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
-		std::vector<boost::shared_ptr<Slice> > closePrevSlices;
-		prevKDTree.find_within_range(nextSlice, distanceThreshold, std::back_inserter(closePrevSlices));
+		std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold);
 
 		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 
@@ -222,6 +203,22 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 void
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
 
+	LOG_ALL(segmentextractorlog)
+			<< "overlap between slice " << prevSlice->getId()
+			<< " and " << nextSlice->getId() << " is "
+			<< _overlap(*prevSlice, *nextSlice, false, false)
+			<< ", normalized by the slice sizes (" << prevSlice->getComponent()->getSize()
+			<< " and " << nextSlice->getComponent()->getSize() << ") this is "
+			<< _overlap(*prevSlice, *nextSlice, true, false) << std::endl;
+
+	if (_overlap(*prevSlice, *nextSlice, true, false) < optionOverlapThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
+		return;
+	}
+
+	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
+
 	boost::shared_ptr<ContinuationSegment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
 
 	_segments->add(segment);
@@ -236,6 +233,39 @@ SegmentExtractor::extractSegment(
 		boost::shared_ptr<Slice> target1,
 		boost::shared_ptr<Slice> target2,
 		Direction direction) {
+
+	LOG_ALL(segmentextractorlog)
+			<< "overlap between slice " << source->getId()
+			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
+			<< _overlap(*target1, *target2, *source, false, false)
+			<< "(" << _overlap(*target1, *source, false, false) << " + "
+			<< _overlap(*target2, *source, false, false) << ")"
+			<< ", normalized by the slice sizes (" << source->getComponent()->getSize()
+			<< " and " << target1->getComponent()->getSize() << " and " << target2->getComponent()->getSize()
+			<< ") this is " << _overlap(*target1, *target2, *source, true, false) << std::endl;
+
+	double avgSliceDistance, maxSliceDistance;
+
+	_distance(*target1, *target2, *source, true, false, avgSliceDistance, maxSliceDistance);
+
+	LOG_ALL(segmentextractorlog)
+			<< "average symmetric distance between slice " << source->getId()
+			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
+			<< avgSliceDistance << ", max is " << maxSliceDistance << std::endl;
+
+	if (_overlap(*target1, *target2, *source, true, false) < optionOverlapThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (overlap too small)" << std::endl;
+		return;
+	}
+
+	if (maxSliceDistance >= optionSliceDistanceThreshold.as<double>()) {
+
+		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (slice distance too big)" << std::endl;
+		return;
+	}
+
+	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
 
 	boost::shared_ptr<BranchSegment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
 
