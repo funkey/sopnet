@@ -14,6 +14,7 @@ GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection) :
 	registerInput(_groundTruthSections, "ground truth sections");
 	registerOutput(_segmentsAssembler->getOutput("ground truth segments"), "ground truth segments");
 
+	_groundTruthSections.registerBackwardSlot(_update);
 	_groundTruthSections.registerBackwardCallback(&GroundTruthExtractor::onInputSet, this);
 }
 
@@ -32,6 +33,9 @@ GroundTruthExtractor::createPipeline() {
 	_sliceExtractors.clear();
 	_segmentExtractors.clear();
 	_segmentsAssembler->clearInputs("segments");
+
+	// make sure relevant input information is available
+	_update();
 
 	_sectionExtractor->setInput(_groundTruthSections.getAssignedOutput());
 

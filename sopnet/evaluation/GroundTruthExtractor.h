@@ -44,6 +44,9 @@ private:
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruthSections;
 
+	// update signal slot to explicitly update inputs
+	signals::Slot<pipeline::Update> _update;
+
 	// ground truth sections to image converter
 	boost::shared_ptr<ImageExtractor> _sectionExtractor;
 
