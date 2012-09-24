@@ -34,8 +34,6 @@ private:
 		pipeline::Output<ImageStack> _stack;
 	};
 
-	void updateOutputs();
-
 	boost::shared_ptr<StackAssembler> _stackAssembler;
 
 	std::string _directory;

@@ -24,7 +24,7 @@ private:
 	 * A collector that bundles the outputs of the gui elements into a single
 	 * GraphCutParameters object.
 	 */
-	class ParametersCollector : public pipeline::ProcessNode {
+	class ParametersCollector : public pipeline::SimpleProcessNode {
 
 		public:
 
@@ -34,11 +34,7 @@ private:
 
 		private:
 
-			// callback for input changes
-			void onModified(const pipeline::Modified& signal);
-
-			// callback for update requests
-			void onUpdate(const pipeline::Update& signal);
+			void updateOutputs();
 
 			// the foreground prior
 			pipeline::Input<double> _foregroundPrior;
@@ -57,12 +53,6 @@ private:
 
 			// the graph cut parameters in a single object
 			pipeline::Output<GraphCutParameters> _parameters;
-
-			signals::Slot<pipeline::Modified> _modified;
-
-			signals::Slot<pipeline::Update>   _update;
-
-			signals::Slot<pipeline::Updated>  _updated;
 	};
 
 	// a slider controlling the foreground prior
@@ -87,10 +77,6 @@ private:
 	// a collector that creates the parameters object from the output of the gui
 	// elements
 	boost::shared_ptr<ParametersCollector> _parametersCollector;
-
-	signals::Slot<pipeline::Modified> _modified;
-
-	signals::Slot<pipeline::Updated>  _updated;
 };
 
 #endif // GUI_GRAPH_CUT_DIALOG_H__

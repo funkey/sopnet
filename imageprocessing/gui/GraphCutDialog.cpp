@@ -15,25 +15,6 @@ GraphCutDialog::ParametersCollector::ParametersCollector() {
 	registerInput(_contrastSigma,     "contrast-term sigma");
 	registerInput(_eightNeighborhood, "eight-neighborhood");
 	registerOutput(_parameters,       "parameters");
-
-	_pottsWeight.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
-	_pottsWeight.registerBackwardSlot(_update);
-
-	_foregroundPrior.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
-	_foregroundPrior.registerBackwardSlot(_update);
-
-	_contrastWeight.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
-	_contrastWeight.registerBackwardSlot(_update);
-
-	_contrastSigma.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
-	_contrastSigma.registerBackwardSlot(_update);
-
-	_eightNeighborhood.registerBackwardCallback(&GraphCutDialog::ParametersCollector::onModified, this);
-	_eightNeighborhood.registerBackwardSlot(_update);
-
-	_parameters.registerForwardCallback(&GraphCutDialog::ParametersCollector::onUpdate, this);
-	_parameters.registerForwardSlot(_modified);
-	_parameters.registerForwardSlot(_updated);
 }
 
 GraphCutDialog::ParametersCollector::~ParametersCollector() {
@@ -42,32 +23,13 @@ GraphCutDialog::ParametersCollector::~ParametersCollector() {
 }
 
 void
-GraphCutDialog::ParametersCollector::onModified(const pipeline::Modified& signal) {
-
-	LOG_ALL(graphcutdialoglog) << "[ParametersCollector] one of my inputs changed" << std::endl;
-
-	// TODO:
-	// • send Modified only if a button is pressed
-
-	_modified();
-}
-
-void
-GraphCutDialog::ParametersCollector::onUpdate(const pipeline::Update& signal) {
-
-	LOG_ALL(graphcutdialoglog) << "[ParametersCollector] update requested" << std::endl;
-
-	_update();
+GraphCutDialog::ParametersCollector::updateOutputs() {
 
 	_parameters->foregroundPrior   = *_foregroundPrior;
 	_parameters->pottsWeight       = *_pottsWeight;
 	_parameters->contrastWeight    = *_contrastWeight;
 	_parameters->contrastSigma     = *_contrastSigma;
 	_parameters->eightNeighborhood = *_eightNeighborhood;
-
-	_updated();
-
-	LOG_ALL(graphcutdialoglog) << "[ParametersCollector] up to date" << std::endl;
 }
 
 GraphCutDialog::GraphCutDialog() :
