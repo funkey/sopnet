@@ -36,8 +36,6 @@ private:
 	boost::shared_ptr<ParametersCollector> _parametersCollector;
 
 	signals::Slot<pipeline::Modified> _modified;
-
-	signals::Slot<pipeline::Updated>  _updated;
 };
 
 #endif // GUI_MSER_DIALOG_H__
