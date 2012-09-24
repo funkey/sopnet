@@ -5,7 +5,7 @@
 #include <inference/LinearConstraints.h>
 #include <sopnet/segments/Segments.h>
 
-class ProblemAssembler : public pipeline::SimpleProcessNode {
+class ProblemAssembler : public pipeline::SimpleProcessNode<> {
 
 public:
 

@@ -10,7 +10,7 @@ class EndSegment;
 class ContinuationSegment;
 class BranchSegment;
 
-class LinearCostFunction : public pipeline::SimpleProcessNode {
+class LinearCostFunction : public pipeline::SimpleProcessNode<> {
 
 public:
 

@@ -10,7 +10,7 @@
 #include "mser/Region.h"
 #include "mser/GrowHistory.h"
 
-class Mser : public pipeline::SimpleProcessNode {
+class Mser : public pipeline::SimpleProcessNode<> {
 
 public:
 

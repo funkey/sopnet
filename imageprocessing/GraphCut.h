@@ -10,7 +10,7 @@
 #include "GraphCutParameters.h"
 
 
-class GraphCut : public pipeline::SimpleProcessNode {
+class GraphCut : public pipeline::SimpleProcessNode<> {
 
 	typedef Graph<float,float,float> graph_type;
 

@@ -24,7 +24,7 @@ private:
 	 * A collector that bundles the outputs of the gui elements into a single
 	 * GraphCutParameters object.
 	 */
-	class ParametersCollector : public pipeline::SimpleProcessNode {
+	class ParametersCollector : public pipeline::SimpleProcessNode<> {
 
 		public:
 

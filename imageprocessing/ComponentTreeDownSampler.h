@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ComponentTree.h>
 
-class ComponentTreeDownSampler : public pipeline::SimpleProcessNode {
+class ComponentTreeDownSampler : public pipeline::SimpleProcessNode<> {
 
 public:
 

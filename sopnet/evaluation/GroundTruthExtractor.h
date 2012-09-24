@@ -22,7 +22,7 @@ public:
 
 private:
 
-	class SegmentsAssembler : public pipeline::SimpleProcessNode {
+	class SegmentsAssembler : public pipeline::SimpleProcessNode<> {
 
 	public:
 

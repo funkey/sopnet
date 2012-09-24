@@ -5,7 +5,7 @@
 #include <inference/LinearObjective.h>
 #include <sopnet/segments/Segments.h>
 
-class ObjectiveGenerator : public pipeline::SimpleProcessNode {
+class ObjectiveGenerator : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void

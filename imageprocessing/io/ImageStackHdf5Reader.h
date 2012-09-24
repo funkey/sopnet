@@ -6,7 +6,7 @@
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
 
-class ImageStackHdf5Reader : public pipeline::SimpleProcessNode {
+class ImageStackHdf5Reader : public pipeline::SimpleProcessNode<> {
 
 public:
 

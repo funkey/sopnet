@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include "ImageStack.h"
 
-class SubStackSelector : public pipeline::SimpleProcessNode {
+class SubStackSelector : public pipeline::SimpleProcessNode<> {
 
 public:
 

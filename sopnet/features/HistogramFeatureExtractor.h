@@ -6,7 +6,7 @@
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
 
-class HistogramFeatureExtractor : public pipeline::SimpleProcessNode {
+class HistogramFeatureExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

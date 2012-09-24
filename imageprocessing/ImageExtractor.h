@@ -35,7 +35,7 @@ class Image;
  * </tr>
  * </table>
  */
-class ImageExtractor : public pipeline::SimpleProcessNode {
+class ImageExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

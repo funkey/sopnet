@@ -6,7 +6,7 @@
 #include <sopnet/slices/Slices.h>
 #include <sopnet/segments/Segments.h>
 
-class GroundTruthSegmentExtractor : public pipeline::SimpleProcessNode {
+class GroundTruthSegmentExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

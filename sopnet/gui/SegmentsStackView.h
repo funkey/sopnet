@@ -5,7 +5,7 @@
 #include <gui/Signals.h>
 #include "SegmentsStackPainter.h"
 
-class SegmentsStackView : public pipeline::SimpleProcessNode {
+class SegmentsStackView : public pipeline::SimpleProcessNode<> {
 
 public:
 

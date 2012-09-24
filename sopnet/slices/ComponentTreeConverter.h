@@ -41,7 +41,7 @@
  * </tr>
  * </table>
  */
-class ComponentTreeConverter : public pipeline::SimpleProcessNode, public ComponentTree::Visitor {
+class ComponentTreeConverter : public pipeline::SimpleProcessNode<>, public ComponentTree::Visitor {
 
 public:
 

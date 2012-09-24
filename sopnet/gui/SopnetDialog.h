@@ -17,7 +17,7 @@ public:
 
 private:
 
-	class ParameterAssembler : public pipeline::SimpleProcessNode {
+	class ParameterAssembler : public pipeline::SimpleProcessNode<> {
 
 	public:
 

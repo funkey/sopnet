@@ -6,7 +6,7 @@
 #include <sopnet/features/Features.h>
 #include <sopnet/segments/Segment.h>
 
-class RandomForestCostFunction : public pipeline::SimpleProcessNode {
+class RandomForestCostFunction : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void

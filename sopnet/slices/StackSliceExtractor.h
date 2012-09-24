@@ -67,7 +67,7 @@ private:
 	 * Collects slices from a number of slice sets and establishes linear
 	 * consistency constraints for them.
 	 */
-	class SliceCollector : public pipeline::SimpleProcessNode {
+	class SliceCollector : public pipeline::SimpleProcessNode<> {
 
 	public:
 

@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include <inference/RandomForest.h>
 
-class RandomForestHdf5Writer : public pipeline::SimpleProcessNode {
+class RandomForestHdf5Writer : public pipeline::SimpleProcessNode<> {
 
 public:
 

@@ -37,7 +37,7 @@
  *
  *   solution    : Solution.
  */
-class LinearSolver : public pipeline::SimpleProcessNode {
+class LinearSolver : public pipeline::SimpleProcessNode<> {
 
 public:
 

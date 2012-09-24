@@ -5,7 +5,7 @@
 #include <util/hdf5.h>
 #include <imageprocessing/ComponentTree.h>
 
-class ComponentTreeHdf5Writer : public pipeline::SimpleProcessNode {
+class ComponentTreeHdf5Writer : public pipeline::SimpleProcessNode<> {
 
 public:
 

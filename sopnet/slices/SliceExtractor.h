@@ -26,7 +26,7 @@ public:
 private:
 
 	// modifies the linear constraints according to the parameter 'force explanation'
-	class LinearConstraintsFilter : public pipeline::SimpleProcessNode {
+	class LinearConstraintsFilter : public pipeline::SimpleProcessNode<> {
 
 	public:
 

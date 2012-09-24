@@ -10,7 +10,7 @@
 #include <sopnet/slices/Slices.h>
 #include <sopnet/segments/Segments.h>
 
-class SegmentExtractor : public pipeline::SimpleProcessNode {
+class SegmentExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

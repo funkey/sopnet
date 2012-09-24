@@ -7,7 +7,7 @@
 #include <sopnet/segments/Segments.h>
 #include <util/point.hpp>
 
-class GoldStandardExtractor : public pipeline::SimpleProcessNode {
+class GoldStandardExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

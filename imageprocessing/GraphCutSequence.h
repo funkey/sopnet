@@ -5,7 +5,7 @@
 #include <imageprocessing/ImageStack.h>
 #include <util/ProgramOptions.h>
 
-class SequenceParameterGenerator : public pipeline::SimpleProcessNode {
+class SequenceParameterGenerator : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -24,7 +24,7 @@ private:
 	float _stepForegroundPrior;
 };
 
-class ImageAverager : public pipeline::SimpleProcessNode {
+class ImageAverager : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -45,7 +45,7 @@ private:
 	vigra::MultiArray<2, float> _averageData;
 };
 
-class GraphCutSequence : public pipeline::SimpleProcessNode {
+class GraphCutSequence : public pipeline::SimpleProcessNode<> {
 
 public:
 

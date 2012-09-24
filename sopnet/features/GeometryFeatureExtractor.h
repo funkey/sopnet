@@ -8,7 +8,7 @@
 #include "Overlap.h"
 #include "SetDifference.h"
 
-class GeometryFeatureExtractor : public pipeline::SimpleProcessNode {
+class GeometryFeatureExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 

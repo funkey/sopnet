@@ -8,7 +8,7 @@ class EndSegment;
 class ContinuationSegment;
 class BranchSegment;
 
-class PriorCostFunction : public pipeline::SimpleProcessNode {
+class PriorCostFunction : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void

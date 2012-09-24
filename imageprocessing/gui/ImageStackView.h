@@ -7,7 +7,7 @@
 #include <gui/Signals.h>
 #include "ImageStackPainter.h"
 
-class ImageStackView : public pipeline::SimpleProcessNode {
+class ImageStackView : public pipeline::SimpleProcessNode<> {
 
 public:
 

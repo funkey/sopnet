@@ -8,7 +8,7 @@
  * A collector that bundles individual paramters into a single MserParameters
  * object.
  */
-class ParametersCollector : public pipeline::SimpleProcessNode {
+class ParametersCollector : public pipeline::SimpleProcessNode<> {
 
 public:
 

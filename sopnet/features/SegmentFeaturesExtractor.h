@@ -18,7 +18,7 @@ public:
 
 private:
 
-	class FeaturesAssembler : public pipeline::SimpleProcessNode {
+	class FeaturesAssembler : public pipeline::SimpleProcessNode<> {
 
 	public:
 

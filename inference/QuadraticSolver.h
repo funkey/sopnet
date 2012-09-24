@@ -27,7 +27,7 @@
  * vector denoting the coefficients of the objective and Q the quadratic
  * coefficients.
  */
-class QuadraticSolver : public pipeline::SimpleProcessNode {
+class QuadraticSolver : public pipeline::SimpleProcessNode<> {
 
 public:
 

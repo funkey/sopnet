@@ -6,7 +6,7 @@
 #include <pipeline/all.h>
 #include "ComponentTreePainter.h"
 
-class ComponentTreeView : public pipeline::SimpleProcessNode {
+class ComponentTreeView : public pipeline::SimpleProcessNode<> {
 
 public:
 

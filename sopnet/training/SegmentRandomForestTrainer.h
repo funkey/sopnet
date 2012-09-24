@@ -9,7 +9,7 @@
 /**
  * Trains a Random Forest on positive and negative samples of segments.
  */
-class SegmentRandomForestTrainer : public pipeline::SimpleProcessNode {
+class SegmentRandomForestTrainer : public pipeline::SimpleProcessNode<> {
 
 public:
 

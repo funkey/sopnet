@@ -19,7 +19,7 @@ public:
 
 private:
 
-	class StackAssembler : public pipeline::SimpleProcessNode {
+	class StackAssembler : public pipeline::SimpleProcessNode<> {
 
 	public:
 

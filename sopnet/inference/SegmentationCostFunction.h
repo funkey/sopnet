@@ -10,7 +10,7 @@ class ContinuationSegment;
 class BranchSegment;
 class Slice;
 
-class SegmentationCostFunction : public pipeline::SimpleProcessNode {
+class SegmentationCostFunction : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void

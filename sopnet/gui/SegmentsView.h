@@ -8,7 +8,7 @@
 #include <sopnet/segments/Segments.h>
 #include "SegmentsPainter.h"
 
-class SegmentsView : public pipeline::SimpleProcessNode {
+class SegmentsView : public pipeline::SimpleProcessNode<> {
 
 public:
 
