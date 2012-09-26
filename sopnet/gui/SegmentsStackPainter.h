@@ -64,6 +64,11 @@ public:
 	void showBranches(bool show);
 
 	/**
+	 * Show the ids of the slices and their connection partners.
+	 */
+	void showSliceIds(bool show);
+
+	/**
 	 * Set the focus in the only-one-segment mode.
 	 */
 	void setFocus(const util::point<double>& position);
@@ -157,6 +162,9 @@ private:
 	bool _showEnds;
 	bool _showContinuations;
 	bool _showBranches;
+
+	// show slice ids
+	bool _showSliceIds;
 
 	// the focus for the only-one-segment mode
 	util::point<double> _focus;
