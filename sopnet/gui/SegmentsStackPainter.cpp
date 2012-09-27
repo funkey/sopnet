@@ -15,6 +15,7 @@ SegmentsStackPainter::SegmentsStackPainter(bool onlyOneSegment) :
 	_showEnds(onlyOneSegment ? false : true),
 	_showContinuations(true),
 	_showBranches(onlyOneSegment ? false : true),
+	_showSliceIds(false),
 	_closestPrevSegment(0),
 	_closestNextSegment(0),
 	_focus(0, 0),
@@ -98,6 +99,12 @@ SegmentsStackPainter::showBranches(bool show) {
 	_showBranches = show;
 
 	updateVisibleSegments();
+}
+
+void
+SegmentsStackPainter::showSliceIds(bool show) {
+
+	_showSliceIds = show;
 }
 
 void
@@ -681,17 +688,19 @@ SegmentsStackPainter::drawSlice(
 	glCheck(glDisable(GL_LIGHTING));
 	glCheck(glDisable(GL_CULL_FACE));
 
-	// draw slice id
-	gui::TextPainter idPainter(boost::lexical_cast<std::string>(slice.getId()));
-	idPainter.setTextSize(10.0);
-	idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
+	if (_showSliceIds) {
 
-	double x = slice.getComponent()->getCenter().x;
-	double y = slice.getComponent()->getCenter().y + offset;
+		gui::TextPainter idPainter(boost::lexical_cast<std::string>(slice.getId()));
+		idPainter.setTextSize(10.0);
+		idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
 
-	glTranslatef(x, y, z);
-	idPainter.draw(roi - util::point<double>(x, y), resolution);
-	glTranslatef(-x, -y, -z);
+		double x = slice.getComponent()->getCenter().x;
+		double y = slice.getComponent()->getCenter().y + offset;
+
+		glTranslatef(x, y, z);
+		idPainter.draw(roi - util::point<double>(x, y), resolution);
+		glTranslatef(-x, -y, -z);
+	}
 }
 
 bool
