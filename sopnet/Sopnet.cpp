@@ -151,6 +151,14 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
+	if (_dumpLemonGraph) {
+	
+		if (!_lemonGraphWriter)
+			_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
+
+		_lemonGraphWriter->clearInputs("linear constraints");
+	}
+
 	unsigned int numSections = 0;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
@@ -231,6 +239,9 @@ Sopnet::createBasicPipeline() {
 		if (section == numSections - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
+		if (_dumpLemonGraph)
+			_lemonGraphWriter->addInput("linear constraints", sliceExtractor->getOutput("linear constraints"));
+
 		_segmentExtractors.push_back(segmentExtractor);
 
 		// add segments and linear constraints to problem assembler
@@ -272,10 +283,7 @@ Sopnet::createInferencePipeline() {
 
 	if (_dumpLemonGraph) {
 
-		_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
-
 		_lemonGraphWriter->setInput("segments", _problemAssembler->getOutput("segments"));
-		_lemonGraphWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 		_lemonGraphWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
 
 		_lemonGraphWriter->setInput("slice cost function", _segmentationCostFunction->getOutput("slice cost function"));

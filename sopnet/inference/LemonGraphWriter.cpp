@@ -27,9 +27,9 @@ LemonGraphWriter::LemonGraphWriter() :
 	_updatingInputs(false) {
 
 	registerInput(_segments, "segments");
-	registerInput(_linearConstraints, "linear constraints");
 	registerInput(_segmentIdsToVariables, "segment ids map");
 	registerInput(_sliceCostFunction, "slice cost function");
+	registerInputs(_linearConstraints, "linear constraints");
 	registerInputs(_segmentCostFunctions, "segment cost functions");
 
 	_segments.registerBackwardCallback(&LemonGraphWriter::onSegmentsModified, this);
@@ -199,6 +199,36 @@ LemonGraphWriter::update() {
 		i++;
 	}
 
+	// create linear constraints vector
+	std::vector<std::vector<int> > allConstraints;
+
+	foreach (boost::shared_ptr<LinearConstraints> constraints, _linearConstraints)
+		foreach (const LinearConstraint& constraint, *constraints) {
+
+			if (constraint.getRelation() == GreaterEqual || constraint.getValue() != 1.0) {
+
+				LOG_ERROR(lemongraphwriterlog) << "got a strange linear constraint: " << constraint << std::endl;
+				continue;
+			}
+
+			std::vector<int> c;
+			unsigned int id;
+			double value;
+
+			foreach (boost::tie(id, value), constraint.getCoefficients()) {
+
+				if (value != 1.0) {
+
+					LOG_ERROR(lemongraphwriterlog) << "got a strange linear constraint: " << constraint << std::endl;
+					continue;
+				}
+
+				c.push_back(graph.id(_slicesToNodes[id]));
+			}
+
+			allConstraints.push_back(c);
+		}
+
 	// create archive
 
 	std::ofstream costsOut(optionCostsFile.as<std::string>().c_str());
@@ -213,6 +243,7 @@ LemonGraphWriter::update() {
 	archive << continuationCosts;
 	archive << branchCostsLeft;
 	archive << branchCostsRight;
+	archive << allConstraints;
 
 	LOG_DEBUG(lemongraphwriterlog) << "done" << std::endl;
 }
