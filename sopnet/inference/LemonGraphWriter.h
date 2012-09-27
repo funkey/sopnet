@@ -58,14 +58,14 @@ private:
 	// all extracted segments
 	pipeline::Input<Segments> _segments;
 
-	// all linear constraints on the segments
-	pipeline::Input<LinearConstraints> _linearConstraints;
-
 	// map from segment ids to variable numbers in the linear constraints
 	pipeline::Input<std::map<unsigned int, unsigned int> > _segmentIdsToVariables;
 
 	// a cost function for slices
 	pipeline::Input<slice_cost_function_type> _sliceCostFunction;
+
+	// all linear constraints on the slices (one set per section)
+	pipeline::Inputs<LinearConstraints> _linearConstraints;
 
 	// cost functions for segments
 	pipeline::Inputs<costs_function_type> _segmentCostFunctions;
