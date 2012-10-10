@@ -70,7 +70,7 @@ else()
   message(STATUS "Vigra *NOT* found.")
 endif()
 
-find_package(HDF5 COMPONENTS CXX)
+find_package(HDF5 COMPONENTS CXX HL)
 if (HDF5_FOUND)
   include_directories(${HDF5_INCLUDE_DIRS})
   message(STATUS "HDF5 found.")
