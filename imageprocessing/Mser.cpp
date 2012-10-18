@@ -467,7 +467,7 @@ Mser::createSubComponentTree(boost::shared_ptr<std::vector<util::point<unsigned 
 		}
 
 		// we found a pixel that exclusively belongs to us
-		(*sharedPixelList)[currentPixel] = util::point<unsigned int>(i%_image->width(), i/_image->height());
+		(*sharedPixelList)[currentPixel] = util::point<unsigned int>(i%_image->width(), i/_image->width());
 
 		LOG_ALL(mserlog) << "added pixel" << (*sharedPixelList)[currentPixel] << std::endl;
 
