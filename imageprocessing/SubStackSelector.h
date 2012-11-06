@@ -2,7 +2,7 @@
 #define IMAGEPROCESSING_SECTION_SELECTOR_H__
 
 #include <pipeline/all.h>
-#include "ImageStack.h"
+#include <imageprocessing/ImageStack.h>
 
 class SubStackSelector : public pipeline::SimpleProcessNode<> {
 
