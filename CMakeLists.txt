@@ -214,7 +214,7 @@ file (GLOB_RECURSE sopnetfiles
   toys/*.cpp)
 
 add_library(allsopnet ${sopnetfiles})
-target_link_libraries(allsopnet util signals pipeline imageprocessing gui ${CORELIBS})
+target_link_libraries(allsopnet signals pipeline imageprocessing gui util ${CORELIBS})
 
 add_executable(sopnet sopnet.cpp)
 target_link_libraries(sopnet allsopnet)
