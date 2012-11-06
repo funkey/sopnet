@@ -23,7 +23,6 @@ else()
   message(STATUS "Boost *NOT* found.")
 endif()
 
-enable_language(Fortran)
 find_package(LAPACK REQUIRED)
 if (LAPACK_FOUND)
   message(STATUS "LAPACK found")
