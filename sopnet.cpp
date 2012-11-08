@@ -331,15 +331,13 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
 			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
 			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>();
-			boost::shared_ptr<RotateView>                     rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("Result:");
 
 			resultView->setInput(sopnet->getOutput("solution"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
 			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
-			rotateView->setInput(overlay->getOutput());
-			namedView->setInput(rotateView->getOutput());
+			namedView->setInput(overlay->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
 		}
