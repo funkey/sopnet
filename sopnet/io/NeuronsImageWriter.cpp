@@ -67,9 +67,9 @@ NeuronsImageWriter::write() {
 
 		std::stringstream filename;
 
-		filename << _directory << "/" << _basename << std::setw(4) << std::setfill('0') << i << ".png";
+		filename << _directory << "/" << _basename << std::setw(4) << std::setfill('0') << i << ".tiff";
 
-		vigra::exportImage(srcImageRange(idImages[i]), vigra::ImageExportInfo(filename.str().c_str()).setPixelType("UINT16"));
+		vigra::exportImage(srcImageRange(idImages[i]), vigra::ImageExportInfo(filename.str().c_str()));
 	}
 }
 
