@@ -45,6 +45,11 @@ public:
 
 	iterator end() { return _neurons.end(); }
 
+	/**
+	 * Get the number of sections these neurons cover.
+	 */
+	unsigned int getNumSections();
+
 private:
 
 	neurons_type _neurons;

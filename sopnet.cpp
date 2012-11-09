@@ -28,6 +28,8 @@
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
+#include <sopnet/io/NeuronsImageWriter.h>
+#include <sopnet/neurons/NeuronExtractor.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
 
@@ -94,6 +96,16 @@ util::ProgramOption optionShowNegativeSamples(
 		_long_name        = "showNegativeSamples",
 		_description_text = "Show a 3D view of all negative training samples.");
 
+util::ProgramOption optionSaveResultDirectory(
+		_module           = "sopnet",
+		_long_name        = "saveResultDirectory",
+		_description_text = "The name of the directory to save the resulting id map to.");
+
+util::ProgramOption optionSaveResultBasename(
+		_module           = "sopnet",
+		_long_name        = "saveResultBasename",
+		_description_text = "The basenames of the images files created in the result directory. The default is \"result_\".",
+		_default_value    = "result_");
 
 void handleException(boost::exception& e) {
 
@@ -411,6 +423,20 @@ int main(int optionc, char** optionv) {
 
 			window->processEvents();
 			usleep(1000);
+		}
+
+		if (optionSaveResultDirectory) {
+
+			LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
+
+			boost::shared_ptr<NeuronExtractor>    neuronExtractor = boost::make_shared<NeuronExtractor>();
+			boost::shared_ptr<NeuronsImageWriter> resultWriter    = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
+
+			neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
+			resultWriter->setInput("neurons", neuronExtractor->getOutput());
+			resultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
+
+			resultWriter->write();
 		}
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
