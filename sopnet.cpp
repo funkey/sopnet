@@ -25,6 +25,7 @@
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
+#include <sopnet/gui/NeuronsView.h>
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
@@ -95,6 +96,11 @@ util::ProgramOption optionShowNegativeSamples(
 		_module           = "sopnet",
 		_long_name        = "showNegativeSamples",
 		_description_text = "Show a 3D view of all negative training samples.");
+
+util::ProgramOption optionShowNeurons(
+		_module           = "sopnet",
+		_long_name        = "showNeurons",
+		_description_text = "Show a 3D view for each found neuron.");
 
 util::ProgramOption optionSaveResultDirectory(
 		_module           = "sopnet",
@@ -407,6 +413,19 @@ int main(int optionc, char** optionv) {
 			namedView->setInput(neRotateView->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
+		}
+
+		if (optionShowNeurons) {
+
+			boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
+			boost::shared_ptr<NeuronsView>     neuronsView     = boost::make_shared<NeuronsView>();
+			boost::shared_ptr<NamedView>       namedView       = boost::make_shared<NamedView>("Found Neurons:");
+
+			neuronExtractor->setInput(sopnet->getOutput("solution"));
+			neuronsView->setInput(neuronExtractor->getOutput());
+			namedView->setInput(neuronsView->getOutput());
+
+			mainContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionTraining) {
