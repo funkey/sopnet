@@ -29,7 +29,7 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
 	loadTextures();
 
-	util::rect<double> size(0, 0, 0, 0);
+	_size = util::rect<double>(0, 0, 0, 0);
 
 	updateRecording();
 
@@ -45,7 +45,7 @@ SegmentsPainter::showEnds(bool show) {
 
 	loadTextures();
 
-	util::rect<double> size(0, 0, 0, 0);
+	_size = util::rect<double>(0, 0, 0, 0);
 
 	updateRecording();
 
@@ -61,7 +61,7 @@ SegmentsPainter::showContinuations(bool show) {
 
 	loadTextures();
 
-	util::rect<double> size(0, 0, 0, 0);
+	_size = util::rect<double>(0, 0, 0, 0);
 
 	updateRecording();
 
@@ -77,7 +77,7 @@ SegmentsPainter::showBranches(bool show) {
 
 	loadTextures();
 
-	util::rect<double> size(0, 0, 0, 0);
+	_size = util::rect<double>(0, 0, 0, 0);
 
 	updateRecording();
 
