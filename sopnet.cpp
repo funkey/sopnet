@@ -183,9 +183,9 @@ int main(int optionc, char** optionv) {
 		window->setInput(zoomView->getOutput());
 
 		// create two rows of views
-		boost::shared_ptr<ContainerView<VerticalPlacing> >   mainContainer       = boost::make_shared<ContainerView<VerticalPlacing> >();
-		boost::shared_ptr<ContainerView<HorizontalPlacing> > imageStackContainer = boost::make_shared<ContainerView<HorizontalPlacing> >();
-		boost::shared_ptr<ContainerView<HorizontalPlacing> > segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >();
+		boost::shared_ptr<ContainerView<VerticalPlacing> >   mainContainer       = boost::make_shared<ContainerView<VerticalPlacing> >("main");
+		boost::shared_ptr<ContainerView<HorizontalPlacing> > imageStackContainer = boost::make_shared<ContainerView<HorizontalPlacing> >("image stacks");
+		boost::shared_ptr<ContainerView<HorizontalPlacing> > segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >("segments");
 
 		// create sopnet dialog
 		boost::shared_ptr<SopnetDialog> sopnetDialog = boost::make_shared<SopnetDialog>();
@@ -330,7 +330,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowAllSegments) {
 
-			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("all segments");
 			boost::shared_ptr<ImageStackView>                  sectionsView = boost::make_shared<ImageStackView>(3);
 			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>(true);
 			boost::shared_ptr<NamedView>                       namedView    = boost::make_shared<NamedView>("All Segments:");
@@ -346,7 +346,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowResult) {
 
-			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >();
+			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("result");
 			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
 			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>();
 			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("Result:");
@@ -362,7 +362,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowResult3d) {
 
-			boost::shared_ptr<SegmentsView> resultView   = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<SegmentsView> resultView   = boost::make_shared<SegmentsView>("result");
 			boost::shared_ptr<RotateView>   rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
 
@@ -375,7 +375,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowGroundTruth) {
 
-			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>("ground truth");
 			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView       = boost::make_shared<NamedView>("Ground-truth:");
 
@@ -389,7 +389,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowGoldStandard) {
 
-			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<SegmentsView> goldstandardView = boost::make_shared<SegmentsView>("gold standard");
 			boost::shared_ptr<RotateView>   gsRotateView     = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView        = boost::make_shared<NamedView>("Gold Standard:");
 
@@ -403,7 +403,7 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowNegativeSamples) {
 
-			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>();
+			boost::shared_ptr<SegmentsView> negativeView = boost::make_shared<SegmentsView>("negative samples");
 			boost::shared_ptr<RotateView>   neRotateView = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Negative Samples:");
 
