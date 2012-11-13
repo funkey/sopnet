@@ -39,8 +39,11 @@ private:
 
 	void updateOutputs();
 
+	void onUpdate(const pipeline::Update& signal);
+
 	pipeline::Input<Neurons> _neurons;
-	pipeline::Output<gui::ContainerPainter> _painter;
+
+	boost::shared_ptr<gui::ContainerView<gui::HorizontalPlacing> > _container;
 };
 
 #endif // SOPNET_GUI_NEURONS_VIEW_H__
