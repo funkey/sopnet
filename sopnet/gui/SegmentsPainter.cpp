@@ -10,7 +10,8 @@
 
 logger::LogChannel segmentspainterlog("segmentspainterlog", "[SegmentsPainter] ");
 
-SegmentsPainter::SegmentsPainter() :
+SegmentsPainter::SegmentsPainter(std::string name) :
+	RecordablePainter(name),
 	_zScale(15),
 	_showEnds(true),
 	_showContinuations(true),
@@ -25,6 +26,12 @@ SegmentsPainter::setImageStack(boost::shared_ptr<ImageStack> imageStack) {
 void
 SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
+	LOG_ALL(segmentspainterlog) << getName() << ": got new segments:" << std::endl;
+
+	LOG_ALL(segmentspainterlog) << getName() << ": " << segments->getEnds().size() << " ends" << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": " << segments->getContinuations().size() << " continuations" << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": " << segments->getBranches().size() << " branches" << std::endl;
+
 	_segments = segments;
 
 	loadTextures();
@@ -33,13 +40,15 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
 	updateRecording();
 
-	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": size is " << _size << std::endl;
 
 	setSize(_size);
 }
 
 void
 SegmentsPainter::showEnds(bool show) {
+
+	LOG_ALL(segmentspainterlog) << getName() << ": show ends == " << show << std::endl;
 
 	_showEnds = show;
 
@@ -49,13 +58,15 @@ SegmentsPainter::showEnds(bool show) {
 
 	updateRecording();
 
-	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": size is " << _size << std::endl;
 
 	setSize(_size);
 }
 
 void
 SegmentsPainter::showContinuations(bool show) {
+
+	LOG_ALL(segmentspainterlog) << getName() << ": show continuations == " << show << std::endl;
 
 	_showContinuations = show;
 
@@ -65,13 +76,15 @@ SegmentsPainter::showContinuations(bool show) {
 
 	updateRecording();
 
-	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": size is " << _size << std::endl;
 
 	setSize(_size);
 }
 
 void
 SegmentsPainter::showBranches(bool show) {
+
+	LOG_ALL(segmentspainterlog) << getName() << ": show branches == " << show << std::endl;
 
 	_showBranches = show;
 
@@ -81,7 +94,7 @@ SegmentsPainter::showBranches(bool show) {
 
 	updateRecording();
 
-	LOG_ALL(segmentspainterlog) << "size is " << _size << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": size is " << _size << std::endl;
 
 	setSize(_size);
 }
@@ -89,7 +102,7 @@ SegmentsPainter::showBranches(bool show) {
 void
 SegmentsPainter::loadTextures() {
 
-	LOG_DEBUG(segmentspainterlog) << "loading textures..." << std::endl;
+	LOG_DEBUG(segmentspainterlog) << getName() << ": loading textures..." << std::endl;
 
 	_textures.clear();
 
@@ -105,7 +118,7 @@ SegmentsPainter::loadTextures() {
 		foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
 			loadTextures(*segment);
 
-	LOG_DEBUG(segmentspainterlog) << "all textures loaded..." << std::endl;
+	LOG_DEBUG(segmentspainterlog) << getName() << ": all textures loaded..." << std::endl;
 }
 
 void
@@ -137,6 +150,8 @@ SegmentsPainter::loadTexture(const Slice& slice) {
 
 void
 SegmentsPainter::updateRecording() {
+
+	LOG_DEBUG(segmentspainterlog) << getName() << ": updating recording" << std::endl;
 
 	// make sure OpenGl operations are save
 	gui::OpenGl::Guard guard;
@@ -307,7 +322,8 @@ SegmentsPainter::drawSlice(
 	double section = slice->getSection();
 
 	LOG_ALL(segmentspainterlog)
-			<< "drawing slice " << slice->getId()
+			<< getName()
+			<< ": drawing slice " << slice->getId()
 			<< " in section " << section << std::endl;
 
 	double z = _zScale*section;
@@ -338,7 +354,7 @@ SegmentsPainter::drawSlice(
 
 	glCheck(glEnd());
 
-	LOG_ALL(segmentspainterlog) << "done." << std::endl;
+	LOG_ALL(segmentspainterlog) << getName() << ": done." << std::endl;
 
 	if (_size == util::rect<double>(0, 0, 0, 0))
 

@@ -3,7 +3,8 @@
 
 static logger::LogChannel segmentsviewlog("segmentsviewlog", "[SegmentsView] ");
 
-SegmentsView::SegmentsView() {
+SegmentsView::SegmentsView(std::string name) :
+		_painter(boost::make_shared<SegmentsPainter>(name)) {
 
 	registerInput(_segments, "segments");
 	registerInput(_rawSections, "raw sections", pipeline::Optional);

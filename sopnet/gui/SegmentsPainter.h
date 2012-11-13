@@ -11,7 +11,7 @@ class SegmentsPainter : public gui::RecordablePainter {
 
 public:
 
-	SegmentsPainter();
+	SegmentsPainter(std::string name = "");
 
 	/**
 	 * Set the image stack that should be used to texture the segments.
