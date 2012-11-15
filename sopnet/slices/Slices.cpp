@@ -27,6 +27,8 @@ Slices::operator=(const Slices& other) {
 
 	_slices = other._slices;
 	_conflicts = other._conflicts;
+
+	return *this;
 }
 
 Slices::~Slices() {

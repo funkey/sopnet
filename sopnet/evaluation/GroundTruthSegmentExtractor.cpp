@@ -110,9 +110,6 @@ GroundTruthSegmentExtractor::updateOutputs() {
 		std::copy(prevSlices.begin(), prevSlices.end(), std::inserter(_remainingPrevSlices, _remainingPrevSlices.begin()));
 		std::copy(nextSlices.begin(), nextSlices.end(), std::inserter(_remainingNextSlices, _remainingNextSlices.begin()));
 
-		unsigned int nextContinuation = 0;
-		unsigned int nextBranch = 0;
-
 		// accept all branches that have spatial overlap
 		double distance;
 		boost::shared_ptr<BranchSegment> branch;

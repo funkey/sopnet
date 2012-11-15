@@ -98,7 +98,6 @@ Distance::distance(
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
-	const ConnectedComponent& c2 = *s2.getComponent();
 
 	const util::rect<unsigned int> s2dmbb = s2.getDistanceMapBoundingBox();
 
@@ -141,8 +140,6 @@ Distance::distance(
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
-	const ConnectedComponent& c2a = *s2a.getComponent();
-	const ConnectedComponent& c2b = *s2b.getComponent();
 
 	const util::rect<unsigned int> s2dmbba = s2a.getDistanceMapBoundingBox();
 	const util::rect<unsigned int> s2dmbbb = s2b.getDistanceMapBoundingBox();

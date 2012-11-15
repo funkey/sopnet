@@ -106,17 +106,20 @@ SegmentsPainter::loadTextures() {
 
 	_textures.clear();
 
-	if (_showEnds)
+	if (_showEnds) {
 		foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 			loadTextures(*segment);
+	}
 
-	if (_showContinuations)
+	if (_showContinuations) {
 		foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations())
 			loadTextures(*segment);
+	}
 
-	if (_showBranches)
+	if (_showBranches) {
 		foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches())
 			loadTextures(*segment);
+	}
 
 	LOG_DEBUG(segmentspainterlog) << getName() << ": all textures loaded..." << std::endl;
 }
@@ -185,19 +188,25 @@ SegmentsPainter::updateRecording() {
 	// draw from front to back, facing to the right
 	_leftSide  = false;
 	_rightSide = true;
-	for (int i = 0; i < _segments->getNumInterSectionIntervals(); i++) {
+	for (unsigned int i = 0; i < _segments->getNumInterSectionIntervals(); i++) {
 
-		if (_showEnds)
+		if (_showEnds) {
+
 			foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
 				draw(*segment);
+		}
 
-		if (_showContinuations)
+		if (_showContinuations) {
+
 			foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
 				draw(*segment);
+		}
 
-		if (_showBranches)
+		if (_showBranches) {
+
 			foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
 				draw(*segment);
+		}
 	}
 
 	// draw from back to front, facing to the left
@@ -205,17 +214,23 @@ SegmentsPainter::updateRecording() {
 	_rightSide = false;
 	for (int i = _segments->getNumInterSectionIntervals() - 1; i >= 0; i--) {
 
-		if (_showEnds)
+		if (_showEnds) {
+
 			foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds(i))
 				draw(*segment);
+		}
 
-		if (_showContinuations)
+		if (_showContinuations) {
+
 			foreach (boost::shared_ptr<ContinuationSegment> segment, _segments->getContinuations(i))
 				draw(*segment);
+		}
 
-		if (_showBranches)
+		if (_showBranches) {
+
 			foreach (boost::shared_ptr<BranchSegment> segment, _segments->getBranches(i))
 				draw(*segment);
+		}
 	}
 
 	glCheck(glDisable(GL_BLEND));

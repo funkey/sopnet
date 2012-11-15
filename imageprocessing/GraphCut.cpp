@@ -98,12 +98,6 @@ GraphCut::updateOutputs() {
 void
 GraphCut::doMaxFlow() {
 
-	// calculates the mincut/maxflow of the graph using the algorithm implemented by Kolmogorov and Boykov (2004)
-	int nodeId = 0;
-	int neighborId = 0;
-
-	float value = 0.0; // stores value of pixel
-
 	// check if there was a change that requires recreation of the graph
 	if (_graphWidth != _image->width() || _graphHeight != _image->height() ||
 	    _parameters->eightNeighborhood != _prevParameters.eightNeighborhood ||
@@ -118,7 +112,7 @@ GraphCut::doMaxFlow() {
 		_setEdges = true;
 		_warmStart = false;
 
-		for (unsigned int i = 0; i < _image->width()*_image->height(); i++)
+		for (int i = 0; i < _image->width()*_image->height(); i++)
 			_graph.add_node();
 
 		_graphWidth = _image->width();

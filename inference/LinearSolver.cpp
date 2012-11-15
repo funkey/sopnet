@@ -95,10 +95,14 @@ LinearSolver::solve() {
 
 	std::string message;
 
-	if (_solver->solve(*_solution, value, message))
+	if (_solver->solve(*_solution, value, message)) {
+
 		LOG_USER(linearsolverlog) << "optimal solution found" << std::endl;
-	else
+
+	} else {
+
 		LOG_ERROR(linearsolverlog) << "error: " << message << std::endl;
+	}
 
 	LOG_ALL(linearsolverlog) << "solution: " << _solution->getVector() << std::endl;
 }

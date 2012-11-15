@@ -411,21 +411,25 @@ SegmentsStackPainter::updateVisibleSegments() {
 
 	if (_onlyOneSegment) {
 
-		if (_showPrev)
+		if (_showPrev) {
+
 			if (_showEnds && _closestPrevEndSegments.size() > 0)
 				_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
 			else if (_showContinuations && _closestPrevContinuationSegments.size() > 0)
 				_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
 			else if (_showBranches && _closestPrevBranchSegments.size() > 0)
 				_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
+		}
 
-		if (_showNext)
+		if (_showNext) {
+
 			if (_showEnds && _closestNextEndSegments.size() > 0)
 				_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
 			else if (_showContinuations && _closestNextContinuationSegments.size() > 0)
 				_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
 			else if (_showBranches && _closestNextBranchSegments.size() > 0)
 				_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
+		}
 
 	} else {
 
@@ -628,8 +632,6 @@ SegmentsStackPainter::drawSlice(
 	glCheck(glEnable(GL_LIGHTING));
 	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
-
-	double section = slice.getSection();
 
 	boost::array<double, 3> color;
 	
