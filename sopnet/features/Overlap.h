@@ -1,8 +1,11 @@
 #ifndef SOPNET_OVERLAP_H__
 #define SOPNET_OVERLAP_H__
 
+#include <util/point.hpp>
+
 // forward declarations
 class Slice;
+class ConnectedComponent;
 
 struct Overlap {
 
