@@ -25,6 +25,8 @@
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
+#include <sopnet/evaluation/ResultEvaluator.h>
+#include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/NeuronsView.h>
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
@@ -101,6 +103,11 @@ util::ProgramOption optionShowNeurons(
 		_module           = "sopnet",
 		_long_name        = "showNeurons",
 		_description_text = "Show a 3D view for each found neuron.");
+
+util::ProgramOption optionShowErrors(
+		_module           = "sopnet",
+		_long_name        = "showErrors",
+		_description_text = "Show the errors of the result.");
 
 util::ProgramOption optionSaveResultDirectory(
 		_module           = "sopnet",
@@ -285,10 +292,10 @@ int main(int optionc, char** optionv) {
 			// special case: select a subset of the slice hypotheses
 			if (optionSlicesFromStacks) {
 
-				if (firstSection >= sliceStackDirectories->get().size())
+				if (firstSection >= (int)sliceStackDirectories->get().size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
-				if (lastSection >= sliceStackDirectories->get().size())
+				if (lastSection >= (int)sliceStackDirectories->get().size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
 				boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
@@ -424,6 +431,20 @@ int main(int optionc, char** optionv) {
 			neuronExtractor->setInput(sopnet->getOutput("solution"));
 			neuronsView->setInput(neuronExtractor->getOutput());
 			namedView->setInput(neuronsView->getOutput());
+
+			mainContainer->addInput(namedView->getOutput());
+		}
+
+		if (optionShowErrors) {
+
+			boost::shared_ptr<ResultEvaluator> resultEvaluator = boost::make_shared<ResultEvaluator>();
+			boost::shared_ptr<ErrorsView>      errorsView      = boost::make_shared<ErrorsView>();
+			boost::shared_ptr<NamedView>       namedView       = boost::make_shared<NamedView>("Errors:");
+
+			resultEvaluator->setInput("result", sopnet->getOutput("solution"));
+			resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+			errorsView->setInput(resultEvaluator->getOutput());
+			namedView->setInput(errorsView->getOutput());
 
 			mainContainer->addInput(namedView->getOutput());
 		}
