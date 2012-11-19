@@ -182,15 +182,20 @@ int main(int optionc, char** optionv) {
 		 *********/
 
 		// create a window
-		boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("sopnet");
-		window->processEvents();
+		boost::shared_ptr<gui::Window> resultWindow  = boost::make_shared<gui::Window>("sopnet: results");
+		boost::shared_ptr<gui::Window> controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
+		resultWindow->processEvents();
+		controlWindow->processEvents();
 
 		// create a zoom view for this window
-		boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
-		window->setInput(zoomView->getOutput());
+		boost::shared_ptr<gui::ZoomView> resultZoomView  = boost::make_shared<gui::ZoomView>(true);
+		boost::shared_ptr<gui::ZoomView> controlZoomView = boost::make_shared<gui::ZoomView>(true);
+		resultWindow->setInput(resultZoomView->getOutput());
+		controlWindow->setInput(controlZoomView->getOutput());
 
 		// create two rows of views
-		boost::shared_ptr<ContainerView<VerticalPlacing> >   mainContainer       = boost::make_shared<ContainerView<VerticalPlacing> >("main");
+		boost::shared_ptr<ContainerView<VerticalPlacing> >   resultContainer     = boost::make_shared<ContainerView<VerticalPlacing> >("results");
+		boost::shared_ptr<ContainerView<VerticalPlacing> >   controlContainer    = boost::make_shared<ContainerView<VerticalPlacing> >("controls");
 		boost::shared_ptr<ContainerView<HorizontalPlacing> > imageStackContainer = boost::make_shared<ContainerView<HorizontalPlacing> >("image stacks");
 		boost::shared_ptr<ContainerView<HorizontalPlacing> > segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >("segments");
 
@@ -198,10 +203,11 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<SopnetDialog> sopnetDialog = boost::make_shared<SopnetDialog>();
 
 		// connect them to the window via the zoom view
-		mainContainer->addInput(imageStackContainer->getOutput());
-		mainContainer->addInput(sopnetDialog->getOutput("painter"));
-		mainContainer->addInput(segmentsContainer->getOutput());
-		zoomView->setInput(mainContainer->getOutput());
+		controlContainer->addInput(imageStackContainer->getOutput());
+		controlContainer->addInput(sopnetDialog->getOutput("painter"));
+		controlZoomView->setInput(controlContainer->getOutput());
+		resultContainer->addInput(segmentsContainer->getOutput());
+		resultZoomView->setInput(resultContainer->getOutput());
 
 		// create basic views
 		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
@@ -354,7 +360,7 @@ int main(int optionc, char** optionv) {
 			overlay->addInput(resultView->getOutput());
 			namedView->setInput(overlay->getOutput());
 
-			segmentsContainer->addInput(namedView->getOutput());
+			controlContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionShowResult) {
@@ -446,7 +452,7 @@ int main(int optionc, char** optionv) {
 				neuronsView->setInput("errors", resultEvaluator->getOutput());
 			namedView->setInput(neuronsView->getOutput());
 
-			mainContainer->addInput(namedView->getOutput());
+			controlContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionShowErrors) {
@@ -459,7 +465,7 @@ int main(int optionc, char** optionv) {
 			errorsView->setInput(resultEvaluator->getOutput());
 			namedView->setInput(errorsView->getOutput());
 
-			mainContainer->addInput(namedView->getOutput());
+			resultContainer->addInput(namedView->getOutput());
 		}
 
 		if (optionTraining) {
@@ -472,9 +478,13 @@ int main(int optionc, char** optionv) {
 			LOG_USER(out) << "[main] training finished!" << std::endl;
 		}
 
-		while (!window->closed()) {
+		boost::thread controlThread(boost::bind(&processEvents, controlWindow));
+		boost::thread resultThread(boost::bind(&processEvents, resultWindow));
 
-			window->processEvents();
+		while (!controlWindow->closed()) {
+
+			//controlWindow->processEvents();
+			//resultWindow->processEvents();
 			usleep(1000);
 		}
 
@@ -491,6 +501,11 @@ int main(int optionc, char** optionv) {
 
 			resultWriter->write();
 		}
+
+		LOG_USER(out) << "[main] waiting for windows to be closed..." << std::endl;
+
+		controlThread.join();
+		resultThread.join();
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
 
