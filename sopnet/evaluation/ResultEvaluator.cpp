@@ -21,11 +21,11 @@ ResultEvaluator::ResultEvaluator(double minOverlap) :
 void
 ResultEvaluator::updateOutputs() {
 
-	LOG_ALL(resultevaluatorlog) << "updating outputs..." << std::endl;
+	LOG_DEBUG(resultevaluatorlog) << "updating outputs..." << std::endl;
 
-	_numSections = std::max(_result->getNumInterSectionIntervals() - 1, _groundTruth->getNumInterSectionIntervals() - 1);
+	_numSections = std::max((int)_result->getNumInterSectionIntervals(), (int)_groundTruth->getNumInterSectionIntervals());
 
-	LOG_ALL(resultevaluatorlog) << "compute errors for " << _numSections << " sections" << std::endl;
+	LOG_DEBUG(resultevaluatorlog) << "compute errors for " << _numSections << " sections" << std::endl;
 
 	// First, find all slices in the result and ground-truth.
 	findAllSlicesAndLinks();
@@ -43,7 +43,7 @@ ResultEvaluator::updateOutputs() {
 	// For each section...
 	for (unsigned int section = 0; section < _numSections; section++) {
 
-		LOG_ALL(resultevaluatorlog) << "processing section " << section << std::endl;
+		LOG_DEBUG(resultevaluatorlog) << "processing section " << section << std::endl;
 
 		// Get all possible mappings of result to ground truth.
 		allMappings.push_back(getAllMappings(section));
@@ -81,13 +81,13 @@ ResultEvaluator::updateOutputs() {
 
 		std::map<int, std::map<int, Errors> > errors;
 
-		LOG_ALL(resultevaluatorlog)
+		LOG_DEBUG(resultevaluatorlog)
 				<< "computing errors for all " << currentMappings.size() << "x"
 				<< previousMappings.size() << " combinations" << std::endl;
 
 		for (unsigned int i = 0; i < currentMappings.size(); i++)
 			for (unsigned int j = 0; j < previousMappings.size(); j++)
-				errors[i][j] = getErrors(*_result, *_groundTruth, currentMappings[i], previousMappings[j], section);
+				errors[i][j] = getErrors(currentMappings[i], previousMappings[j], section);
 
 		// For each mapping of the current section, get the minimal number of 
 		// errors up to the current section, remember which mapping in the 
@@ -127,7 +127,7 @@ ResultEvaluator::updateOutputs() {
 	Errors minErrors;
 	int bestMapping = -1;
 
-	LOG_ALL(resultevaluatorlog) << "walking backwards to find sequence of optimal mappings" << std::endl;
+	LOG_DEBUG(resultevaluatorlog) << "walking backwards to find sequence of optimal mappings" << std::endl;
 
 	for (unsigned int i = 0; i < allMappings[_numSections-1].size(); i++) {
 
@@ -146,14 +146,23 @@ ResultEvaluator::updateOutputs() {
 
 		bestMappings[section] = allMappings[section][bestMapping];
 
-		int bestMapping = bestPreviousMapping[section][bestMapping];
+		if (section > 0)
+			bestMapping = bestPreviousMapping[section][bestMapping];
 	}
 
 	// Set outputs.
 
 	*_errors = minErrors;
 
-	LOG_ALL(resultevaluatorlog) << "done" << std::endl;
+	LOG_DEBUG(resultevaluatorlog) << "done" << std::endl;
+
+	LOG_ALL(resultevaluatorlog) << "false merges:" << std::endl;
+	int a, b;
+	foreach (boost::tie(a, b), minErrors.falseMerges())
+		LOG_ALL(resultevaluatorlog) << "[" << a << ", " << b << "]" << std::endl;
+	LOG_ALL(resultevaluatorlog) << "false splits:" << std::endl;
+	foreach (boost::tie(a, b), minErrors.falseSplits())
+		LOG_ALL(resultevaluatorlog) << "[" << a << ", " << b << "]" << std::endl;
 }
 
 ResultEvaluator::Mappings
@@ -211,11 +220,22 @@ ResultEvaluator::getResultSlices(unsigned int section) {
 void
 ResultEvaluator::findAllSlicesAndLinks() {
 
+	_resultSlices      = std::vector<std::vector<boost::shared_ptr<Slice> > >();
+	_groundTruthSlices = std::vector<std::vector<boost::shared_ptr<Slice> > >();
+	_resultLinks       = std::vector<std::set<std::pair<int, int> > >();
+	_groundTruthLinks  = std::vector<std::set<std::pair<int, int> > >();
+
+	LOG_DEBUG(resultevaluatorlog) << "collecting all ground-truth slices" << std::endl;
 	_groundTruthSlices = findSlices(*_groundTruth);
+
+	LOG_DEBUG(resultevaluatorlog) << "collecting all result slices" << std::endl;
 	_resultSlices      = findSlices(*_result);
 
+	LOG_DEBUG(resultevaluatorlog) << "collecting all ground-truth links" << std::endl;
 	_groundTruthLinks = findLinks(*_groundTruth);
-	_resultLinks      = findLinks(*_groundTruth);
+
+	LOG_DEBUG(resultevaluatorlog) << "collecting all result links" << std::endl;
+	_resultLinks      = findLinks(*_result);
 }
 
 std::vector<std::vector<boost::shared_ptr<Slice> > >
@@ -318,6 +338,8 @@ ResultEvaluator::insertSlice(
 		std::vector<std::set<boost::shared_ptr<Slice> > >& sliceSets,
 		boost::shared_ptr<Slice>                           slice) {
 
+	LOG_ALL(resultevaluatorlog) << "inserting slice " << slice->getId() << " to set of section " << slice->getSection() << std::endl;
+
 	// Add the slice to its section set.
 	sliceSets[slice->getSection()].insert(slice);
 }
@@ -393,8 +415,6 @@ ResultEvaluator::createMappings(
 
 Errors
 ResultEvaluator::getErrors(
-		const Segments& result,
-		const Segments& groundTruth,
 		const Mapping& mapping,
 		const Mapping& previousMapping,
 		unsigned int section) {
@@ -406,59 +426,9 @@ ResultEvaluator::getErrors(
 
 	Errors intraErrors = getIntraErrors(mapping, section);
 
-	// Create a look-up table for result ids to ground-truth ids under the 
-	// current mapping.
-	std::map<int, std::vector<int> > partnersOf;
-	std::map<int, std::vector<int> > previousPartnersOf;
+	// Get inter-section errors.
 
-	int r, g;
-	foreach (boost::tie(r, g), mapping)
-		partnersOf[r].push_back(g);
-	foreach (boost::tie(r, g), previousMapping)
-		previousPartnersOf[r].push_back(g);
-
-	// Get all links in result.
-	std::set<std::pair<int, int> > resultLinks = _resultLinks[section];
-	std::set<std::pair<int, int> > trueResultLinks;
-
-	// Get all links in ground-truth.
-	std::set<std::pair<int, int> > groundTruthLinks = _groundTruthLinks[section];
-	std::set<std::pair<int, int> > foundGroundTruthLinks;
-
-	// For each link in result...
-	int a, b;
-	foreach (boost::tie(a, b), resultLinks) {
-
-		// ...find all corresponding links in ground-truth.
-
-		// For each partner pa of a
-		foreach (int pa, previousPartnersOf[a]) {
-
-			// For each partner pb of b
-			foreach (int pb, partnersOf[b]) {
-
-				// If (pa, pb) is in groundTruthLinks
-				if (groundTruthLinks.count(std::make_pair(pa, pb))) {
-
-					// ...remember result and ground-truth link as true 
-					// positives
-					trueResultLinks.insert(std::make_pair(a, b));
-					foundGroundTruthLinks.insert(std::make_pair(pa, pb));
-				}
-			}
-		}
-	}
-
-	Errors interErrors;
-
-	// Remaining result links are false merges.
-
-	interErrors.numFalseMerges = resultLinks.size() - trueResultLinks.size();
-
-
-	// Remaining ground-truth links are false splits.
-
-	interErrors.numFalseSplits = groundTruthLinks.size() - foundGroundTruthLinks.size();
+	Errors interErrors = getInterErrors(mapping, previousMapping, section);
 
 	return intraErrors + interErrors;
 }
@@ -501,16 +471,101 @@ ResultEvaluator::getIntraErrors(const Mapping& mapping, unsigned int section) {
 
 	// Remaining result slice ids are false positives.
 
-	errors.numFalsePositives = resultIds.size();
+	errors.falsePositives() = resultIds;
 
 	// Remaining ground-truth slice ids are false negatives.
 
-	errors.numFalseNegatives = groundTruthIds.size();
+	errors.falseNegatives() = groundTruthIds;
 
 	LOG_ALL(resultevaluatorlog)
-			<< errors.numFalsePositives << " false positives, "
-			<< errors.numFalseNegatives << " false negatives" << std::endl;
+			<< errors.numFalsePositives() << " false positives, "
+			<< errors.numFalseNegatives() << " false negatives" << std::endl;
 
 	return errors;
+}
+
+Errors
+ResultEvaluator::getInterErrors(
+		const Mapping& mapping,
+		const Mapping& previousMapping,
+		unsigned int section) {
+
+	Errors interErrors;
+
+	// Create a look-up table for result ids to ground-truth ids under the 
+	// current mapping.
+	std::map<int, std::vector<int> > partnersOf;
+	std::map<int, std::vector<int> > previousPartnersOf;
+
+	int r, g;
+	foreach (boost::tie(r, g), mapping)
+		partnersOf[r].push_back(g);
+	foreach (boost::tie(r, g), previousMapping)
+		previousPartnersOf[r].push_back(g);
+
+	// Get all links in result.
+	std::set<std::pair<int, int> > resultLinks = _resultLinks[section];
+	std::set<std::pair<int, int> > trueResultLinks;
+
+	// Get all links in ground-truth.
+	std::set<std::pair<int, int> > groundTruthLinks = _groundTruthLinks[section];
+	std::set<std::pair<int, int> > foundGroundTruthLinks;
+
+	int a, b;
+
+	LOG_ALL(resultevaluatorlog) << "result links: ";
+	foreach (boost::tie(a, b), resultLinks)
+		LOG_ALL(resultevaluatorlog) << "    (" << a << ", " << b << ")" << std::endl;
+
+	LOG_ALL(resultevaluatorlog) << "ground truth links: ";
+	foreach (boost::tie(a, b), groundTruthLinks)
+		LOG_ALL(resultevaluatorlog) << "    (" << a << ", " << b << ")" << std::endl;
+
+	// For each link in result...
+	foreach (boost::tie(a, b), resultLinks) {
+
+		// ...find all corresponding links in ground-truth.
+
+		// For each partner pa of a
+		foreach (int pa, previousPartnersOf[a]) {
+
+			// For each partner pb of b
+			foreach (int pb, partnersOf[b]) {
+
+				// If (pa, pb) is in groundTruthLinks
+				if (groundTruthLinks.count(std::make_pair(pa, pb))) {
+
+					// ...remember result and ground-truth link as true 
+					// positives
+					trueResultLinks.insert(std::make_pair(a, b));
+					foundGroundTruthLinks.insert(std::make_pair(pa, pb));
+
+					LOG_ALL(resultevaluatorlog) << "found a mathing link: (" << a << ", " << b << ") -> (" << pa << ", " << pb << ")" << std::endl;
+				}
+			}
+		}
+	}
+
+	LOG_ALL(resultevaluatorlog) << "true result links: ";
+	foreach (boost::tie(a, b), trueResultLinks)
+		LOG_ALL(resultevaluatorlog) << "    (" << a << ", " << b << ")" << std::endl;
+
+	LOG_ALL(resultevaluatorlog) << "found ground truth links: ";
+	foreach (boost::tie(a, b), foundGroundTruthLinks)
+		LOG_ALL(resultevaluatorlog) << "    (" << a << ", " << b << ")" << std::endl;
+
+	// Remaining result links are false merges.
+
+	foreach (boost::tie(a, b), trueResultLinks)
+		resultLinks.erase(std::make_pair(a, b));
+	interErrors.falseMerges() = resultLinks;
+
+	// Remaining ground-truth links are false splits.
+
+	foreach (boost::tie(a, b), foundGroundTruthLinks)
+		groundTruthLinks.erase(std::make_pair(a, b));
+	interErrors.falseSplits() = groundTruthLinks;
+
+	return interErrors;
 }
 

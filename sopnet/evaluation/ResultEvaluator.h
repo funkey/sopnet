@@ -54,13 +54,18 @@ private:
 			unsigned int                            numSlice);
 
 	Errors getErrors(
-			const Segments& result,
-			const Segments& groundTruth,
 			const Mapping& mapping,
 			const Mapping& previousMapping,
 			unsigned int section);
 
-	Errors getIntraErrors(const Mapping& mapping, unsigned int section);
+	Errors getIntraErrors(
+			const Mapping& mapping,
+			unsigned int section);
+
+	Errors getInterErrors(
+			const Mapping& mapping,
+			const Mapping& previousMapping,
+			unsigned int section);
 
 	pipeline::Input<Segments> _result;
 	pipeline::Input<Segments> _groundTruth;
