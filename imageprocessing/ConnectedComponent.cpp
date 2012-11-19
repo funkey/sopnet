@@ -14,11 +14,11 @@ ConnectedComponent::ConnectedComponent(
 		unsigned int begin,
 		unsigned int end) :
 
+	_pixels(pixelList),
 	_value(value),
 	_boundingBox(0, 0, 0, 0),
 	_center(0, 0),
 	_source(source),
-	_pixels(pixelList),
 	_begin(_pixels->begin() + begin),
 	_end(_pixels->begin() + end) {
 
@@ -33,10 +33,10 @@ ConnectedComponent::ConnectedComponent(
 
 	foreach (const util::point<unsigned int>& pixel, getPixels()) {
 
-		_boundingBox.minX = std::min(_boundingBox.minX, (double)pixel.x);
-		_boundingBox.maxX = std::max(_boundingBox.maxX, (double)pixel.x + 1);
-		_boundingBox.minY = std::min(_boundingBox.minY, (double)pixel.y);
-		_boundingBox.maxY = std::max(_boundingBox.maxY, (double)pixel.y + 1);
+		_boundingBox.minX = std::min(_boundingBox.minX, (int)pixel.x);
+		_boundingBox.maxX = std::max(_boundingBox.maxX, (int)pixel.x + 1);
+		_boundingBox.minY = std::min(_boundingBox.minY, (int)pixel.y);
+		_boundingBox.maxY = std::max(_boundingBox.maxY, (int)pixel.y + 1);
 
 		_center += pixel;
 	}
@@ -45,7 +45,7 @@ ConnectedComponent::ConnectedComponent(
 
 	_bitmap.reshape(bitmap_type::size_type(_boundingBox.width(), _boundingBox.height()), false);
 
-	foreach (const util::point<unsigned int>& pixel, getPixels())
+	foreach (const util::point<int>& pixel, getPixels())
 		_bitmap(pixel.x - _boundingBox.minX, pixel.y - _boundingBox.minY) = true;
 }
 
@@ -73,13 +73,13 @@ ConnectedComponent::getPixelList() const {
 	return _pixels;
 }
 
-const unsigned int
+unsigned int
 ConnectedComponent::getSize() const {
 
 	return _end - _begin;
 }
 
-const util::rect<double>&
+const util::rect<int>&
 ConnectedComponent::getBoundingBox() const {
 
 	return _boundingBox;

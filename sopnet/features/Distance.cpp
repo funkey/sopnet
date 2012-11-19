@@ -13,7 +13,7 @@ Distance::operator()(
 		double& maxSliceDistance) {
 
 	// values to add to slice2's pixel positions
-	util::point<unsigned int> offset2(0, 0);
+	util::point<int> offset2(0, 0);
 
 	// ...only non-zero if we want to align both slices
 	if (align)
@@ -46,7 +46,7 @@ Distance::operator()(
 		double& maxSliceDistance) {
 
 	// values to add to slice2's pixel positions
-	util::point<unsigned int> offset2(0, 0);
+	util::point<int> offset2(0, 0);
 
 	// ...only non-zero if we want to align slice2 to both slice1s
 	if (align) {
@@ -93,19 +93,19 @@ void
 Distance::distance(
 		const Slice& s1,
 		const Slice& s2,
-		const util::point<unsigned int>& offset2,
+		const util::point<int>& offset2,
 		double& avgSliceDistance,
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<unsigned int> s2dmbb = s2.getDistanceMapBoundingBox();
+	const util::rect<int> s2dmbb = s2.getDistanceMapBoundingBox();
 
 	double totalDistance = 0.0;
 
 	maxSliceDistance = 0.0;
 
-	foreach (util::point<unsigned int> p1, c1.getPixels()) {
+	foreach (util::point<int> p1, c1.getPixels()) {
 
 		// correct for offset2
 		p1 += offset2;
@@ -119,7 +119,7 @@ Distance::distance(
 		}
 
 		// get p1's position in s2's distance map
-		p1 -= util::point<unsigned int>(s2dmbb.minX, s2dmbb.minY);
+		p1 -= util::point<int>(s2dmbb.minX, s2dmbb.minY);
 
 		// add up the value
 		double dist = s2.getDistanceMap()(p1.x, p1.y);
@@ -135,20 +135,20 @@ Distance::distance(
 		const Slice& s1,
 		const Slice& s2a,
 		const Slice& s2b,
-		const util::point<unsigned int>& offset2,
+		const util::point<int>& offset2,
 		double& avgSliceDistance,
 		double& maxSliceDistance) {
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<unsigned int> s2dmbba = s2a.getDistanceMapBoundingBox();
-	const util::rect<unsigned int> s2dmbbb = s2b.getDistanceMapBoundingBox();
+	const util::rect<int> s2dmbba = s2a.getDistanceMapBoundingBox();
+	const util::rect<int> s2dmbbb = s2b.getDistanceMapBoundingBox();
 
 	double totalDistance = 0.0;
 
 	maxSliceDistance = 0.0;
 
-	foreach (util::point<unsigned int> p1, c1.getPixels()) {
+	foreach (util::point<int> p1, c1.getPixels()) {
 
 		// correct for offset2
 		p1 += offset2;
@@ -156,7 +156,7 @@ Distance::distance(
 		double distancea;
 
 		{
-			util::point<unsigned int> p1a = p1;
+			util::point<int> p1a = p1;
 
 			// is it within s2a's distance map bounding box?
 			if (!s2dmbba.contains(p1a)) {
@@ -166,7 +166,7 @@ Distance::distance(
 			} else {
 
 				// get p1a's position in s2a's distance map
-				p1a -= util::point<unsigned int>(s2dmbba.minX, s2dmbba.minY);
+				p1a -= util::point<int>(s2dmbba.minX, s2dmbba.minY);
 
 				// add up the value
 				distancea = s2a.getDistanceMap()(p1a.x, p1a.y);
@@ -176,7 +176,7 @@ Distance::distance(
 		double distanceb;
 
 		{
-			util::point<unsigned int> p1b = p1;
+			util::point<int> p1b = p1;
 
 			// is it within s2b's distance map bounding box?
 			if (!s2dmbbb.contains(p1b)) {
@@ -186,7 +186,7 @@ Distance::distance(
 			} else {
 
 				// get p1b's position in s2b's distance map
-				p1b -= util::point<unsigned int>(s2dmbbb.minX, s2dmbbb.minY);
+				p1b -= util::point<int>(s2dmbbb.minX, s2dmbbb.minY);
 
 				// add up the value
 				distanceb = s2b.getDistanceMap()(p1b.x, p1b.y);

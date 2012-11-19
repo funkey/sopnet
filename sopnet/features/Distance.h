@@ -66,7 +66,7 @@ private:
 	void distance(
 			const Slice& slice1,
 			const Slice& slice2,
-			const util::point<unsigned int>& offset2,
+			const util::point<int>& offset2,
 			double& avgSliceDistance,
 			double& maxSliceDistance);
 
@@ -74,7 +74,7 @@ private:
 			const Slice& s1,
 			const Slice& s2a,
 			const Slice& s2b,
-			const util::point<unsigned int>& offset2,
+			const util::point<int>& offset2,
 			double& avgSliceDistance,
 			double& maxSliceDistance);
 

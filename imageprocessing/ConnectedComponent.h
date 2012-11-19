@@ -45,7 +45,7 @@ public:
 	/**
 	 * Get the number of pixels of this component.
 	 */
-	const unsigned int getSize() const;
+	unsigned int getSize() const;
 
 	/**
 	 * Get the mean pixel location of this component.
@@ -55,7 +55,7 @@ public:
 	/**
 	 * Get the bounding box of this component.
 	 */
-	const util::rect<double>& getBoundingBox() const;
+	const util::rect<int>& getBoundingBox() const;
 
 	/**
 	 * Get a bitmap of the size of the bounding box with values 'true' for every
@@ -89,7 +89,7 @@ private:
 	double                                  _value;
 
 	// the min and max x and y values
-	util::rect<double>                      _boundingBox;
+	util::rect<int>                         _boundingBox;
 
 	// the center of mass of this component
 	util::point<double>                     _center;

@@ -56,7 +56,7 @@ Slice::computeDistanceMap() {
 
 	unsigned int maxDistance = optionMaxDistanceMapValue.as<unsigned int>();
 
-	const util::rect<double>& boundingBox = _component->getBoundingBox();
+	const util::rect<int>& boundingBox = _component->getBoundingBox();
 
 	// comput size and offset of distance map
 	_distanceMapSize.minX = boundingBox.minX - maxDistance;
@@ -72,10 +72,10 @@ Slice::computeDistanceMap() {
 	// copy slice pixels into object image
 	foreach (const util::point<unsigned int>& pixel, _component->getPixels()) {
 
-		unsigned int x = pixel.x - boundingBox.minX + maxDistance;
-		unsigned int y = pixel.y - boundingBox.minY + maxDistance;
+		int x = pixel.x - boundingBox.minX + maxDistance;
+		int y = pixel.y - boundingBox.minY + maxDistance;
 
-		if (x < 0 || x >= _distanceMapSize.width() || y < 0 || y >= _distanceMapSize.height()) {
+		if (x < 0 || x >= (int)_distanceMapSize.width() || y < 0 || y >= (int)_distanceMapSize.height()) {
 
 			LOG_ERROR(logger::out) << "[Slice] invalid pixel position: " << x << ", " << y << std::endl;
 

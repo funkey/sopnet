@@ -53,7 +53,7 @@ public:
 	/**
 	 * Get the bounding box of the distance map.
 	 */
-	const util::rect<unsigned int>& getDistanceMapBoundingBox() const { return _distanceMapSize; }
+	const util::rect<int>& getDistanceMapBoundingBox() const { return _distanceMapSize; }
 
 	/**
 	 * Intersect this slice with another one. Note that the result might not be
@@ -80,7 +80,7 @@ private:
 	distance_map_type _distanceMap;
 
 	// the upper left corner and extends of the distance map in the section
-	util::rect<unsigned int> _distanceMapSize;
+	util::rect<int> _distanceMapSize;
 };
 
 #endif // CELLTRACKER_CELL_H__
