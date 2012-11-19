@@ -56,4 +56,6 @@ std::ostream& operator<<(std::ostream& out, const LinearConstraint& constraint) 
 	out << (constraint.getRelation() == LessEqual ? "<=" : (constraint.getRelation() == GreaterEqual ? ">=" : "=="));
 
 	out << " " << constraint.getValue();
+
+	return out;
 }

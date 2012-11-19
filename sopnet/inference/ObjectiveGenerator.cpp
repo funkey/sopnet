@@ -29,13 +29,13 @@ ObjectiveGenerator::updateObjective() {
 	std::vector<double> allCosts(_segments->size(), 0);
 
 	// accumulate costs
-	for (int i = 0; i < _costFunctions.size(); i++) {
+	for (unsigned int i = 0; i < _costFunctions.size(); i++) {
 
 		costs_function_type& costFunction = *_costFunctions[i];
 		costFunction(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), allCosts);
 	}
 
 	// set the coefficients
-	for (int i = 0; i < allCosts.size(); i++)
+	for (unsigned int i = 0; i < allCosts.size(); i++)
 		_objective->setCoefficient(i, allCosts[i]);
 }

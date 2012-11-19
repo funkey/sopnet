@@ -1,15 +1,16 @@
 #include "Slices.h"
 
 Slices::Slices() :
-	_kdTree(0),
 	_adaptor(0),
+	_kdTree(0),
 	_kdTreeDirty(true) {}
 
 Slices::Slices(const Slices& other) :
+	pipeline::Data(),
 	_slices(other._slices),
 	_conflicts(other._conflicts),
-	_kdTree(0),
 	_adaptor(0),
+	_kdTree(0),
 	_kdTreeDirty(true) {}
 
 Slices&
@@ -66,7 +67,7 @@ Slices::addAll(const Slices& slices) {
 void
 Slices::remove(boost::shared_ptr<Slice> slice) {
 
-	for (int i = 0; i < _slices.size(); i++)
+	for (unsigned int i = 0; i < _slices.size(); i++)
 		if (_slices[i] == slice) {
 
 			_slices.erase(_slices.begin() + i);
@@ -123,7 +124,7 @@ Slices::find(const util::point<double>& center, double distance) {
 	query[0] = center.x;
 	query[1] = center.y;
 
-	nanoflann::SearchParams params;
+	nanoflann::SearchParams params(0 /* ignored parameter */);
 
 	_kdTree->radiusSearch(&query[0], distance, results, params);
 

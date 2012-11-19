@@ -34,7 +34,7 @@ private:
 	unsigned int numDifferent(
 			unsigned int size1,
 			const std::vector<bool>& pixels,
-			const util::point<unsigned int>& size,
+			const util::point<int>& size,
 			const util::point<double>& centerOffset,
 			const util::point<double>& offset,
 			const Slice& slice2);

@@ -335,6 +335,12 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
 
+		// create result evaluator if needed by anyone
+		boost::shared_ptr<ResultEvaluator> resultEvaluator;
+
+		if (optionShowErrors)
+			resultEvaluator = boost::make_shared<ResultEvaluator>();
+
 		if (optionShowAllSegments) {
 
 			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("all segments");
@@ -373,6 +379,9 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<RotateView>   rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
 
+			if (optionShowErrors)
+				resultView->setInput("errors", resultEvaluator->getOutput());
+
 			resultView->setInput(sopnet->getOutput("solution"));
 			rotateView->setInput(resultView->getOutput());
 			namedView->setInput(rotateView->getOutput());
@@ -385,6 +394,9 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<SegmentsView> groundTruthView = boost::make_shared<SegmentsView>("ground truth");
 			boost::shared_ptr<RotateView>   gtRotateView    = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>    namedView       = boost::make_shared<NamedView>("Ground-truth:");
+
+			if (optionShowErrors)
+				groundTruthView->setInput("errors", resultEvaluator->getOutput());
 
 			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
 			groundTruthView->setInput("raw sections", rawSectionsReader->getOutput());
@@ -430,6 +442,8 @@ int main(int optionc, char** optionv) {
 
 			neuronExtractor->setInput(sopnet->getOutput("solution"));
 			neuronsView->setInput(neuronExtractor->getOutput());
+			if (optionShowErrors)
+				neuronsView->setInput("errors", resultEvaluator->getOutput());
 			namedView->setInput(neuronsView->getOutput());
 
 			mainContainer->addInput(namedView->getOutput());
@@ -437,9 +451,8 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowErrors) {
 
-			boost::shared_ptr<ResultEvaluator> resultEvaluator = boost::make_shared<ResultEvaluator>();
-			boost::shared_ptr<ErrorsView>      errorsView      = boost::make_shared<ErrorsView>();
-			boost::shared_ptr<NamedView>       namedView       = boost::make_shared<NamedView>("Errors:");
+			boost::shared_ptr<ErrorsView> errorsView = boost::make_shared<ErrorsView>();
+			boost::shared_ptr<NamedView>  namedView  = boost::make_shared<NamedView>("Errors:");
 
 			resultEvaluator->setInput("result", sopnet->getOutput("solution"));
 			resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));

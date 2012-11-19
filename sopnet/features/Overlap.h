@@ -36,7 +36,7 @@ private:
 	unsigned int overlap(
 			const ConnectedComponent& c1,
 			const ConnectedComponent& c2,
-			const util::point<unsigned int>& offset2);
+			const util::point<int>& offset2);
 };
 
 #endif // SOPNET_OVERLAP_H__

@@ -68,7 +68,7 @@ ComponentTreeConverter::visitNode(boost::shared_ptr<ComponentTree::Node> node) {
 }
 
 void
-ComponentTreeConverter::leaveNode(boost::shared_ptr<ComponentTree::Node> node) {
+ComponentTreeConverter::leaveNode(boost::shared_ptr<ComponentTree::Node>) {
 
 	_path.pop_back();
 }

@@ -195,8 +195,8 @@ add_subdirectory(modules/gui)
 # compiler settings #
 #####################
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -fomit-frame-pointer -Wno-deprecated -Wno-invalid-offsetof")
-set(CMAKE_CXX_FLAGS_DEBUG   "-g -Wall -Wno-deprecated -Wno-invalid-offsetof")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra -fomit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG   "-g -Wall -Wextra")
 
 ###############
 # main target #

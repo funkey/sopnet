@@ -62,7 +62,7 @@ NeuronExtractor::updateOutputs() {
 
 	// prepare neurons
 	std::vector<boost::shared_ptr<Neuron> > neurons(neuronId);
-	for (int i = 0; i < neuronId; i++)
+	for (unsigned int i = 0; i < neuronId; i++)
 		neurons[i] = boost::make_shared<Neuron>();
 
 	// collect all end segments

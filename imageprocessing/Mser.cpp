@@ -113,10 +113,10 @@ Mser::reset() {
 	}
 
 	// reset the contents of the per-value data structures
-	for (int i = 0; i < _stacks.size(); i++)
+	for (unsigned int i = 0; i < _stacks.size(); i++)
 		_stacks[i] = std::stack<unsigned int>();
 
-	for (int i = 0; i < _regions.size(); i++)
+	for (unsigned int i = 0; i < _regions.size(); i++)
 		_regions[i] = mser::Region();
 
 	// reset counters
@@ -295,7 +295,7 @@ Mser::processStack(int nextValue) {
 
 	while (true) {
 
-		processCurrentRegion(nextValue);
+		processCurrentRegion();
 
 		if (nextValue < _regions[_currentRegion - 1].getValue()) {
 
@@ -317,7 +317,7 @@ Mser::processStack(int nextValue) {
 }
 
 void
-Mser::processCurrentRegion(int nextValue) {
+Mser::processCurrentRegion() {
 
 	// check for stability of the current region
 	if (_regions[_currentRegion].isStable()) {
@@ -388,10 +388,10 @@ Mser::createComponentTree() {
 	 */
 
 	// find the first and last pixel index
-	unsigned int begin = PixelList::None;
-	unsigned int end   = PixelList::None;
+	int begin = PixelList::None;
+	int end   = PixelList::None;
 
-	for (int i = 0; i < _pixelList.size() && (begin == PixelList::None || end == PixelList::None); i++) {
+	for (unsigned int i = 0; i < _pixelList.size() && (begin == PixelList::None || end == PixelList::None); i++) {
 
 		if (_pixelList.prev[i] == PixelList::None)
 			begin = i;
@@ -404,7 +404,7 @@ Mser::createComponentTree() {
 	mser::Region root(255, &_pixelList, _image, &(*_parameters), begin, end);
 
 	// add all top-level msers as children to root
-	for (int i = 0; i < _msers.size(); i++)
+	for (unsigned int i = 0; i < _msers.size(); i++)
 		if (_msers[i].isTopLevel())
 			root.addChildRegion(i);
 

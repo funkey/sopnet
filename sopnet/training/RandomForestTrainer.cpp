@@ -31,7 +31,7 @@ RandomForestTrainer::RandomForestTrainer() :
 }
 
 void
-RandomForestTrainer::onGroundTruthSet(const pipeline::InputSet<Segments>& signal) {
+RandomForestTrainer::onGroundTruthSet(const pipeline::InputSet<Segments>&) {
 
 	_goldStandardExtractor->setInput("ground truth", _groundTruth);
 
@@ -57,14 +57,14 @@ RandomForestTrainer::onGroundTruthSet(const pipeline::InputSet<Segments>& signal
 }
 
 void
-RandomForestTrainer::onSegmentsSet(const pipeline::InputSet<Segments>& signal) {
+RandomForestTrainer::onSegmentsSet(const pipeline::InputSet<Segments>&) {
 
 	_goldStandardExtractor->setInput("all segments", _allSegments);
 	_segmentFeaturesExtractor->setInput("segments", _allSegments);
 }
 
 void
-RandomForestTrainer::onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal) {
+RandomForestTrainer::onRawSectionsSet(const pipeline::InputSet<ImageStack>&) {
 
 	_gtFeaturesExtractor->setInput("raw sections", _rawSections);
 	_segmentFeaturesExtractor->setInput("raw sections", _rawSections);

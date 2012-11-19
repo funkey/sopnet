@@ -46,10 +46,14 @@ QuadraticSolver::solve() {
 
 	std::string message;
 
-	if (_solver->solve(*_solution, value, message))
+	if (_solver->solve(*_solution, value, message)) {
+
 		LOG_USER(quadraticsolverlog) << "optimal solution found" << std::endl;
-	else
+
+	} else {
+
 		LOG_ERROR(quadraticsolverlog) << "error: " << message << std::endl;
+	}
 }
 
 unsigned int

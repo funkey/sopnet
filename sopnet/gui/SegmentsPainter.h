@@ -4,6 +4,7 @@
 #include <gui/RecordablePainter.h>
 #include <gui/Texture.h>
 #include <imageprocessing/ImageStack.h>
+#include <sopnet/evaluation/Errors.h>
 #include <sopnet/segments/Segments.h>
 #include "SliceTextures.h"
 
@@ -22,6 +23,11 @@ public:
 	 * Set the segments to draw.
 	 */
 	void setSegments(boost::shared_ptr<Segments> segments);
+
+	/**
+	 * Set the errors to highlight.
+	 */
+	void setErrors(boost::shared_ptr<Errors> errors);
 
 	void showEnds(bool show);
 
@@ -51,9 +57,13 @@ private:
 
 	void drawSlice(boost::shared_ptr<Slice> slice, double red, double green, double blue);
 
+	void drawLink(const Slice& slice1, const Slice& slice2, double red, double green, double blue);
+
 	boost::shared_ptr<ImageStack> _imageStack;
 
 	boost::shared_ptr<Segments> _segments;
+
+	boost::shared_ptr<Errors> _errors;
 
 	util::rect<double> _size;
 

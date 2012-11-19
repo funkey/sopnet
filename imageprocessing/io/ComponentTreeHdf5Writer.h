@@ -22,7 +22,7 @@ private:
 		WriteVisitor(unsigned int numComponents);
 
 		void visitNode(boost::shared_ptr<ComponentTree::Node> node);
-		void visitEdge(boost::shared_ptr<ComponentTree::Node> parent, boost::shared_ptr<ComponentTree::Node> child) {};
+		void visitEdge(boost::shared_ptr<ComponentTree::Node>, boost::shared_ptr<ComponentTree::Node>) {};
 
 		void save(H5::Group& group);
 

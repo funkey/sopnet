@@ -84,10 +84,10 @@ public:
 
 	public:
 
-		void visitNode(boost::shared_ptr<Node> node) {};
-		void visitEdge(boost::shared_ptr<Node> parent, boost::shared_ptr<Node> child) {};
-		void leaveNode(boost::shared_ptr<Node> node) {};
-		void leaveEdge(boost::shared_ptr<Node> parent, boost::shared_ptr<Node> child) {};
+		void visitNode(boost::shared_ptr<Node>) {};
+		void visitEdge(boost::shared_ptr<Node>, boost::shared_ptr<Node>) {};
+		void leaveNode(boost::shared_ptr<Node>) {};
+		void leaveEdge(boost::shared_ptr<Node>, boost::shared_ptr<Node>) {};
 	};
 
 	/**

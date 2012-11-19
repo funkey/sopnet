@@ -13,8 +13,8 @@
 logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[GeometryFeatureExtractor] ");
 
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
-	_distance(Slice::optionMaxDistanceMapValue.as<double>()),
-	_features(boost::make_shared<Features>()) {
+	_features(boost::make_shared<Features>()),
+	_distance(Slice::optionMaxDistanceMapValue.as<double>()) {
 
 	registerInput(_segments, "segments");
 	registerOutput(_features, "features");

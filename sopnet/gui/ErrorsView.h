@@ -26,10 +26,10 @@ private:
 		std::stringstream ss;
 
 		ss
-				<< "false positives: " << _errors->numFalsePositives << ", "
-				<< "false negatives: " << _errors->numFalseNegatives<< ", "
-				<< "false splits: " << _errors->numFalseSplits << ", "
-				<< "false merges: " << _errors->numFalseMerges;
+				<< "false positives: " << _errors->numFalsePositives() << ", "
+				<< "false negatives: " << _errors->numFalseNegatives() << ", "
+				<< "false splits: " << _errors->numFalseSplits() << ", "
+				<< "false merges: " << _errors->numFalseMerges();
 
 		_painter->setText(ss.str());
 

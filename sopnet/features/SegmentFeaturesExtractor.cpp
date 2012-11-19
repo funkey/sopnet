@@ -22,7 +22,7 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 }
 
 void
-SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase& signal) {
+SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 
 	if (_segments && _rawSections) {
 

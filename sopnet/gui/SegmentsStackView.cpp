@@ -20,7 +20,7 @@ SegmentsStackView::SegmentsStackView(bool onlyOneSegment) :
 }
 
 void
-SegmentsStackView::onSegmentsModified(const pipeline::Modified& signal) {
+SegmentsStackView::onSegmentsModified(const pipeline::Modified&) {
 
 	_segmentsModified = true;
 }

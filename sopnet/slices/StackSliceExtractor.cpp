@@ -34,7 +34,7 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 }
 
 void
-StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>& signal) {
+StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(stacksliceextractorlog) << "image stack set" << std::endl;
 
@@ -45,7 +45,7 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>& signal) {
 	_sliceCollector->clearInputs(0);
 
 	// for each image in the stack, set up the pipeline
-	for (int i = 0; i < _sliceImageStack->size(); i++) {
+	for (unsigned int i = 0; i < _sliceImageStack->size(); i++) {
 
 		boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
 

@@ -48,7 +48,7 @@ private:
 
 	void processStack(int nextValue);
 
-	void processCurrentRegion(int nextValue);
+	void processCurrentRegion();
 
 	void setCurrentRegionValue(int value);
 

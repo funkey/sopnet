@@ -30,19 +30,19 @@ LinearSolver::~LinearSolver() {
 }
 
 void
-LinearSolver::onObjectiveModified(const pipeline::Modified& signal) {
+LinearSolver::onObjectiveModified(const pipeline::Modified&) {
 
 	_objectiveDirty = true;
 }
 
 void
-LinearSolver::onLinearConstraintsModified(const pipeline::Modified& signal) {
+LinearSolver::onLinearConstraintsModified(const pipeline::Modified&) {
 
 	_linearConstraintsDirty = true;
 }
 
 void
-LinearSolver::onParametersModified(const pipeline::Modified& signal) {
+LinearSolver::onParametersModified(const pipeline::Modified&) {
 
 	_parametersDirty = true;
 }

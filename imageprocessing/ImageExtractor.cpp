@@ -14,7 +14,7 @@ ImageExtractor::ImageExtractor() {
 }
 
 void
-ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>& signal) {
+ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(imageextractorlog) << "input image stack set" << std::endl;
 
@@ -23,7 +23,7 @@ ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>& signal) {
 	_images.resize(_stack->size());
 
 	// for each image in the stack
-	for (int i = 0; i < _stack->size(); i++) {
+	for (unsigned int i = 0; i < _stack->size(); i++) {
 
 		LOG_ALL(imageextractorlog) << "(re)setting output " << i << std::endl;
 

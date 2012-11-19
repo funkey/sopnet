@@ -54,7 +54,7 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		_model.update();
 
 		// remove default lower bound on variables
-		for (int i = 0; i < _numVariables; i++)
+		for (unsigned int i = 0; i < _numVariables; i++)
 			_variables[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
 
 	} else if (variableType == Integer) {
@@ -66,7 +66,7 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		_model.update();
 
 		// remove default lower bound on variables
-		for (int i = 0; i < _numVariables; i++)
+		for (unsigned int i = 0; i < _numVariables; i++)
 			_variables[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
 	}
 

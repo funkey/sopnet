@@ -34,7 +34,7 @@ RandomForestCostFunction::costs(
 
 	if (segmentCosts.size() == _cache.size()) {
 
-		for (int i = 0; i < segmentCosts.size(); i++)
+		for (unsigned int i = 0; i < segmentCosts.size(); i++)
 			segmentCosts[i] += _cache[i];
 
 		return;

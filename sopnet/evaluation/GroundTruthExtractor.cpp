@@ -19,7 +19,7 @@ GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection) :
 }
 
 void
-GroundTruthExtractor::onInputSet(const pipeline::InputSet<ImageStack>& signal) {
+GroundTruthExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(groundtruthextractorlog) << "ground truth sections set" << std::endl;
 

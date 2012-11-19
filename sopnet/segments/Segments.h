@@ -34,7 +34,7 @@ public:
 	/**
 	 * Nanoflann access interface. Gets the distance between two data points.
 	 */
-	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t size) const {
+	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t) const {
 
 		double d0 = p1[0] - _segments[index_p2]->getCenter().x;
 		double d1 = p1[1] - _segments[index_p2]->getCenter().y;
@@ -60,7 +60,7 @@ public:
 	 * returns false.
 	 */
 	template <class BBox>
-	bool kdtree_get_bbox(BBox &bb) const { return false; }
+	bool kdtree_get_bbox(BBox&) const { return false; }
 
 private:
 
@@ -256,7 +256,7 @@ private:
 		}
 
 		// nothing for interval >= num intervals
-		if (interval >= allSegments.size())
+		if (interval >= (int)allSegments.size())
 			return std::vector<boost::shared_ptr<SegmentType> >();
 
 		return allSegments[interval];
@@ -309,7 +309,7 @@ private:
 		query[0] = center.x;
 		query[1] = center.y;
 
-		nanoflann::SearchParams params;
+		nanoflann::SearchParams params(0 /* ignored parameter */);
 
 		trees[interSectionInterval]->radiusSearch(&query[0], distance, results, params);
 

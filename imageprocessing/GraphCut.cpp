@@ -5,15 +5,16 @@
 
 logger::LogChannel graphcutlog("graphcutlog", "[GraphCut] ");
 
-GraphCut::GraphCut() : _graph(0,0),
+GraphCut::GraphCut() :
+		_segmentation(boost::make_shared<Image>()),
+		_energy(0),
+		_graph(0, 0),
 		_imageChanged(true),
 		_gcParametersChanged(true),
 		_pottsImageChanged(true),
 		_graphWidth(0),
 		_graphHeight(0),
-		_warmStart(false),
-		_segmentation(boost::make_shared<Image>()),
-		_energy(0) {
+		_warmStart(false) {
 
 	registerInput(_image,"image");
 	registerInput(_parameters,"parameters");
@@ -29,7 +30,7 @@ GraphCut::GraphCut() : _graph(0,0),
 }
 
 void
-GraphCut::onModifiedImage(const pipeline::Modified& signal) {
+GraphCut::onModifiedImage(const pipeline::Modified&) {
 
 	LOG_DEBUG(graphcutlog) << "image modified!" << std::endl;
 
@@ -38,7 +39,7 @@ GraphCut::onModifiedImage(const pipeline::Modified& signal) {
 }
 
 void
-GraphCut::onModifiedPottsImage(const pipeline::Modified& signal) {
+GraphCut::onModifiedPottsImage(const pipeline::Modified&) {
 
 	LOG_DEBUG(graphcutlog) << "potts image modified!" << std::endl;
 
@@ -47,7 +48,7 @@ GraphCut::onModifiedPottsImage(const pipeline::Modified& signal) {
 }
 
 void
-GraphCut::onModifiedGCParameters(const pipeline::Modified& signal) {
+GraphCut::onModifiedGCParameters(const pipeline::Modified&) {
 
 	LOG_DEBUG(graphcutlog) << "parameters modified!" << std::endl;
 

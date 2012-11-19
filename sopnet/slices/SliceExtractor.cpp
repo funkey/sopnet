@@ -54,7 +54,7 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 }
 
 void
-SliceExtractor::onInputSet(const pipeline::InputSet<MserParameters>& signal) {
+SliceExtractor::onInputSet(const pipeline::InputSet<MserParameters>&) {
 
 	LOG_ALL(sliceextractorlog) << "using non-default mser parameters" << std::endl;
 

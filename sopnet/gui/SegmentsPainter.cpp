@@ -46,6 +46,12 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 }
 
 void
+SegmentsPainter::setErrors(boost::shared_ptr<Errors> errors) {
+
+	_errors = errors;
+}
+
+void
 SegmentsPainter::showEnds(bool show) {
 
 	LOG_ALL(segmentspainterlog) << getName() << ": show ends == " << show << std::endl;
@@ -258,27 +264,9 @@ SegmentsPainter::draw(const ContinuationSegment& continuation) {
 	drawSlice(continuation.getSourceSlice(), 0.5, 1.0, 0.5);
 	drawSlice(continuation.getTargetSlice(), 0.5, 1.0, 0.5);
 
-	util::point<double> center1 = continuation.getSourceSlice()->getComponent()->getCenter();
-	util::point<double> center2 = continuation.getTargetSlice()->getComponent()->getCenter();
-
-	unsigned int section1 = continuation.getSourceSlice()->getSection();
-	unsigned int section2 = continuation.getTargetSlice()->getSection();
-
 	glCheck(glDisable(GL_TEXTURE_2D));
 
-	glBegin(GL_LINES);
-
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
-
-	glCheck(glEnd());
-
-	glBegin(GL_POINTS);
-
-	glCheck(glVertex3f(center1.x, center1.y, section1*_zScale));
-	glCheck(glVertex3f(center2.x, center2.y, section2*_zScale));
-
-	glCheck(glEnd());
+	drawLink(*continuation.getSourceSlice(), *continuation.getTargetSlice(), 0.5, 1.0, 0.5);
 }
 
 void
@@ -290,43 +278,10 @@ SegmentsPainter::draw(const BranchSegment& branch) {
 	drawSlice(branch.getTargetSlice1(), 0.5, 0.5, 1.0);
 	drawSlice(branch.getTargetSlice2(), 0.5, 0.5, 1.0);
 
-	util::point<double> center1 = branch.getSourceSlice()->getComponent()->getCenter();
-	util::point<double> center2 = branch.getTargetSlice1()->getComponent()->getCenter();
-	util::point<double> center3 = branch.getTargetSlice2()->getComponent()->getCenter();
-
-	unsigned int section1 = branch.getSourceSlice()->getSection();
-	unsigned int section2 = branch.getTargetSlice1()->getSection();
-	unsigned int section3 = branch.getTargetSlice2()->getSection();
-
 	glCheck(glDisable(GL_TEXTURE_2D));
 
-	glBegin(GL_LINES);
-
-	glVertex3f(center1.x, center1.y, section1*_zScale);
-	glVertex3f(center2.x, center2.y, section2*_zScale);
-
-	glCheck(glEnd());
-
-	glBegin(GL_POINTS);
-
-	glVertex3f(center1.x, center1.y, section1*_zScale);
-	glVertex3f(center2.x, center2.y, section2*_zScale);
-
-	glCheck(glEnd());
-
-	glBegin(GL_LINES);
-
-	glVertex3f(center1.x, center1.y, section1*_zScale);
-	glVertex3f(center3.x, center3.y, section3*_zScale);
-
-	glCheck(glEnd());
-
-	glBegin(GL_POINTS);
-
-	glVertex3f(center1.x, center1.y, section1*_zScale);
-	glVertex3f(center3.x, center3.y, section3*_zScale);
-
-	glCheck(glEnd());
+	drawLink(*branch.getSourceSlice(), *branch.getTargetSlice1(), 0.5, 0.5, 1.0);
+	drawLink(*branch.getSourceSlice(), *branch.getTargetSlice2(), 0.5, 0.5, 1.0);
 }
 
 void
@@ -342,6 +297,23 @@ SegmentsPainter::drawSlice(
 			<< " in section " << section << std::endl;
 
 	double z = _zScale*section;
+
+	if (_errors) {
+
+		if (_errors->falsePositives().count(slice->getId())) {
+
+			red   = 1.0;
+			green = 0.0;
+			blue  = 1.0;
+		}
+
+		if (_errors->falseNegatives().count(slice->getId())) {
+
+			red   = 1.0;
+			green = 0.0;
+			blue  = 1.0;
+		}
+	}
 
 	glCheck(glColor4f(red, green, blue, 1.0));
 
@@ -382,4 +354,56 @@ SegmentsPainter::drawSlice(
 		_size.maxX = std::max(_size.maxX, bb.maxX);
 		_size.maxY = std::max(_size.maxY, bb.maxY);
 	}
+}
+
+void
+SegmentsPainter::drawLink(const Slice& slice1, const Slice& slice2, double red, double green, double blue) {
+
+	util::point<double> center1 = slice1.getComponent()->getCenter();
+	util::point<double> center2 = slice2.getComponent()->getCenter();
+
+	unsigned int section1 = slice1.getSection();
+	unsigned int section2 = slice2.getSection();
+
+	const Slice& prev = (section1 < section2 ? slice1 : slice2);
+	const Slice& next = (section1 < section2 ? slice2 : slice1);
+
+	LOG_ALL(segmentspainterlog) << "drawing link [" << prev.getId() << ", " << next.getId() << "]" << std::endl;
+
+	if (_errors) {
+
+		if (_errors->falseSplits().count(std::make_pair(prev.getId(), next.getId()))) {
+
+			LOG_ALL(segmentspainterlog) << "this is a false split link" << std::endl;
+
+			red   = 1.0;
+			green = 0.0;
+			blue  = 1.0;
+		}
+
+		if (_errors->falseMerges().count(std::make_pair(prev.getId(), next.getId()))) {
+
+			LOG_ALL(segmentspainterlog) << "this is a false merge link" << std::endl;
+
+			red   = 1.0;
+			green = 0.0;
+			blue  = 1.0;
+		}
+	}
+
+	glCheck(glColor4f(red, green, blue, 1.0));
+
+	glBegin(GL_LINES);
+
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center2.x, center2.y, section2*_zScale);
+
+	glCheck(glEnd());
+
+	glBegin(GL_POINTS);
+
+	glVertex3f(center1.x, center1.y, section1*_zScale);
+	glVertex3f(center2.x, center2.y, section2*_zScale);
+
+	glCheck(glEnd());
 }

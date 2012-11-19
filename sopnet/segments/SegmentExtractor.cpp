@@ -57,13 +57,13 @@ SegmentExtractor::SegmentExtractor() :
 }
 
 void
-SegmentExtractor::onSlicesModified(const pipeline::Modified& signal) {
+SegmentExtractor::onSlicesModified(const pipeline::Modified&) {
 
 	_slicesChanged = true;
 }
 
 void
-SegmentExtractor::onLinearConstraintsModified(const pipeline::Modified& signal) {
+SegmentExtractor::onLinearConstraintsModified(const pipeline::Modified&) {
 
 	_linearCosntraintsChanged = true;
 }

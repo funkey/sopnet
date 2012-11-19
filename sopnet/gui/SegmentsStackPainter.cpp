@@ -8,16 +8,16 @@ static logger::LogChannel segmentsstackpainterlog("segmentsstackpainterlog", "[S
 SegmentsStackPainter::SegmentsStackPainter(bool onlyOneSegment) :
 	_prevSegments(boost::make_shared<Segments>()),
 	_nextSegments(boost::make_shared<Segments>()),
+	_closestPrevSegment(0),
+	_closestNextSegment(0),
 	_section(0),
 	_onlyOneSegment(onlyOneSegment),
-	_showNext(true),
 	_showPrev(onlyOneSegment ? false : true),
+	_showNext(true),
 	_showEnds(onlyOneSegment ? false : true),
 	_showContinuations(true),
 	_showBranches(onlyOneSegment ? false : true),
 	_showSliceIds(false),
-	_closestPrevSegment(0),
-	_closestNextSegment(0),
 	_focus(0, 0),
 	_zScale(15) {}
 
@@ -403,8 +403,8 @@ SegmentsStackPainter::updateVisibleSegments() {
 
 	// update the sets of previous and next segments
 
-	int prevInterval = _section;
-	int nextInterval = _section + 1;
+	unsigned int prevInterval = _section;
+	unsigned int nextInterval = _section + 1;
 
 	_prevSegments->clear();
 	_nextSegments->clear();
@@ -433,15 +433,12 @@ SegmentsStackPainter::updateVisibleSegments() {
 
 	} else {
 
-		if (prevInterval >= 0) {
-
-			if (_showEnds)
-				_prevSegments->addAll(_segments->getEnds(prevInterval));
-			if (_showContinuations)
-				_prevSegments->addAll(_segments->getContinuations(prevInterval));
-			if (_showBranches)
-				_prevSegments->addAll(_segments->getBranches(prevInterval));
-		}
+		if (_showEnds)
+			_prevSegments->addAll(_segments->getEnds(prevInterval));
+		if (_showContinuations)
+			_prevSegments->addAll(_segments->getContinuations(prevInterval));
+		if (_showBranches)
+			_prevSegments->addAll(_segments->getBranches(prevInterval));
 
 		if (nextInterval < _segments->getNumInterSectionIntervals()) {
 
@@ -463,10 +460,10 @@ SegmentsStackPainter::sizeAddSlice(const util::rect<double>& currentSize, const 
 
 	util::rect<double> size;
 
-	size.minX = std::min(currentSize.minX, slice.getComponent()->getBoundingBox().minX);
-	size.minY = std::min(currentSize.minY, slice.getComponent()->getBoundingBox().minY);
-	size.maxX = std::max(currentSize.maxX, slice.getComponent()->getBoundingBox().maxX);
-	size.maxY = std::max(currentSize.maxY, slice.getComponent()->getBoundingBox().maxY);
+	size.minX = std::min(currentSize.minX, (double)slice.getComponent()->getBoundingBox().minX);
+	size.minY = std::min(currentSize.minY, (double)slice.getComponent()->getBoundingBox().minY);
+	size.maxX = std::max(currentSize.maxX, (double)slice.getComponent()->getBoundingBox().maxX);
+	size.maxY = std::max(currentSize.maxY, (double)slice.getComponent()->getBoundingBox().maxY);
 
 	return size;
 }

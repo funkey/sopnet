@@ -37,8 +37,6 @@ ComponentTreeHdf5Writer::writeComponentTree() {
 }
 
 ComponentTreeHdf5Writer::WriteVisitor::WriteVisitor(unsigned int numComponents) :
-	_numPixelLists(0),
-	_numComponents(0),
 	_pixelListIds(numComponents),
 	_begins(numComponents),
 	_ends(numComponents),
@@ -46,7 +44,9 @@ ComponentTreeHdf5Writer::WriteVisitor::WriteVisitor(unsigned int numComponents) 
 	_maxXs(numComponents),
 	_minYs(numComponents),
 	_maxYs(numComponents),
-	_values(numComponents) {}
+	_values(numComponents),
+	_numPixelLists(0),
+	_numComponents(0) {}
 
 void
 ComponentTreeHdf5Writer::WriteVisitor::visitNode(boost::shared_ptr<ComponentTree::Node> node) {

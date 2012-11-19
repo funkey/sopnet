@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
+#include <sopnet/evaluation/Errors.h>
 #include <sopnet/neurons/Neurons.h>
 
 class NeuronsView : public pipeline::SimpleProcessNode<> {
@@ -42,6 +43,7 @@ private:
 	void onUpdate(const pipeline::Update& signal);
 
 	pipeline::Input<Neurons> _neurons;
+	pipeline::Input<Errors>  _errors;
 
 	boost::shared_ptr<gui::ContainerView<gui::HorizontalPlacing> > _container;
 };

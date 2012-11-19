@@ -41,6 +41,6 @@ SubStackSelector::updateOutputs() {
 		lastImage = _stack->size() - 1;
 	}
 
-	for (int i = _firstImage; i <= lastImage; i++)
+	for (unsigned int i = _firstImage; i <= lastImage; i++)
 		_subStack->add((*_stack)[i]);
 }

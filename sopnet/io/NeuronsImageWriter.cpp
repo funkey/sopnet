@@ -63,7 +63,7 @@ NeuronsImageWriter::write() {
 	}
 
 	// save output images
-	for (int i = 0; i < numSections; i++) {
+	for (unsigned int i = 0; i < numSections; i++) {
 
 		std::stringstream filename;
 

@@ -14,10 +14,10 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 	registerInput(_sections, "raw sections");
 	registerOutput(_features, "features");
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		_features->addName("histogram " + boost::lexical_cast<std::string>(i));
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		_features->addName("normalized histogram " + boost::lexical_cast<std::string>(i));
 }
 
@@ -43,14 +43,14 @@ HistogramFeatureExtractor::getFeatures(const EndSegment& end) {
 
 	std::vector<double> histogram = computeHistogram(*end.getSlice().get());
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[i] = histogram[i];
 
 	double sum = 0;
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		sum += histogram[i];
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[_numBins + i] = histogram[i]/sum;
 
 	return features;
@@ -64,18 +64,18 @@ HistogramFeatureExtractor::getFeatures(const ContinuationSegment& continuation) 
 	std::vector<double> sourceHistogram = computeHistogram(*continuation.getSourceSlice().get());
 	std::vector<double> targetHistogram = computeHistogram(*continuation.getTargetSlice().get());
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
 
 	double sourceSum = 0;
 	double targetSum = 0;
-	for (int i = 0; i < _numBins; i++) {
+	for (unsigned int i = 0; i < _numBins; i++) {
 
 		sourceSum += sourceHistogram[i];
 		targetSum += targetHistogram[i];
 	}
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
 
 	return features;
@@ -92,21 +92,21 @@ HistogramFeatureExtractor::getFeatures(const BranchSegment& branch) {
 
 	std::vector<double> targetHistogram = targetHistogram1;
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		targetHistogram[i] += targetHistogram2[i];
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[i] = std::abs(sourceHistogram[i] - targetHistogram[i]);
 
 	double sourceSum = 0;
 	double targetSum = 0;
-	for (int i = 0; i < _numBins; i++) {
+	for (unsigned int i = 0; i < _numBins; i++) {
 
 		sourceSum += sourceHistogram[i];
 		targetSum += targetHistogram[i];
 	}
 
-	for (int i = 0; i < _numBins; i++)
+	for (unsigned int i = 0; i < _numBins; i++)
 		features[_numBins + i] = std::abs(sourceHistogram[i]/sourceSum - targetHistogram[i]/targetSum);
 
 	return features;

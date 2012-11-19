@@ -25,7 +25,7 @@ RandomForest::prepareTraining(int numSamples, int numFeatures) {
 void
 RandomForest::addSample(const std::vector<FeatureType>& sample, LabelType label) {
 
-	for (int i = 0; i < _numFeatures; i++)
+	for (unsigned int i = 0; i < _numFeatures; i++)
 		_samples(_nextSample, i) = sample[i];
 
 	_labels(_nextSample) = label;
@@ -66,7 +66,7 @@ RandomForest::train(int numTrees, int numFeatures) {
 
 	_outOfBagError = errorVisitor.oob_breiman;
 
-	for (int i = 0; i < _numFeatures; i++)
+	for (unsigned int i = 0; i < _numFeatures; i++)
 		_variableImportance[i] = variableVisitor.variable_importance_(i);
 
 	_numClasses = _rf.class_count();
@@ -89,7 +89,7 @@ RandomForest::getLabel(const std::vector<FeatureType>& sample) {
 
 	SamplesType s(SamplesSize(1, _numFeatures));
 
-	for (int i = 0; i < _numFeatures; i++)
+	for (unsigned int i = 0; i < _numFeatures; i++)
 		s(i) = sample[i];
 
 	return _rf.predictLabel(s);
@@ -101,14 +101,14 @@ RandomForest::getProbabilities(const std::vector<FeatureType>& sample) {
 	SamplesType s(SamplesSize(1, _numFeatures));
 	ProbsType   probs(ProbsSize(1, _numClasses));
 
-	for (int i = 0; i < _numFeatures; i++)
+	for (unsigned int i = 0; i < _numFeatures; i++)
 		s(i) = sample[i];
 
 	_rf.predictProbabilities(s, probs);
 
 	std::vector<double> p(_numClasses);
 
-	for (int c = 0; c < _numClasses; c++)
+	for (unsigned int c = 0; c < _numClasses; c++)
 		p[c] = probs(c);
 
 	return p;

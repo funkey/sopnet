@@ -22,7 +22,7 @@ LinearCostFunction::updateOutputs() {
 }
 
 double
-LinearCostFunction::costs(const Segment& segment, boost::shared_ptr<LinearCostFunctionParameters> parameters) {
+LinearCostFunction::costs(const Segment& segment, boost::shared_ptr<LinearCostFunctionParameters>) {
 
 	LOG_ALL(linearcostfunctionlog) << "evaluating segment " << segment.getId() << std::endl;
 

@@ -24,7 +24,7 @@ TimeView::~TimeView() {
 }
 
 void
-TimeView::onModified(const pipeline::Modified& signal) {
+TimeView::onModified(const pipeline::Modified&) {
 
 	_dirty = true;
 
@@ -32,7 +32,7 @@ TimeView::onModified(const pipeline::Modified& signal) {
 }
 
 void
-TimeView::onUpdate(const pipeline::Update& signal) {
+TimeView::onUpdate(const pipeline::Update&) {
 
 	_textPainter->setText(boost::lexical_cast<std::string>(_time->seconds));
 

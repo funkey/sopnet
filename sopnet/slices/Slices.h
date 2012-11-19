@@ -33,7 +33,7 @@ public:
 	/**
 	 * Nanoflann access interface. Gets the distance between two data points.
 	 */
-	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t size) const {
+	inline double kdtree_distance(const double *p1, const size_t index_p2, size_t) const {
 
 		double d0 = p1[0] - _slices[index_p2]->getComponent()->getCenter().x;
 		double d1 = p1[1] - _slices[index_p2]->getComponent()->getCenter().y;
@@ -59,7 +59,7 @@ public:
 	 * returns false.
 	 */
 	template <class BBox>
-	bool kdtree_get_bbox(BBox &bb) const { return false; }
+	bool kdtree_get_bbox(BBox&) const { return false; }
 
 private:
 

@@ -9,6 +9,7 @@ NeuronsView::NeuronsView() :
 		_container(boost::make_shared<gui::ContainerView<gui::HorizontalPlacing> > ("neurons")) {
 
 	registerInput(_neurons, "neurons");
+	registerInput(_errors, "errors", pipeline::Optional);
 	registerOutput(_container->getOutput(), "painter");
 }
 
@@ -29,6 +30,8 @@ NeuronsView::updateOutputs() {
 		boost::shared_ptr<gui::RotateView> rotateView = boost::make_shared<gui::RotateView>();
 
 		neuronView->setInput("segments", neuron);
+		if (_errors)
+			neuronView->setInput("errors", _errors);
 		rotateView->setInput(neuronView->getOutput());
 		_container->addInput(rotateView->getOutput());
 	}

@@ -33,7 +33,6 @@ util::ProgramOption optionRandomForestFile(
 		util::_default_value    = "segment_rf.hdf");
 
 Sopnet::Sopnet(const std::string& projectDirectory) :
-	_projectDirectory(projectDirectory),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
@@ -45,7 +44,8 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()) {
+	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
+	_projectDirectory(projectDirectory) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
@@ -78,7 +78,7 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 }
 
 void
-Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>& signal) {
+Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(sopnetlog) << "membranes set" << std::endl;
 
@@ -86,7 +86,7 @@ Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>& signal) {
 }
 
 void
-Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>& signal) {
+Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(sopnetlog) << "slices set" << std::endl;
 
@@ -94,7 +94,7 @@ Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>& signal) {
 }
 
 void
-Sopnet::onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal) {
+Sopnet::onRawSectionsSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(sopnetlog) << "raw sections set" << std::endl;
 
@@ -102,7 +102,7 @@ Sopnet::onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal) {
 }
 
 void
-Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal) {
+Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>&) {
 
 	LOG_DEBUG(sopnetlog) << "ground-truth set" << std::endl;
 
@@ -110,7 +110,7 @@ Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal) {
 }
 
 void
-Sopnet::onParametersSet(const pipeline::InputSetBase& signal) {
+Sopnet::onParametersSet(const pipeline::InputSetBase&) {
 
 	LOG_DEBUG(sopnetlog) << "parameters set" << std::endl;
 
@@ -182,7 +182,7 @@ Sopnet::createBasicPipeline() {
 	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
 
 	// for every section
-	for (int section = 0; section < numSections; section++) {
+	for (unsigned int section = 0; section < numSections; section++) {
 
 		boost::shared_ptr<ProcessNode> sliceExtractor;
 
