@@ -9,9 +9,9 @@ NeuronExtractor::NeuronExtractor() {
 void
 NeuronExtractor::updateOutputs() {
 
-	// identify connected segments
-
 	_slices.clear();
+	_neuronIds.clear();
+	_neurons->clear();
 
 	// collect all end slices
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
@@ -34,10 +34,6 @@ NeuronExtractor::updateOutputs() {
 		mergeSlices(
 				branch->getSourceSlice()->getId(),
 				branch->getTargetSlice2()->getId());
-
-		mergeSlices(
-				branch->getTargetSlice1()->getId(),
-				branch->getTargetSlice2()->getId());
 	}
 
 	// assign a neuron id to each slice
@@ -49,13 +45,23 @@ NeuronExtractor::updateOutputs() {
 
 	foreach (boost::tie(sliceId, sameNeuronSlices), _slices) {
 
+		bool alreadyAssigned = false;
+
 		foreach (unsigned int id, sameNeuronSlices) {
 
-			if (!_neuronIds.count(id))
+			if (!_neuronIds.count(id)) {
+
 				_neuronIds[id] = neuronId;
+
+			} else {
+
+				alreadyAssigned = true;
+				break;
+			}
 		}
 
-		neuronId++;
+		if (!alreadyAssigned)
+			neuronId++;
 	}
 
 	// sort segments according to the neuron their slices belong to
@@ -90,8 +96,6 @@ NeuronExtractor::updateOutputs() {
 	}
 
 	// finally, put found neurons in output data structure
-
-	_neurons->clear();
 
 	foreach (boost::shared_ptr<Neuron> neuron, neurons)
 		_neurons->add(neuron);
