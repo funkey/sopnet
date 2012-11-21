@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
+#include <gui/Signals.h>
 #include <sopnet/evaluation/Errors.h>
 #include <sopnet/neurons/Neurons.h>
 
@@ -40,12 +41,17 @@ private:
 
 	void updateOutputs();
 
-	void onUpdate(const pipeline::Update& signal);
+	void onNeuronsModified(const pipeline::Modified& signal);
+
+	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron);
 
 	pipeline::Input<Neurons> _neurons;
 	pipeline::Input<Errors>  _errors;
+	pipeline::Output<unsigned int> _currentNeuron;
 
 	boost::shared_ptr<gui::ContainerView<gui::HorizontalPlacing> > _container;
+
+	bool _neuronsChanged;
 };
 
 #endif // SOPNET_GUI_NEURONS_VIEW_H__

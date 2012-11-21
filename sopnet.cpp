@@ -28,6 +28,7 @@
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/NeuronsView.h>
+#include <sopnet/gui/NeuronsStackView.h>
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
@@ -347,6 +348,10 @@ int main(int optionc, char** optionv) {
 		if (optionShowErrors)
 			resultEvaluator = boost::make_shared<ResultEvaluator>();
 
+		// create a neuron extractor
+		boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
+		neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
+
 		if (optionShowAllSegments) {
 
 			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("all segments");
@@ -363,14 +368,17 @@ int main(int optionc, char** optionv) {
 			controlContainer->addInput(namedView->getOutput());
 		}
 
+		boost::shared_ptr<NeuronsStackView> resultView;
+
 		if (optionShowResult) {
+
+			resultView = boost::make_shared<NeuronsStackView>();
 
 			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("result");
 			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
-			boost::shared_ptr<SegmentsStackView>              resultView   = boost::make_shared<SegmentsStackView>();
 			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("Result:");
 
-			resultView->setInput(sopnet->getOutput("solution"));
+			resultView->setInput(neuronExtractor->getOutput("neurons"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
 			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
@@ -442,17 +450,18 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowNeurons) {
 
-			boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
-			boost::shared_ptr<NeuronsView>     neuronsView     = boost::make_shared<NeuronsView>();
-			boost::shared_ptr<NamedView>       namedView       = boost::make_shared<NamedView>("Found Neurons:");
+			boost::shared_ptr<NeuronsView> neuronsView = boost::make_shared<NeuronsView>();
+			boost::shared_ptr<NamedView>   namedView   = boost::make_shared<NamedView>("Found Neurons:");
 
-			neuronExtractor->setInput(sopnet->getOutput("solution"));
 			neuronsView->setInput(neuronExtractor->getOutput());
 			if (optionShowErrors)
 				neuronsView->setInput("errors", resultEvaluator->getOutput());
 			namedView->setInput(neuronsView->getOutput());
 
 			controlContainer->addInput(namedView->getOutput());
+
+			if (resultView)
+				resultView->setInput("current neuron", neuronsView->getOutput("current neuron"));
 		}
 
 		if (optionShowErrors) {
@@ -492,10 +501,8 @@ int main(int optionc, char** optionv) {
 
 			LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
 
-			boost::shared_ptr<NeuronExtractor>    neuronExtractor = boost::make_shared<NeuronExtractor>();
-			boost::shared_ptr<NeuronsImageWriter> resultWriter    = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
+			boost::shared_ptr<NeuronsImageWriter> resultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
 
-			neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
 			resultWriter->setInput("neurons", neuronExtractor->getOutput());
 			resultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
 
