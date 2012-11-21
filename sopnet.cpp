@@ -356,14 +356,17 @@ int main(int optionc, char** optionv) {
 
 			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("all segments");
 			boost::shared_ptr<ImageStackView>                  sectionsView = boost::make_shared<ImageStackView>(3);
-			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>(true);
+			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>();
+			boost::shared_ptr<RotateView>                      rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>                       namedView    = boost::make_shared<NamedView>("All Segments:");
 
 			resultView->setInput(sopnet->getOutput("segments"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
 			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
-			namedView->setInput(overlay->getOutput());
+			//rotateView->setInput(overlay->getOutput());
+			rotateView->setInput(resultView->getOutput());
+			namedView->setInput(rotateView->getOutput());
 
 			controlContainer->addInput(namedView->getOutput());
 		}
@@ -490,13 +493,6 @@ int main(int optionc, char** optionv) {
 		boost::thread controlThread(boost::bind(&processEvents, controlWindow));
 		boost::thread resultThread(boost::bind(&processEvents, resultWindow));
 
-		while (!controlWindow->closed()) {
-
-			//controlWindow->processEvents();
-			//resultWindow->processEvents();
-			usleep(1000);
-		}
-
 		if (optionSaveResultDirectory) {
 
 			LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
@@ -509,9 +505,9 @@ int main(int optionc, char** optionv) {
 			resultWriter->write();
 		}
 
-		LOG_USER(out) << "[main] waiting for windows to be closed..." << std::endl;
-
 		controlThread.join();
+
+		resultWindow->close();
 		resultThread.join();
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;

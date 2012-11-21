@@ -12,7 +12,7 @@ public:
 	/**
 	 * @param onlyOneSegment Start with only-one-segment mode enabled.
 	 */
-	SegmentsStackView(bool onlyOneSegment = false);
+	SegmentsStackView();
 
 private:
 

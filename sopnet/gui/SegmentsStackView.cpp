@@ -3,8 +3,8 @@
 
 static logger::LogChannel segmentsstackviewlog("segmentsstackviewlog", "[SegmentsStackView] ");
 
-SegmentsStackView::SegmentsStackView(bool onlyOneSegment) :
-	_painter(boost::make_shared<SegmentsStackPainter>(onlyOneSegment)),
+SegmentsStackView::SegmentsStackView() :
+	_painter(boost::make_shared<SegmentsStackPainter>()),
 	_section(0),
 	_segmentsModified(true) {
 
@@ -80,13 +80,6 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		setDirty(_painter);
 	}
 
-	if (signal.key == gui::keys::O) {
-
-		_painter->toggleShowOnlyOneSegment();
-
-		setDirty(_painter);
-	}
-
 	if (signal.key == gui::keys::E) {
 
 		_painter->showEnds(true);
@@ -132,17 +125,14 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 void
 SegmentsStackView::onMouseDown(gui::MouseDown& signal) {
 
-	if (_painter->onlyOneSegment()) {
+	if (signal.button == gui::buttons::Left)
+		_painter->setFocus(signal.position);
 
-		if (signal.button == gui::buttons::Left)
-			_painter->setFocus(signal.position);
+	if (signal.button == gui::buttons::WheelDown)
+		_painter->nextSegment();
 
-		if (signal.button == gui::buttons::WheelDown)
-			_painter->nextSegment();
+	if (signal.button == gui::buttons::WheelUp)
+		_painter->prevSegment();
 
-		if (signal.button == gui::buttons::WheelUp)
-			_painter->prevSegment();
-
-		setDirty(_painter);
-	}
+	setDirty(_painter);
 }

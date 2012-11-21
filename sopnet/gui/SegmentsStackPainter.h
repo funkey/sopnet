@@ -15,11 +15,7 @@ class SegmentsStackPainter : public gui::Painter {
 
 public:
 
-	/**
-	 * @param onlyOneSegment Start with the painter in only-one-segment mode,
-	 *                       i.e., show only one segment at a time.
-	 */
-	SegmentsStackPainter(bool onlyOneSegment = false);
+	SegmentsStackPainter();
 
 	/**
 	 * Set a new set of segments.
@@ -30,13 +26,6 @@ public:
 	 * Change the currently visible section.
 	 */
 	void setCurrentSection(unsigned int section);
-
-	/**
-	 * Toggle between showing only one segment and all segments.
-	 *
-	 * @return The new state.
-	 */
-	bool toggleShowOnlyOneSegment();
 
 	/**
 	 * Show segments to the previous section.
@@ -69,17 +58,17 @@ public:
 	void showSliceIds(bool show);
 
 	/**
-	 * Set the focus in the only-one-segment mode.
+	 * Set the focus.
 	 */
 	void setFocus(const util::point<double>& position);
 
 	/**
-	 * Show the next segment in the only-one-segment mode.
+	 * Show the next segment.
 	 */
 	void nextSegment();
 
 	/**
-	 * Show the previous segment in the only-one-segment mode.
+	 * Show the previous segment.
 	 */
 	void prevSegment();
 
@@ -90,24 +79,10 @@ public:
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
 
-	/**
-	 * Returns true if the painter is in the only-one-segment mode.
-	 */
-	bool onlyOneSegment();
-
 private:
 
 	// add the given slice's bounding box to the current size
 	util::rect<double> sizeAddSlice(const util::rect<double>& currentSize, const Slice& slice);
-
-	// find a random color for all slices of one neuron
-	void assignColors();
-
-	// add a slice to the same-neuron lookup table
-	void addSlice(unsigned int slice);
-
-	// merge the slices of the neurons belonging to slice1 and slice2
-	void mergeSlices(unsigned int slice1, unsigned int slice2);
 
 	// fill the sets of prev/next segments
 	void updateVisibleSegments();
@@ -151,9 +126,6 @@ private:
 	// the section to draw
 	unsigned int _section;
 
-	// show only one segment at a time
-	bool _onlyOneSegment;
-
 	// show segments in certain directions
 	bool _showPrev;
 	bool _showNext;
@@ -166,7 +138,7 @@ private:
 	// show slice ids
 	bool _showSliceIds;
 
-	// the focus for the only-one-segment mode
+	// the point around which to show segments
 	util::point<double> _focus;
 
 	// the distance between sections
@@ -174,12 +146,6 @@ private:
 
 	// the height of the section
 	double _sectionHeight;
-
-	// a lookup table for slice colors
-	std::map<unsigned int, boost::array<double, 3> > _colors;
-
-	// a lookup table for slices of the same neuron
-	std::map<unsigned int, std::set<unsigned int> > _slices;
 };
 
 #endif // SOPNET_GUI_SEGMENTS_STACK_PAINTER_H__

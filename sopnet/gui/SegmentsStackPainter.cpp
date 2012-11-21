@@ -5,19 +5,18 @@
 
 static logger::LogChannel segmentsstackpainterlog("segmentsstackpainterlog", "[SegmentsStackPainter] ");
 
-SegmentsStackPainter::SegmentsStackPainter(bool onlyOneSegment) :
+SegmentsStackPainter::SegmentsStackPainter() :
 	_prevSegments(boost::make_shared<Segments>()),
 	_nextSegments(boost::make_shared<Segments>()),
 	_closestPrevSegment(0),
 	_closestNextSegment(0),
 	_section(0),
-	_onlyOneSegment(onlyOneSegment),
-	_showPrev(onlyOneSegment ? false : true),
+	_showPrev(true),
 	_showNext(true),
-	_showEnds(onlyOneSegment ? false : true),
+	_showEnds(false),
 	_showContinuations(true),
-	_showBranches(onlyOneSegment ? false : true),
-	_showSliceIds(false),
+	_showBranches(false),
+	_showSliceIds(true),
 	_focus(0, 0),
 	_zScale(15) {}
 
@@ -28,27 +27,9 @@ SegmentsStackPainter::setSegments(boost::shared_ptr<Segments> segments) {
 
 	_segments = segments;
 
-	if (!_onlyOneSegment)
-		assignColors();
-
 	_textures.clear();
 
 	setCurrentSection(_section);
-}
-
-bool
-SegmentsStackPainter::toggleShowOnlyOneSegment() {
-
-	LOG_DEBUG(segmentsstackpainterlog) << "toggling only-one-segment mode" << std::endl;
-
-	_onlyOneSegment = !_onlyOneSegment;
-
-	if (!_onlyOneSegment)
-		assignColors();
-
-	updateVisibleSegments();
-
-	return _onlyOneSegment;
 }
 
 void
@@ -166,9 +147,6 @@ SegmentsStackPainter::setFocus(const util::point<double>& focus) {
 void
 SegmentsStackPainter::nextSegment() {
 
-	if (!_onlyOneSegment)
-		return;
-
 	LOG_DEBUG(segmentsstackpainterlog) << "old prev segment: " << _closestPrevSegment << std::endl;
 	LOG_DEBUG(segmentsstackpainterlog) << "old next segment: " << _closestNextSegment << std::endl;
 
@@ -221,9 +199,6 @@ SegmentsStackPainter::nextSegment() {
 void
 SegmentsStackPainter::prevSegment() {
 
-	if (!_onlyOneSegment)
-		return;
-
 	LOG_DEBUG(segmentsstackpainterlog) << "old prev segment: " << _closestPrevSegment << std::endl;
 	LOG_DEBUG(segmentsstackpainterlog) << "old next segment: " << _closestNextSegment << std::endl;
 
@@ -242,100 +217,6 @@ SegmentsStackPainter::prevSegment() {
 	LOG_DEBUG(segmentsstackpainterlog) << "current next segment: " << _closestNextSegment << std::endl;
 
 	updateVisibleSegments();
-}
-
-void
-SegmentsStackPainter::assignColors() {
-
-	LOG_DEBUG(segmentsstackpainterlog) << "assigning colors" << std::endl;
-
-	_colors.clear();
-
-	// identify connected segments
-
-	_slices.clear();
-
-	// collect all end slices
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
-		addSlice(end->getSlice()->getId());
-
-	// identify slices belonging to the same neuron
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
-
-		mergeSlices(
-				continuation->getSourceSlice()->getId(),
-				continuation->getTargetSlice()->getId());
-	}
-
-	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
-
-		mergeSlices(
-				branch->getSourceSlice()->getId(),
-				branch->getTargetSlice1()->getId());
-
-		mergeSlices(
-				branch->getSourceSlice()->getId(),
-				branch->getTargetSlice2()->getId());
-
-		mergeSlices(
-				branch->getTargetSlice1()->getId(),
-				branch->getTargetSlice2()->getId());
-	}
-
-	// assign colors to all connected sets of slices
-
-	unsigned int sliceId;
-	std::set<unsigned int> sameNeuronSlices;
-
-	foreach (boost::tie(sliceId, sameNeuronSlices), _slices) {
-
-		// draw a random color
-		double r = (double)rand()/RAND_MAX;
-		double g = (double)rand()/RAND_MAX;
-		double b = (double)rand()/RAND_MAX;
-
-		_colors[sliceId][0] = r;
-		_colors[sliceId][1] = g;
-		_colors[sliceId][2] = b;
-
-		foreach (unsigned int id, sameNeuronSlices) {
-
-			_colors[id][0] = r;
-			_colors[id][1] = g;
-			_colors[id][2] = b;
-		}
-	 }
-
-	LOG_DEBUG(segmentsstackpainterlog) << "done" << std::endl;
-}
-
-void
-SegmentsStackPainter::addSlice(unsigned int slice) {
-
-	_slices[slice].insert(slice);
-}
-
-void
-SegmentsStackPainter::mergeSlices(unsigned int slice1, unsigned int slice2) {
-
-	// make sure we have partner sets for the given slices
-	addSlice(slice1);
-	addSlice(slice2);
-
-	// get all partners of slice2 and add them to the partners of slice1
-	foreach (unsigned int id, _slices[slice2])
-		_slices[slice1].insert(id);
-
-	// slice1 is now the only one, who knows all its partners
-
-	// the partners of slice1 might not know about slice2 or any of its partners
-
-	// for each partner of slice1, add all partners of slice1 to the partner list
-	foreach (unsigned int id, _slices[slice1]) {
-
-		foreach (unsigned int partner, _slices[slice1])
-			_slices[id].insert(partner);
-	}
 }
 
 void
@@ -384,13 +265,11 @@ SegmentsStackPainter::setCurrentSection(unsigned int section) {
 
 	// for the only-one-segment mode, we show the segment partner slices above
 	// and below the current section -- therefor we are three times bigger
-	if (_onlyOneSegment) {
 
-		unsigned int height = size.height();
+	unsigned int height = size.height();
 
-		size.minY -= height;
-		size.maxY += height;
-	}
+	size.minY -= height;
+	size.maxY += height;
 
 	setSize(size);
 
@@ -403,52 +282,27 @@ SegmentsStackPainter::updateVisibleSegments() {
 
 	// update the sets of previous and next segments
 
-	unsigned int prevInterval = _section;
-	unsigned int nextInterval = _section + 1;
-
 	_prevSegments->clear();
 	_nextSegments->clear();
 
-	if (_onlyOneSegment) {
+	if (_showPrev) {
 
-		if (_showPrev) {
+		if (_showEnds && _closestPrevEndSegments.size() > 0)
+			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
+		else if (_showContinuations && _closestPrevContinuationSegments.size() > 0)
+			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
+		else if (_showBranches && _closestPrevBranchSegments.size() > 0)
+			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
+	}
 
-			if (_showEnds && _closestPrevEndSegments.size() > 0)
-				_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
-			else if (_showContinuations && _closestPrevContinuationSegments.size() > 0)
-				_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
-			else if (_showBranches && _closestPrevBranchSegments.size() > 0)
-				_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
-		}
+	if (_showNext) {
 
-		if (_showNext) {
-
-			if (_showEnds && _closestNextEndSegments.size() > 0)
-				_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
-			else if (_showContinuations && _closestNextContinuationSegments.size() > 0)
-				_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
-			else if (_showBranches && _closestNextBranchSegments.size() > 0)
-				_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
-		}
-
-	} else {
-
-		if (_showEnds)
-			_prevSegments->addAll(_segments->getEnds(prevInterval));
-		if (_showContinuations)
-			_prevSegments->addAll(_segments->getContinuations(prevInterval));
-		if (_showBranches)
-			_prevSegments->addAll(_segments->getBranches(prevInterval));
-
-		if (nextInterval < _segments->getNumInterSectionIntervals()) {
-
-			if (_showEnds)
-				_nextSegments->addAll(_segments->getEnds(nextInterval));
-			if (_showContinuations)
-				_nextSegments->addAll(_segments->getContinuations(nextInterval));
-			if (_showBranches)
-				_nextSegments->addAll(_segments->getBranches(nextInterval));
-		}
+		if (_showEnds && _closestNextEndSegments.size() > 0)
+			_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
+		else if (_showContinuations && _closestNextContinuationSegments.size() > 0)
+			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
+		else if (_showBranches && _closestNextBranchSegments.size() > 0)
+			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
 	}
 }
 
@@ -630,22 +484,7 @@ SegmentsStackPainter::drawSlice(
 	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
 
-	boost::array<double, 3> color;
-	
-	if (_onlyOneSegment) {
-
-		color[0] = red;
-		color[1] = green;
-		color[2] = blue;
-
-		alpha = 0.9;
-
-	} else {
-	
-		color = _colors[slice.getId()];
-	}
-
-	glCheck(glColor4f(color[0], color[1], color[2], alpha));
+	glCheck(glColor4f(red, green, blue, alpha));
 
 	_textures.get(slice.getId())->bind();
 
@@ -655,19 +494,16 @@ SegmentsStackPainter::drawSlice(
 
 	double offset = 0;
 
-	if (_onlyOneSegment) {
+	//if (z < 0) {
 
-		if (z < 0) {
+		//offset = _sectionHeight;
+		//z = 0;
 
-			offset = _sectionHeight;
-			z = 0;
+	//} else if (z > 0) {
 
-		} else if (z > 0) {
-
-			offset = -_sectionHeight;
-			z = 0;
-		}
-	}
+		//offset = -_sectionHeight;
+		//z = 0;
+	//}
 
 	// left side
 	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.minY + offset, z);
@@ -702,8 +538,3 @@ SegmentsStackPainter::drawSlice(
 	}
 }
 
-bool
-SegmentsStackPainter::onlyOneSegment() {
-
-	return _onlyOneSegment;
-}
