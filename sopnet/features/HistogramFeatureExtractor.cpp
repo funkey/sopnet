@@ -13,18 +13,18 @@ HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
 	registerInput(_segments, "segments");
 	registerInput(_sections, "raw sections");
 	registerOutput(_features, "features");
-
-	for (unsigned int i = 0; i < _numBins; i++)
-		_features->addName("histogram " + boost::lexical_cast<std::string>(i));
-
-	for (unsigned int i = 0; i < _numBins; i++)
-		_features->addName("normalized histogram " + boost::lexical_cast<std::string>(i));
 }
 
 void
 HistogramFeatureExtractor::updateOutputs() {
 
 	_features->clear();
+
+	for (unsigned int i = 0; i < _numBins; i++)
+		_features->addName("histogram " + boost::lexical_cast<std::string>(i));
+
+	for (unsigned int i = 0; i < _numBins; i++)
+		_features->addName("normalized histogram " + boost::lexical_cast<std::string>(i));
 
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 		_features->add(segment->getId(), getFeatures(*segment));

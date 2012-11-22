@@ -18,6 +18,14 @@ GeometryFeatureExtractor::GeometryFeatureExtractor() :
 
 	registerInput(_segments, "segments");
 	registerOutput(_features, "features");
+}
+
+void
+GeometryFeatureExtractor::updateOutputs() {
+
+	LOG_DEBUG(geometryfeatureextractorlog) << "extracting features" << std::endl;
+
+	_features->clear();
 
 	_features->addName("center distance");
 	_features->addName("set difference");
@@ -33,14 +41,6 @@ GeometryFeatureExtractor::GeometryFeatureExtractor() :
 	_features->addName("max slice distance");
 	_features->addName("aligned average slice distance");
 	_features->addName("aligned max slice distance");
-}
-
-void
-GeometryFeatureExtractor::updateOutputs() {
-
-	LOG_DEBUG(geometryfeatureextractorlog) << "extracting features" << std::endl;
-
-	_features->clear();
 
 	// don't use the cache -- there are some inconsistencies
 	_useCache = false;
@@ -194,20 +194,20 @@ GeometryFeatureExtractor::computeFeatures(const EndSegment& end) {
 
 	std::vector<double> features(14);
 
-	features[0] = Features::None;
-	features[1] = Features::None;
-	features[2] = Features::None;
-	features[3] = Features::None;
-	features[4] = Features::None;
+	features[0] = Features::NoFeatureValue;
+	features[1] = Features::NoFeatureValue;
+	features[2] = Features::NoFeatureValue;
+	features[3] = Features::NoFeatureValue;
+	features[4] = Features::NoFeatureValue;
 	features[5] = end.getSlice()->getComponent()->getSize();
-	features[6] = Features::None;
-	features[7] = Features::None;
-	features[8] = Features::None;
-	features[9] = Features::None;
-	features[10] = Features::None;
-	features[11] = Features::None;
-	features[12] = Features::None;
-	features[13] = Features::None;
+	features[6] = Features::NoFeatureValue;
+	features[7] = Features::NoFeatureValue;
+	features[8] = Features::NoFeatureValue;
+	features[9] = Features::NoFeatureValue;
+	features[10] = Features::NoFeatureValue;
+	features[11] = Features::NoFeatureValue;
+	features[12] = Features::NoFeatureValue;
+	features[13] = Features::NoFeatureValue;
 
 	return features;
 }

@@ -39,7 +39,7 @@ private:
 
 	pipeline::Input<ImageStack> _rawSections;
 
-	boost::shared_ptr<GeometryFeatureExtractor>   _geometryFeatureExtractor;
+	boost::shared_ptr<GeometryFeatureExtractor>  _geometryFeatureExtractor;
 
 	boost::shared_ptr<HistogramFeatureExtractor> _histogramFeatureExtractor;
 
