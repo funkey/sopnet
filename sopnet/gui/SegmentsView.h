@@ -13,7 +13,7 @@ class SegmentsView : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SegmentsView(std::string name);
+	SegmentsView(std::string name = "");
 
 private:
 
