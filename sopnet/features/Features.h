@@ -48,7 +48,7 @@ public:
 
 	const segment_ids_map& getSegmentsIdsMap() const;
 
-	static double None;
+	static double NoFeatureValue;
 
 private:
 

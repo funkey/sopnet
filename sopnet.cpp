@@ -27,6 +27,7 @@
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/gui/ErrorsView.h>
+#include <sopnet/gui/FeaturesView.h>
 #include <sopnet/gui/NeuronsView.h>
 #include <sopnet/gui/NeuronsStackView.h>
 #include <sopnet/gui/SegmentsView.h>
@@ -354,19 +355,30 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowAllSegments) {
 
-			boost::shared_ptr<ContainerView<OverlayPlacing> >  overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("all segments");
-			boost::shared_ptr<ImageStackView>                  sectionsView = boost::make_shared<ImageStackView>(3);
-			boost::shared_ptr<SegmentsStackView>               resultView   = boost::make_shared<SegmentsStackView>();
-			boost::shared_ptr<RotateView>                      rotateView   = boost::make_shared<RotateView>();
-			boost::shared_ptr<NamedView>                       namedView    = boost::make_shared<NamedView>("All Segments:");
+			boost::shared_ptr<ContainerView<HorizontalPlacing> > container    = boost::make_shared<ContainerView<HorizontalPlacing> >("all segments");
+			boost::shared_ptr<ContainerView<OverlayPlacing> >    overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("stack view");
+			boost::shared_ptr<ImageStackView>                    sectionsView = boost::make_shared<ImageStackView>(3);
+			boost::shared_ptr<SegmentsStackView>                 stackView    = boost::make_shared<SegmentsStackView>();
+			boost::shared_ptr<SegmentsView>                      segmentsView = boost::make_shared<SegmentsView>("single segment");
+			boost::shared_ptr<FeaturesView>                      featuresView = boost::make_shared<FeaturesView>();
+			boost::shared_ptr<RotateView>                        rotateView   = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>                         namedView    = boost::make_shared<NamedView>("All Segments:");
 
-			resultView->setInput(sopnet->getOutput("segments"));
+			stackView->setInput(sopnet->getOutput("segments"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
 			overlay->addInput(sectionsView->getOutput());
-			overlay->addInput(resultView->getOutput());
-			//rotateView->setInput(overlay->getOutput());
-			rotateView->setInput(resultView->getOutput());
-			namedView->setInput(rotateView->getOutput());
+			overlay->addInput(stackView->getOutput("painter"));
+
+			segmentsView->setInput(stackView->getOutput("visible segments"));
+			rotateView->setInput(segmentsView->getOutput());
+
+			featuresView->setInput("segments", stackView->getOutput("visible segments"));
+			featuresView->setInput("features", sopnet->getOutput("all features"));
+
+			container->addInput(overlay->getOutput());
+			container->addInput(rotateView->getOutput());
+			container->addInput(featuresView->getOutput());
+			namedView->setInput(container->getOutput());
 
 			controlContainer->addInput(namedView->getOutput());
 		}

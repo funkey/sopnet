@@ -1,7 +1,7 @@
 #include <sopnet/exceptions.h>
 #include "Features.h"
 
-double Features::None = -100;
+double Features::NoFeatureValue = -100;
 
 void
 Features::addName(const std::string& name) {
