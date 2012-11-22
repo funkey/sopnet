@@ -10,6 +10,7 @@ SegmentsStackView::SegmentsStackView() :
 
 	registerInput(_segments, "segments");
 	registerOutput(_painter, "painter");
+	registerOutput(_visibleSegments, "visible segments");
 
 	_segments.registerBackwardCallback(&SegmentsStackView::onSegmentsModified, this);
 
@@ -30,6 +31,7 @@ SegmentsStackView::updateOutputs() {
 
 	util::rect<double> oldSize = _painter->getSize();
 
+	// set new or modified segments
 	if (_segmentsModified) {
 
 		_painter->setSegments(_segments);
@@ -37,6 +39,12 @@ SegmentsStackView::updateOutputs() {
 		_segmentsModified = false;
 	}
 
+	// query visible segments
+	_painter->getVisibleSegments(*_visibleSegments);
+
+	LOG_ALL(segmentsstackviewlog) << "there are " << _visibleSegments->size() << " visible segments" << std::endl;
+
+	// get new size of painter
 	util::rect<double> newSize = _painter->getSize();
 
 	if (oldSize == newSize) {
@@ -67,6 +75,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->setCurrentSection(_section);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::D) {
@@ -78,6 +87,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->setCurrentSection(_section);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::E) {
@@ -87,6 +97,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->showBranches(false);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::C) {
@@ -96,6 +107,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->showBranches(false);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::B) {
@@ -105,6 +117,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->showBranches(true);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::S) {
@@ -114,6 +127,7 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->showBranches(true);
 
 		setDirty(_painter);
+		setDirty(_visibleSegments);
 	}
 
 	if (signal.key == gui::keys::N) {
@@ -135,4 +149,5 @@ SegmentsStackView::onMouseDown(gui::MouseDown& signal) {
 		_painter->prevSegment();
 
 	setDirty(_painter);
+	setDirty(_visibleSegments);
 }

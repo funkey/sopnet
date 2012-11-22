@@ -11,7 +11,7 @@ SegmentsStackPainter::SegmentsStackPainter() :
 	_closestPrevSegment(0),
 	_closestNextSegment(0),
 	_section(0),
-	_showPrev(true),
+	_showPrev(false),
 	_showNext(true),
 	_showEnds(false),
 	_showContinuations(true),
@@ -494,16 +494,18 @@ SegmentsStackPainter::drawSlice(
 
 	double offset = 0;
 
-	//if (z < 0) {
+	// draw the segment in the previous or next section, instead of in front of 
+	// current section
+	if (z < 0) {
 
-		//offset = _sectionHeight;
-		//z = 0;
+		offset = _sectionHeight;
+		z = 0;
 
-	//} else if (z > 0) {
+	} else if (z > 0) {
 
-		//offset = -_sectionHeight;
-		//z = 0;
-	//}
+		offset = -_sectionHeight;
+		z = 0;
+	}
 
 	// left side
 	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.minY + offset, z);
@@ -538,3 +540,15 @@ SegmentsStackPainter::drawSlice(
 	}
 }
 
+void
+SegmentsStackPainter::getVisibleSegments(Segments& segments) {
+
+	segments.clear();
+
+	segments.addAll(_prevSegments->getEnds());
+	segments.addAll(_prevSegments->getContinuations());
+	segments.addAll(_prevSegments->getBranches());
+	segments.addAll(_nextSegments->getEnds());
+	segments.addAll(_nextSegments->getContinuations());
+	segments.addAll(_nextSegments->getBranches());
+}

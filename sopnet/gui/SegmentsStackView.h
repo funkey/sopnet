@@ -30,6 +30,9 @@ private:
 	// the painter for the currently selected section
 	pipeline::Output<SegmentsStackPainter> _painter;
 
+	// the currently visible segment(s)
+	pipeline::Output<Segments> _visibleSegments;
+
 	// signal to report size changes
 	signals::Slot<gui::SizeChanged> _sizeChanged;
 

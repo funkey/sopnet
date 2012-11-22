@@ -79,6 +79,11 @@ public:
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
 
+	/**
+	 * Fill segments with the currently visible segments.
+	 */
+	void getVisibleSegments(Segments& segments);
+
 private:
 
 	// add the given slice's bounding box to the current size
@@ -98,10 +103,10 @@ private:
 	// the segments
 	boost::shared_ptr<Segments> _segments;
 
-	// the previous segments of the currently selected section
+	// all currently visible segments to the previous section
 	boost::shared_ptr<Segments> _prevSegments;
 
-	// the next segments of the currently selected section
+	// all currently visible segments to the next section
 	boost::shared_ptr<Segments> _nextSegments;
 
 	// the closest previous segments to the current focus
