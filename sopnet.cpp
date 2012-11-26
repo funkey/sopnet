@@ -205,6 +205,7 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<SopnetDialog> sopnetDialog = boost::make_shared<SopnetDialog>();
 
 		// connect them to the window via the zoom view
+		controlContainer->setAlign(VerticalPlacing::Left);
 		controlContainer->addInput(imageStackContainer->getOutput());
 		controlContainer->addInput(sopnetDialog->getOutput("painter"));
 		controlZoomView->setInput(controlContainer->getOutput());
