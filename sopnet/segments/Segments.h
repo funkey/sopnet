@@ -132,19 +132,34 @@ public:
 	}
 
 	/**
+	 * Get all end segments.
+	 */
+	std::vector<boost::shared_ptr<EndSegment> > getEnds();
+
+	/**
+	 * Get all continuation segments.
+	 */
+	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations();
+
+	/**
+	 * Get all branch segments.
+	 */
+	std::vector<boost::shared_ptr<BranchSegment> > getBranches();
+
+	/**
 	 * Get all end segments in the given inter-section interval.
 	 */
-	std::vector<boost::shared_ptr<EndSegment> > getEnds(int interval = -1);
+	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(int interval);
 
 	/**
 	 * Get all continuation segments in the given inter-section interval.
 	 */
-	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations(int interval = -1);
+	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(int interval);
 
 	/**
 	 * Get all branch segments in the given inter-section interval.
 	 */
-	std::vector<boost::shared_ptr<BranchSegment> > getBranches(int interval = -1);
+	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(int interval);
 
 	/**
 	 * Find all end segments in the given inter-section interval that are close
@@ -239,27 +254,19 @@ public:
 
 private:
 
+	// resize to hold segments in the given number of inter-section intervals
+	void resize(int numInterSectionInterval);
+
 	template <typename SegmentType>
 	std::vector<boost::shared_ptr<SegmentType> > get(
-			int interval,
 			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments) {
 
-		// all segments for interval == -1
-		if (interval < 0) {
+		std::vector<boost::shared_ptr<SegmentType> > segments;
 
-			std::vector<boost::shared_ptr<SegmentType> > segments;
+		foreach (const std::vector<boost::shared_ptr<SegmentType> >& interSegments, allSegments)
+			std::copy(interSegments.begin(), interSegments.end(), std::back_inserter(segments));
 
-			foreach (const std::vector<boost::shared_ptr<SegmentType> >& interSegments, allSegments)
-				std::copy(interSegments.begin(), interSegments.end(), std::back_inserter(segments));
-
-			return segments;
-		}
-
-		// nothing for interval >= num intervals
-		if (interval >= (int)allSegments.size())
-			return std::vector<boost::shared_ptr<SegmentType> >();
-
-		return allSegments[interval];
+		return segments;
 	}
 
 	template <typename SegmentType, typename SegmentAdaptorType, typename SegmentKdTreeType>
