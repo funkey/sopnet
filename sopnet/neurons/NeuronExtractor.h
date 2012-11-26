@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <sopnet/segments/Segments.h>
-#include "Neurons.h"
+#include <sopnet/segments/SegmentTrees.h>
 
 /**
  * Given a set of segments, extracts all connected components of slices as 
@@ -26,7 +26,7 @@ private:
 	void mergeSlices(unsigned int slice1, unsigned int slice2);
 
 	pipeline::Input<Segments> _segments;
-	pipeline::Output<Neurons> _neurons;
+	pipeline::Output<SegmentTrees> _neurons;
 
 	// a lookup table for slices of the same neuron
 	std::map<unsigned int, std::set<unsigned int> > _slices;

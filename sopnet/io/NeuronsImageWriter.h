@@ -5,7 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/neurons/Neurons.h>
+#include <sopnet/segments/SegmentTrees.h>
 
 /**
  * Writes a set of neurons to a sequence of png images. The intensity of the 
@@ -27,7 +27,7 @@ private:
 
 	void drawSlice(const Slice& slice, std::vector<id_image>& idImages, unsigned int id);
 
-	pipeline::Input<Neurons>    _neurons;
+	pipeline::Input<SegmentTrees>    _neurons;
 	pipeline::Input<ImageStack> _reference;
 
 	std::string _directory;

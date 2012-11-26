@@ -30,7 +30,7 @@ NeuronsView::updateOutputs() {
 		_container->clearInputs("painters");
 
 		unsigned int neuronNum = 0;
-		foreach (boost::shared_ptr<Neuron> neuron, *_neurons) {
+		foreach (boost::shared_ptr<SegmentTree> neuron, *_neurons) {
 
 			LOG_ALL(neuronsviewlog) << "adding a neuron" << std::endl;
 

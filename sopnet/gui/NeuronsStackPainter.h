@@ -7,7 +7,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include <gui/Painter.h>
-#include <sopnet/neurons/Neurons.h>
+#include <sopnet/segments/SegmentTrees.h>
 #include "SliceTextures.h"
 
 class NeuronsStackPainter : public gui::Painter {
@@ -19,7 +19,7 @@ public:
 	/**
 	 * Set a new set of segments.
 	 */
-	void setNeurons(boost::shared_ptr<Neurons> segments);
+	void setNeurons(boost::shared_ptr<SegmentTrees> segments);
 
 	/**
 	 * Change the currently visible section.
@@ -75,7 +75,7 @@ private:
 	void loadTextures();
 
 	void drawNeuron(
-		Neuron& neuron,
+		SegmentTree& neuron,
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution);
@@ -123,7 +123,7 @@ private:
 	void setPrevColor();
 
 	// the neurons
-	boost::shared_ptr<Neurons> _neurons;
+	boost::shared_ptr<SegmentTrees> _neurons;
 
 	// the textures of the slices to draw
 	SliceTextures _textures;

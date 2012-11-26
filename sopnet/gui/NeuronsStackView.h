@@ -1,5 +1,5 @@
 #include <pipeline/all.h>
-#include <sopnet/neurons/Neurons.h>
+#include <sopnet/segments/SegmentTrees.h>
 #include <gui/Keys.h>
 #include <gui/Buttons.h>
 #include <gui/Signals.h>
@@ -25,7 +25,7 @@ private:
 	void onKeyDown(gui::KeyDown& signal);
 
 	// the neurons to show
-	pipeline::Input<Neurons> _neurons;
+	pipeline::Input<SegmentTrees> _neurons;
 
 	// the number of the neuron to show currently
 	pipeline::Input<unsigned int> _currentNeuron;

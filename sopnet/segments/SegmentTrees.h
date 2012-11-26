@@ -1,16 +1,16 @@
-#ifndef SOPNET_NEURONS_NEURONS_H__
-#define SOPNET_NEURONS_NEURONS_H__
+#ifndef SOPNET_SEGMENT_TREES_SEGMENT_TREES_H__
+#define SOPNET_SEGMENT_TREES_SEGMENT_TREES_H__
 
 #include <vector>
 
 #include <boost/shared_ptr.hpp>
 
 #include <pipeline/all.h>
-#include "Neuron.h"
+#include <sopnet/segments/SegmentTree.h>
 
-class Neurons : public pipeline::Data {
+class SegmentTrees : public pipeline::Data {
 
-	typedef std::vector<boost::shared_ptr<Neuron> > neurons_type;
+	typedef std::vector<boost::shared_ptr<SegmentTree> > neurons_type;
 
 public:
 
@@ -25,12 +25,12 @@ public:
 	/**
 	 * Add a neuron.
 	 */
-	void add(boost::shared_ptr<Neuron> neuron) { _neurons.push_back(neuron); }
+	void add(boost::shared_ptr<SegmentTree> neuron) { _neurons.push_back(neuron); }
 
 	/**
 	 * Add a set of neurons.
 	 */
-	void addAll(boost::shared_ptr<Neurons> neurons) { foreach (boost::shared_ptr<Neuron> neuron, *neurons) _neurons.push_back(neuron); }
+	void addAll(boost::shared_ptr<SegmentTrees> neurons) { foreach (boost::shared_ptr<SegmentTree> neuron, *neurons) _neurons.push_back(neuron); }
 
 	/**
 	 * Get the number of neurons.
@@ -55,5 +55,5 @@ private:
 	neurons_type _neurons;
 };
 
-#endif // SOPNET_NEURONS_NEURONS_H__
+#endif // SOPNET_SEGMENT_TREES_SEGMENT_TREES_H__
 

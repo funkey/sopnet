@@ -6,7 +6,7 @@
 #include <gui/HorizontalPlacing.h>
 #include <gui/Signals.h>
 #include <sopnet/evaluation/Errors.h>
-#include <sopnet/neurons/Neurons.h>
+#include <sopnet/segments/SegmentTrees.h>
 
 class NeuronsView : public pipeline::SimpleProcessNode<> {
 
@@ -45,7 +45,7 @@ private:
 
 	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron);
 
-	pipeline::Input<Neurons> _neurons;
+	pipeline::Input<SegmentTrees> _neurons;
 	pipeline::Input<Errors>  _errors;
 	pipeline::Output<unsigned int> _currentNeuron;
 

@@ -67,9 +67,9 @@ NeuronExtractor::updateOutputs() {
 	// sort segments according to the neuron their slices belong to
 
 	// prepare neurons
-	std::vector<boost::shared_ptr<Neuron> > neurons(neuronId);
+	std::vector<boost::shared_ptr<SegmentTree> > neurons(neuronId);
 	for (unsigned int i = 0; i < neuronId; i++)
-		neurons[i] = boost::make_shared<Neuron>();
+		neurons[i] = boost::make_shared<SegmentTree>();
 
 	// collect all end segments
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
@@ -97,7 +97,7 @@ NeuronExtractor::updateOutputs() {
 
 	// finally, put found neurons in output data structure
 
-	foreach (boost::shared_ptr<Neuron> neuron, neurons)
+	foreach (boost::shared_ptr<SegmentTree> neuron, neurons)
 		_neurons->add(neuron);
 }
 

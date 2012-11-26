@@ -16,7 +16,7 @@ NeuronsStackPainter::NeuronsStackPainter() :
 	_zScale(15) {}
 
 void
-NeuronsStackPainter::setNeurons(boost::shared_ptr<Neurons> neurons) {
+NeuronsStackPainter::setNeurons(boost::shared_ptr<SegmentTrees> neurons) {
 
 	// aquire a read lock on the neurons
 	boost::shared_lock<boost::shared_mutex> lockNeurons(neurons->getMutex());
@@ -138,7 +138,7 @@ NeuronsStackPainter::setCurrentSection(unsigned int section) {
 	// get the size of the painter
 	util::rect<double> size(0, 0, 0, 0);
 
-	foreach (boost::shared_ptr<Neuron> neuron, *_neurons) {
+	foreach (boost::shared_ptr<SegmentTree> neuron, *_neurons) {
 
 		foreach (boost::shared_ptr<EndSegment> end, neuron->getEnds())
 			size = sizeAddSlice(size, *end->getSlice());
@@ -204,7 +204,7 @@ NeuronsStackPainter::draw(
 	} else {
 
 		unsigned int neuronNum = 0;
-		foreach (boost::shared_ptr<Neuron> neuron, *_neurons) {
+		foreach (boost::shared_ptr<SegmentTree> neuron, *_neurons) {
 
 			// read lock on neuron
 			boost::shared_lock<boost::shared_mutex> lockNeuron(neuron->getMutex());
@@ -217,7 +217,7 @@ NeuronsStackPainter::draw(
 
 void
 NeuronsStackPainter::drawNeuron(
-		Neuron& neuron,
+		SegmentTree& neuron,
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {

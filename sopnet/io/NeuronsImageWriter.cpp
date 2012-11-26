@@ -28,7 +28,7 @@ NeuronsImageWriter::write() {
 
 	// draw each neuron to output images
 	unsigned int id = 1;
-	foreach (boost::shared_ptr<Neuron> neuron, *_neurons) {
+	foreach (boost::shared_ptr<SegmentTree> neuron, *_neurons) {
 
 		foreach (boost::shared_ptr<EndSegment> end, neuron->getEnds()) {
 

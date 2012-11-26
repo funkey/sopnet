@@ -1,13 +1,13 @@
-#include "Neurons.h"
+#include <sopnet/segments/SegmentTrees.h>
 
 unsigned int
-Neurons::getNumSections() {
+SegmentTrees::getNumSections() {
 
 	int start = 0;
 	int end   = -1;
 
 	// for every neuron...
-	foreach (boost::shared_ptr<Neuron> neuron, _neurons) {
+	foreach (boost::shared_ptr<SegmentTree> neuron, _neurons) {
 
 		// ...it is enough to consider the end segments
 		foreach (boost::shared_ptr<EndSegment> endSegment, neuron->getEnds()) {
