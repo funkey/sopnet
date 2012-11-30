@@ -1,17 +1,36 @@
 Compilation
 ===========
 
+Submodules
+----------
+
 If you haven't done so already, make sure that all submodules are up-to-date:
 
   $ git submodule update --init
+
+Build System
+------------
 
 Create a build directory (e.g., ./build), change into it and type
 
   $ cmake [path_to_sopnet_directory (e.g. '..')]
 
+Dependencies
+------------
+
 cmake will try to find the required packages and tell you which ones are
 missing. All packages except for the vigra library and the Gurobi solver can be
-installed using the default Ubuntu repositories.
+installed using the default Ubuntu repositories:
+
+  • libboost-all-dev
+  • liblapack-dev
+  • libx11-dev
+  • freeglut3-dev
+  • libglew1.5-dev
+  • libcairo2-dev
+  • libpng12-dev
+  • libtiff4-dev
+  • libhdf5-serial-dev (optional)
 
 To get a recent version of vigra, perform the following steps:
 
