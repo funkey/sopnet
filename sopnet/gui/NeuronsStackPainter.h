@@ -71,6 +71,9 @@ private:
 	// find a random color for each neuron
 	void assignColors();
 
+	// load all slice textures
+	void loadTextures();
+
 	void drawNeuron(
 		Neuron& neuron,
 		unsigned int neuronNum,
@@ -78,12 +81,46 @@ private:
 		const util::point<double>& resolution);
 
 	void drawSlice(
-		const Slice& slice,
-		double z,
-		double red, double green, double blue,
-		double alpha,
-		const util::rect<double>&  roi,
-		const util::point<double>& resolution);
+			const Slice& slice,
+			double red, double green, double blue,
+			double alpha,
+			const util::rect<double>&  roi,
+			const util::point<double>& resolution);
+
+	void drawMerge(
+			const util::point<double>& source1,
+			const util::point<double>& source2,
+			const util::point<double>& target,
+			Direction direction,
+			const util::rect<double>& roi,
+			const util::point<double>& resolution);
+
+	void drawBranch(
+			const util::point<double>& source,
+			const util::point<double>& target1,
+			const util::point<double>& target2,
+			Direction direction,
+			const util::rect<double>& roi,
+			const util::point<double>& resolution);
+
+	void drawContinuation(
+			const util::point<double>& source,
+			const util::point<double>& target,
+			Direction direction,
+			const util::rect<double>& roi,
+			const util::point<double>& resolution);
+
+	void drawEnd(
+			const util::point<double>& center,
+			Direction direction,
+			const util::rect<double>& roi,
+			const util::point<double>& resolution);
+
+	// set the color to draw links to next section
+	void setNextColor();
+
+	// set the color to draw links to prev section
+	void setPrevColor();
 
 	// the neurons
 	boost::shared_ptr<Neurons> _neurons;

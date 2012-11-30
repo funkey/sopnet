@@ -78,6 +78,6 @@ SliceTextures::get(unsigned int sliceId) {
 	if (_textures.count(sliceId))
 		return _textures[sliceId];
 
-	BOOST_THROW_EXCEPTION(GuiError() << error_message("slice texture does not exist"));
+	BOOST_THROW_EXCEPTION(MissingTexture() << error_message("slice texture does not exist") << STACK_TRACE);
 }
 

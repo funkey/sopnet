@@ -15,6 +15,9 @@ class SliceTextures {
 
 public:
 
+	// missing texture exception
+	struct MissingTexture : virtual GuiError {};
+
 	~SliceTextures();
 
 	/**
