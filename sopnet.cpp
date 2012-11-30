@@ -144,22 +144,15 @@ void handleException(boost::exception& e) {
 
 void processEvents(boost::shared_ptr<gui::Window> window) {
 
-	// init signal handler
-	util::SignalHandler::init();
-
 	LOG_USER(out) << " started as " << window->getCaption() << " at " << window.get() << std::endl;
 
-	while (!window->closed()) {
+	try {
 
-		try {
+		window->processEvents();
 
-			usleep(100);
-			window->processEvents();
+	} catch (boost::exception& e) {
 
-		} catch (boost::exception& e) {
-
-			handleException(e);
-		}
+		handleException(e);
 	}
 
 	LOG_USER(out) << "[window thread] releasing shared pointer to window" << std::endl;
@@ -197,8 +190,6 @@ int main(int optionc, char** optionv) {
 		// create a window
 		resultWindow  = boost::make_shared<gui::Window>("sopnet: results");
 		controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
-		resultWindow->processEvents();
-		controlWindow->processEvents();
 
 		// create a zoom view for this window
 		boost::shared_ptr<gui::ZoomView> resultZoomView  = boost::make_shared<gui::ZoomView>(true);
