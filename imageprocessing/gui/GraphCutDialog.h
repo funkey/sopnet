@@ -56,16 +56,16 @@ private:
 	};
 
 	// a slider controlling the foreground prior
-	boost::shared_ptr<gui::Slider> _foregroundPriorSlider;
+	boost::shared_ptr<gui::Slider<double> > _foregroundPriorSlider;
 
 	// a slider controlling the potts term weight
-	boost::shared_ptr<gui::Slider> _pottsWeightSlider;
+	boost::shared_ptr<gui::Slider<double> > _pottsWeightSlider;
 
 	// a slider controlling the contrast term weight
-	boost::shared_ptr<gui::Slider> _contrastWeightSlider;
+	boost::shared_ptr<gui::Slider<double> > _contrastWeightSlider;
 
 	// a slider controlling the contrast term sigma
-	boost::shared_ptr<gui::Slider> _contrastSigmaSlider;
+	boost::shared_ptr<gui::Slider<double> > _contrastSigmaSlider;
 
 	// a switch to selecet betwee 4 and 8 neighborhood
 	boost::shared_ptr<gui::Switch> _eightNeighborhoodSwitch;

@@ -33,10 +33,10 @@ GraphCutDialog::ParametersCollector::updateOutputs() {
 }
 
 GraphCutDialog::GraphCutDialog() :
-	_foregroundPriorSlider(boost::make_shared<gui::Slider>("foreground prior", 0.0, 1.0)),
-	_pottsWeightSlider(boost::make_shared<gui::Slider>("potts-term weight", 0.0, 10.0)),
-	_contrastWeightSlider(boost::make_shared<gui::Slider>("contrast-term weight", 0.0, 10.0)),
-	_contrastSigmaSlider(boost::make_shared<gui::Slider>("contrast-term sigma", 0.01, 2.0)),
+	_foregroundPriorSlider(boost::make_shared<gui::Slider<double> >("foreground prior", 0.0, 1.0)),
+	_pottsWeightSlider(boost::make_shared<gui::Slider<double> >("potts-term weight", 0.0, 10.0)),
+	_contrastWeightSlider(boost::make_shared<gui::Slider<double> >("contrast-term weight", 0.0, 10.0)),
+	_contrastSigmaSlider(boost::make_shared<gui::Slider<double> >("contrast-term sigma", 0.01, 2.0)),
 	_eightNeighborhoodSwitch(boost::make_shared<gui::Switch>("eight neighborhood")),
 	_gui(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >()),
 	_parametersCollector(boost::make_shared<ParametersCollector>()) {

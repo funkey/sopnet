@@ -50,19 +50,19 @@ private:
 
 	// segmentation cost parameters
 
-	boost::shared_ptr<gui::Slider> _segmentationCostWeightSlider;
+	boost::shared_ptr<gui::Slider<double> > _segmentationCostWeightSlider;
 
-	boost::shared_ptr<gui::Slider> _segmentationCostPottsWeightSlider;
+	boost::shared_ptr<gui::Slider<double> > _segmentationCostPottsWeightSlider;
 
-	boost::shared_ptr<gui::Slider> _segmentationCostPriorForegroundSlider;
+	boost::shared_ptr<gui::Slider<double> > _segmentationCostPriorForegroundSlider;
 
 	// prior cost parameters
 
-	boost::shared_ptr<gui::Slider> _priorEndSlider;
+	boost::shared_ptr<gui::Slider<double> > _priorEndSlider;
 
-	boost::shared_ptr<gui::Slider> _priorContinuationSlider;
+	boost::shared_ptr<gui::Slider<double> > _priorContinuationSlider;
 
-	boost::shared_ptr<gui::Slider> _priorBranchSlider;
+	boost::shared_ptr<gui::Slider<double> > _priorBranchSlider;
 
 	// collection and gui
 

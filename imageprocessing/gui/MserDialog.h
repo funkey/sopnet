@@ -21,11 +21,11 @@ public:
 private:
 
 	// a slider controlling the potts weight
-	boost::shared_ptr<gui::Slider> _deltaSlider;
-	boost::shared_ptr<gui::Slider> _minAreaSlider;
-	boost::shared_ptr<gui::Slider> _maxAreaSlider;
-	boost::shared_ptr<gui::Slider> _maxVariationSlider;
-	boost::shared_ptr<gui::Slider> _minDiversitySlider;
+	boost::shared_ptr<gui::Slider<double> > _deltaSlider;
+	boost::shared_ptr<gui::Slider<double> > _minAreaSlider;
+	boost::shared_ptr<gui::Slider<double> > _maxAreaSlider;
+	boost::shared_ptr<gui::Slider<double> > _maxVariationSlider;
+	boost::shared_ptr<gui::Slider<double> > _minDiversitySlider;
 
 	// a container of gui elements to control the fields of the parameters
 	// object

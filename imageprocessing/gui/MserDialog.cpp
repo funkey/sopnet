@@ -6,11 +6,11 @@
 logger::LogChannel mserdialoglog("mserdialoglog", "[MserDialog] ");
 
 MserDialog::MserDialog() :
-	_deltaSlider(boost::make_shared<gui::Slider>("delta", 0, 256, 1)),
-	_minAreaSlider(boost::make_shared<gui::Slider>("min area", 0, 100000)),
-	_maxAreaSlider(boost::make_shared<gui::Slider>("max area", 0, 100000, 10000)),
-	_maxVariationSlider(boost::make_shared<gui::Slider>("max variation", 0.0, 10.0, 10.0)),
-	_minDiversitySlider(boost::make_shared<gui::Slider>("min diversity", 0.0, 10.0, 0.2)),
+	_deltaSlider(boost::make_shared<gui::Slider<double> >("delta", 0, 256, 1)),
+	_minAreaSlider(boost::make_shared<gui::Slider<double> >("min area", 0, 100000)),
+	_maxAreaSlider(boost::make_shared<gui::Slider<double> >("max area", 0, 100000, 10000)),
+	_maxVariationSlider(boost::make_shared<gui::Slider<double> >("max variation", 0.0, 10.0, 10.0)),
+	_minDiversitySlider(boost::make_shared<gui::Slider<double> >("min diversity", 0.0, 10.0, 0.2)),
 	_gui(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >()),
 	_parametersCollector(boost::make_shared<ParametersCollector>()) {
 

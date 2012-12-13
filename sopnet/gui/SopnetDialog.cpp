@@ -12,12 +12,12 @@ util::ProgramOption optionForceExplanation(
 
 SopnetDialog::SopnetDialog() :
 	_forceExplanationSwitch(boost::make_shared<gui::Switch>("force slice explanation", optionForceExplanation)),
-	_segmentationCostWeightSlider(boost::make_shared<gui::Slider>("segmentation cost weight", 0.0, 100.0, 1.0)),
-	_segmentationCostPottsWeightSlider(boost::make_shared<gui::Slider>("segmentation cost potts weight", -100, 100, 1.0)),
-	_segmentationCostPriorForegroundSlider(boost::make_shared<gui::Slider>("segmentation cost prior foreground", 0, 1, 0.5)),
-	_priorEndSlider(boost::make_shared<gui::Slider>("prior end", -10000000, 10000000.0, PriorCostFunctionParameters::optionPriorEnds.as<double>())),
-	_priorContinuationSlider(boost::make_shared<gui::Slider>("prior continuation", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorContinuations.as<double>())),
-	_priorBranchSlider(boost::make_shared<gui::Slider>("prior branch", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorBranches.as<double>())),
+	_segmentationCostWeightSlider(boost::make_shared<gui::Slider<double> >("segmentation cost weight", 0.0, 100.0, 1.0)),
+	_segmentationCostPottsWeightSlider(boost::make_shared<gui::Slider<double> >("segmentation cost potts weight", -100, 100, 1.0)),
+	_segmentationCostPriorForegroundSlider(boost::make_shared<gui::Slider<double> >("segmentation cost prior foreground", 0, 1, 0.5)),
+	_priorEndSlider(boost::make_shared<gui::Slider<double> >("prior end", -10000000, 10000000.0, PriorCostFunctionParameters::optionPriorEnds.as<double>())),
+	_priorContinuationSlider(boost::make_shared<gui::Slider<double> >("prior continuation", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorContinuations.as<double>())),
+	_priorBranchSlider(boost::make_shared<gui::Slider<double> >("prior branch", -10000000.0, 10000000.0, PriorCostFunctionParameters::optionPriorBranches.as<double>())),
 	_containerView(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >()),
 	_parameterAssembler(boost::make_shared<ParameterAssembler>()) {
 
