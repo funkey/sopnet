@@ -37,6 +37,7 @@
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
+#include <util/SignalHandler.h>
 
 using std::cout;
 using std::endl;
@@ -129,19 +130,22 @@ void handleException(boost::exception& e) {
 	if (boost::get_error_info<error_message>(e))
 		LOG_ERROR(out) << *boost::get_error_info<error_message>(e);
 
+	LOG_ERROR(out) << std::endl;
+
+	LOG_ERROR(out) << "[window thread] stack trace:" << std::endl;
+
 	if (boost::get_error_info<stack_trace>(e))
 		LOG_ERROR(out) << *boost::get_error_info<stack_trace>(e);
 
 	LOG_ERROR(out) << std::endl;
 
-	LOG_ERROR(out) << "[window thread] details: " << std::endl
-	               << boost::diagnostic_information(e)
-	               << std::endl;
-
 	exit(-1);
 }
 
 void processEvents(boost::shared_ptr<gui::Window> window) {
+
+	// init signal handler
+	util::SignalHandler::init();
 
 	LOG_USER(out) << " started as " << window->getCaption() << " at " << window.get() << std::endl;
 
@@ -180,6 +184,9 @@ int main(int optionc, char** optionv) {
 
 		// init logger
 		LogManager::init();
+
+		// init signal handler
+		util::SignalHandler::init();
 
 		LOG_USER(out) << "[main] starting..." << std::endl;
 
