@@ -77,6 +77,11 @@ util::ProgramOption optionShowAllSegments(
 		_long_name        = "showAllSegments",
 		_description_text = "Show all segment hypotheses.");
 
+util::ProgramOption optionShowSegmentFeatures(
+		_module           = "sopnet",
+		_long_name        = "showSegmentFeatures",
+		_description_text = "Show the features of the currently selected segment.");
+
 util::ProgramOption optionShowResult(
 		_module           = "sopnet",
 		_long_name        = "showResult",
@@ -363,7 +368,6 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<ImageStackView>                    sectionsView = boost::make_shared<ImageStackView>(3);
 			boost::shared_ptr<SegmentsStackView>                 stackView    = boost::make_shared<SegmentsStackView>();
 			boost::shared_ptr<SegmentsView>                      segmentsView = boost::make_shared<SegmentsView>("single segment");
-			boost::shared_ptr<FeaturesView>                      featuresView = boost::make_shared<FeaturesView>();
 			boost::shared_ptr<RotateView>                        rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>                         namedView    = boost::make_shared<NamedView>("All Segments:");
 
@@ -375,12 +379,17 @@ int main(int optionc, char** optionv) {
 			segmentsView->setInput(stackView->getOutput("visible segments"));
 			rotateView->setInput(segmentsView->getOutput());
 
-			featuresView->setInput("segments", stackView->getOutput("visible segments"));
-			featuresView->setInput("features", sopnet->getOutput("all features"));
-
 			container->addInput(overlay->getOutput());
 			container->addInput(rotateView->getOutput());
-			container->addInput(featuresView->getOutput());
+
+			if (optionShowSegmentFeatures) {
+
+				boost::shared_ptr<FeaturesView>                      featuresView = boost::make_shared<FeaturesView>();
+				featuresView->setInput("segments", stackView->getOutput("visible segments"));
+				featuresView->setInput("features", sopnet->getOutput("all features"));
+				container->addInput(featuresView->getOutput());
+			}
+
 			namedView->setInput(container->getOutput());
 
 			controlContainer->addInput(namedView->getOutput());
