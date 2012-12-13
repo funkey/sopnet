@@ -165,6 +165,10 @@ void processEvents(boost::shared_ptr<gui::Window> window) {
 
 int main(int optionc, char** optionv) {
 
+	// let the windows be the last thing to be destructed
+	boost::shared_ptr<gui::Window> resultWindow;
+	boost::shared_ptr<gui::Window> controlWindow;
+
 	try {
 
 		/********
@@ -184,8 +188,8 @@ int main(int optionc, char** optionv) {
 		 *********/
 
 		// create a window
-		boost::shared_ptr<gui::Window> resultWindow  = boost::make_shared<gui::Window>("sopnet: results");
-		boost::shared_ptr<gui::Window> controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
+		resultWindow  = boost::make_shared<gui::Window>("sopnet: results");
+		controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
 		resultWindow->processEvents();
 		controlWindow->processEvents();
 
