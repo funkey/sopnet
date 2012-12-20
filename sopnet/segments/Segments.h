@@ -134,32 +134,37 @@ public:
 	/**
 	 * Get all end segments.
 	 */
-	std::vector<boost::shared_ptr<EndSegment> > getEnds();
+	std::vector<boost::shared_ptr<EndSegment> > getEnds() const;
 
 	/**
 	 * Get all continuation segments.
 	 */
-	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations();
+	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations() const;
 
 	/**
 	 * Get all branch segments.
 	 */
-	std::vector<boost::shared_ptr<BranchSegment> > getBranches();
+	std::vector<boost::shared_ptr<BranchSegment> > getBranches() const;
+
+	/**
+	 * Get all segments.
+	 */
+	std::vector<boost::shared_ptr<Segment> > getSegments() const;
 
 	/**
 	 * Get all end segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(int interval);
+	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(unsigned int interval);
 
 	/**
 	 * Get all continuation segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(int interval);
+	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(unsigned int interval);
 
 	/**
 	 * Get all branch segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(int interval);
+	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(unsigned int interval);
 
 	/**
 	 * Find all end segments in the given inter-section interval that are close
@@ -254,12 +259,16 @@ public:
 
 private:
 
+	static std::vector<boost::shared_ptr<EndSegment> >          EmptyEnds;
+	static std::vector<boost::shared_ptr<ContinuationSegment> > EmptyContinuations;
+	static std::vector<boost::shared_ptr<BranchSegment> >       EmptyBranches;
+
 	// resize to hold segments in the given number of inter-section intervals
 	void resize(int numInterSectionInterval);
 
 	template <typename SegmentType>
 	std::vector<boost::shared_ptr<SegmentType> > get(
-			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments) {
+			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments) const {
 
 		std::vector<boost::shared_ptr<SegmentType> > segments;
 

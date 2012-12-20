@@ -36,3 +36,15 @@ BranchSegment::getTargetSlice2() const {
 
 	return _targetSlice2;
 }
+
+std::vector<boost::shared_ptr<Slice> >
+BranchSegment::getSlices() const {
+
+	std::vector<boost::shared_ptr<Slice> > slices;
+
+	slices.push_back(getSourceSlice());
+	slices.push_back(getTargetSlice1());
+	slices.push_back(getTargetSlice2());
+
+	return slices;
+}

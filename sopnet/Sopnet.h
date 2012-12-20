@@ -38,7 +38,7 @@ public:
 	 * @param projectDirectory The directory to read and write the data from and to.
 	 * @param dumpLemonGraph Dump the problem as a lemon graph.
 	 */
-	Sopnet(const std::string& projectDirectory, bool dumpLemonGraph = false);
+	Sopnet(const std::string& projectDirectory, boost::shared_ptr<ProcessNode> problemWriter = boost::shared_ptr<ProcessNode>());
 
 private:
 
@@ -163,8 +163,8 @@ private:
 	// the project directory
 	std::string _projectDirectory;
 
-	// dump the problem as a lemon graph
-	bool _dumpLemonGraph;
+	// a writer to dump a description of the problem
+	boost::shared_ptr<ProcessNode> _problemWriter;
 };
 
 #endif // CELLTRACKER_CELLTRACKER_H__

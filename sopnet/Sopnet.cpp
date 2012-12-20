@@ -10,7 +10,7 @@
 #include <util/ProgramOptions.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
-#include <sopnet/inference/LemonGraphWriter.h>
+#include <sopnet/inference/ProblemGraphWriter.h>
 #include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
@@ -35,7 +35,7 @@ util::ProgramOption optionRandomForestFile(
 
 Sopnet::Sopnet(
 		const std::string& projectDirectory,
-		bool dumpLemonGraph) :
+		boost::shared_ptr<ProcessNode> problemWriter) :
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
@@ -49,7 +49,7 @@ Sopnet::Sopnet(
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
 	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
 	_projectDirectory(projectDirectory),
-	_dumpLemonGraph(dumpLemonGraph) {
+	_problemWriter(problemWriter) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
@@ -151,13 +151,8 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
-	if (_dumpLemonGraph) {
-	
-		if (!_lemonGraphWriter)
-			_lemonGraphWriter = boost::make_shared<LemonGraphWriter>();
-
-		_lemonGraphWriter->clearInputs("linear constraints");
-	}
+	if (_problemWriter)
+		_problemWriter->clearInputs("linear constraints");
 
 	unsigned int numSections = 0;
 
@@ -239,8 +234,8 @@ Sopnet::createBasicPipeline() {
 		if (section == numSections - 1) // only for the last pair of slices
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
-		if (_dumpLemonGraph)
-			_lemonGraphWriter->addInput("linear constraints", sliceExtractor->getOutput("linear constraints"));
+		if (_problemWriter)
+			_problemWriter->addInput("linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);
 
@@ -281,14 +276,11 @@ Sopnet::createInferencePipeline() {
 	_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
 	_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
 
-	if (_dumpLemonGraph) {
+	if (_problemWriter) {
 
-		_lemonGraphWriter->setInput("segments", _problemAssembler->getOutput("segments"));
-		_lemonGraphWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
-
-		_lemonGraphWriter->setInput("slice cost function", _segmentationCostFunction->getOutput("slice cost function"));
-		_lemonGraphWriter->addInput("segment cost functions", _randomForestCostFunction->getOutput("cost function"));
-		_lemonGraphWriter->addInput("segment cost functions", _priorCostFunction->getOutput("cost function"));
+		_problemWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+		_problemWriter->setInput("segment ids map", _problemAssembler->getOutput("segment ids map"));
+		_problemWriter->setInput("objective", _objectiveGenerator->getOutput("objective"));
 	}
 }
 

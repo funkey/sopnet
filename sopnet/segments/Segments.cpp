@@ -1,5 +1,9 @@
 #include "Segments.h"
 
+std::vector<boost::shared_ptr<EndSegment> >          Segments::EmptyEnds;
+std::vector<boost::shared_ptr<ContinuationSegment> > Segments::EmptyContinuations;
+std::vector<boost::shared_ptr<BranchSegment> >       Segments::EmptyBranches;
+
 Segments::~Segments() {
 
 	clear();
@@ -127,39 +131,64 @@ Segments::addAll(boost::shared_ptr<Segments> segments) {
 }
 
 const std::vector<boost::shared_ptr<EndSegment> >&
-Segments::getEnds(int interval) {
+Segments::getEnds(unsigned int interval) {
+
+	if (interval >= _ends.size())
+		return EmptyEnds;
 
 	return _ends[interval];
 }
 
 const std::vector<boost::shared_ptr<ContinuationSegment> >&
-Segments::getContinuations(int interval) {
+Segments::getContinuations(unsigned int interval) {
+
+	if (interval >= _continuations.size())
+		return EmptyContinuations;
 
 	return _continuations[interval];
 }
 
 const std::vector<boost::shared_ptr<BranchSegment> >&
-Segments::getBranches(int interval) {
+Segments::getBranches(unsigned int interval) {
+
+	if (interval >= _branches.size())
+		return EmptyBranches;
 
 	return _branches[interval];
 }
 
 std::vector<boost::shared_ptr<EndSegment> >
-Segments::getEnds() {
+Segments::getEnds() const {
 
 	return get(_ends);
 }
 
 std::vector<boost::shared_ptr<ContinuationSegment> >
-Segments::getContinuations() {
+Segments::getContinuations() const {
 
 	return get(_continuations);
 }
 
 std::vector<boost::shared_ptr<BranchSegment> >
-Segments::getBranches() {
+Segments::getBranches() const {
 
 	return get(_branches);
+}
+
+std::vector<boost::shared_ptr<Segment> >
+Segments::getSegments() const {
+
+	std::vector<boost::shared_ptr<Segment> > allSegments;
+
+	std::vector<boost::shared_ptr<EndSegment> >          ends          = get(_ends);
+	std::vector<boost::shared_ptr<ContinuationSegment> > continuations = get(_continuations);
+	std::vector<boost::shared_ptr<BranchSegment> >       branches      = get(_branches);
+
+	std::copy(ends.begin(), ends.end(), std::back_inserter(allSegments));
+	std::copy(continuations.begin(), continuations.end(), std::back_inserter(allSegments));
+	std::copy(branches.begin(), branches.end(), std::back_inserter(allSegments));
+
+	return allSegments;
 }
 
 std::vector<boost::shared_ptr<EndSegment> >
