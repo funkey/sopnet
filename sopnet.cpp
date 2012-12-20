@@ -270,7 +270,8 @@ int main(int optionc, char** optionv) {
 
 			// for every image directory in the given directory
 			foreach (boost::filesystem::path directory, sorted)
-				sliceStackDirectories->get().push_back(directory.string());
+				if (boost::filesystem::is_directory(directory))
+					sliceStackDirectories->get().push_back(directory.string());
 
 		} else {
 
