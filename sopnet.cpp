@@ -33,6 +33,7 @@
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
+#include <sopnet/inference/ProblemGraphWriter.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <util/hdf5.h>
@@ -60,8 +61,8 @@ util::ProgramOption optionTraining(
 		_short_name       = "t",
 		_description_text = "Train the segment random forest classifier.");
 
-util::ProgramOption optionDumpLemonGraph(
-		_long_name        = "dumpLemonGraph",
+util::ProgramOption optionDumpProblemGraph(
+		_long_name        = "dumpProblemGraph",
 		_description_text = "Dump the problem as a lemon graph.");
 
 util::ProgramOption optionFirstSection(
@@ -341,8 +342,11 @@ int main(int optionc, char** optionv) {
 		slicesView->setInput(slicesReader->getOutput());
 		groundTruthView->setInput(groundTruthReader->getOutput());
 
+		// create problem writer
+		boost::shared_ptr<ProblemGraphWriter> problemWriter = boost::make_shared<ProblemGraphWriter>();
+
 		// create sopnet pipeline
-		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented", optionDumpLemonGraph);
+		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented", problemWriter);
 
 		// set input to sopnet pipeline
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
@@ -538,6 +542,10 @@ int main(int optionc, char** optionv) {
 
 		resultWindow->close();
 		resultThread.join();
+
+		LOG_USER(out) << "[main] asking problem writer for dump..." << std::endl;
+
+		problemWriter->write("./dump/slices.txt", "./dump/segments.txt", "./dump/constraints.txt", "./dump/slices/");
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
 
