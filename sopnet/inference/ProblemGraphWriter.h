@@ -28,13 +28,17 @@ private:
 	// we produce nothing
 	void updateOutputs() {};
 
-	void writeSlices();
+	void writeSlices(
+			const std::string& slicesFile,
+			const std::string& sliceImageDirectory);
 
 	void writeSegments(const std::string& segmentsFile);
 
 	void writeConstraints();
 
-	void writeSlice(const Slice& slice);
+	void writeSlice(const Slice& slice, std::ofstream& out);
+
+	void writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory);
 
 	void writeSegment(const Segment& segment, std::ofstream& out);
 

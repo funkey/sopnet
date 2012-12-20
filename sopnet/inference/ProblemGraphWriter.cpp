@@ -1,5 +1,9 @@
 #include <fstream>
 
+#include <boost/lexical_cast.hpp>
+
+#include <vigra/impex.hxx>
+
 #include "ProblemGraphWriter.h"
 
 static logger::LogChannel problemgraphwriterlog("problemgraphwriterlog", "[ProblemGraphWriter] ");
@@ -35,7 +39,7 @@ ProblemGraphWriter::write(
 
 	LOG_DEBUG(problemgraphwriterlog) << "dumping problem graph..." << std::endl;
 
-	writeSlices();
+	writeSlices(slicesFile, sliceImageDirectory);
 
 	writeSegments(segmentsFile);
 
@@ -45,15 +49,28 @@ ProblemGraphWriter::write(
 }
 
 void
-ProblemGraphWriter::writeSlices() {
+ProblemGraphWriter::writeSlices(
+		const std::string& slicesFile,
+		const std::string& sliceImageDirectory) {
 
-	LOG_DEBUG(problemgraphwriterlog) << "writing slices" << std::endl;
+	LOG_DEBUG(problemgraphwriterlog) << "writing slices to " << slicesFile << std::endl;
+
+	std::ofstream out(slicesFile.c_str());
 
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
 
 		if (end->getDirection() == Left)
-			writeSlice(*end->getSlice());
+			writeSlice(*end->getSlice(), out);
 	}
+
+	LOG_DEBUG(problemgraphwriterlog) << "writing slice imagess to " << sliceImageDirectory << std::endl;
+
+	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
+
+		if (end->getDirection() == Left)
+			writeSliceImage(*end->getSlice(), sliceImageDirectory);
+	}
+	// TODO
 }
 
 void
@@ -82,14 +99,32 @@ ProblemGraphWriter::writeConstraints() {
 }
 
 void
-ProblemGraphWriter::writeSlice(const Slice& slice) {
+ProblemGraphWriter::writeSlice(const Slice& slice, std::ofstream& out) {
 
+	LOG_DEBUG(problemgraphwriterlog) << "writing slices" << std::endl;
+
+	// TODO: write whatever you want to know about a slice into out
+
+	//slice.getComponent()...
+}
+
+void
+ProblemGraphWriter::writeSliceImage(const Slice& slice, const std::string& sliceImageDirectory) {
+
+	unsigned int section = slice.getSection();
+	unsigned int id      = slice.getId();
+
+	std::string filename = sliceImageDirectory + "/" + boost::lexical_cast<std::string>(section) + "_" + boost::lexical_cast<std::string>(id) + ".png";
+
+	vigra::exportImage(vigra::srcImageRange(slice.getComponent()->getBitmap()), vigra::ImageExportInfo(filename.c_str()));
 }
 
 void
 ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out) {
 
 	LOG_ALL(problemgraphwriterlog) << "writing segment " << segment.getId() << std::endl;
+
+	out << segment.getId() << " ";
 
 	out << segment.getSlices().size();
 
