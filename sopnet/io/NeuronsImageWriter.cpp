@@ -1,5 +1,7 @@
 #include <sstream>
 
+#include <boost/filesystem.hpp>
+
 #include <vigra/impex.hxx>
 
 #include "NeuronsImageWriter.h"
@@ -14,6 +16,18 @@ NeuronsImageWriter::NeuronsImageWriter(std::string directory, std::string basena
 
 void
 NeuronsImageWriter::write() {
+
+	// prepare the output directory
+	boost::filesystem::path directory(_directory);
+
+	if (!boost::filesystem::exists(directory)) {
+
+		boost::filesystem::create_directory(directory);
+
+	} else if (!boost::filesystem::is_directory(directory)) {
+
+		BOOST_THROW_EXCEPTION(IOError() << error_message(std::string("\"") + _directory + "\" is not a directory") << STACK_TRACE);
+	}
 
 	// make sure we have a recent _neurons
 	updateInputs();
