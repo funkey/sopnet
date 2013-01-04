@@ -41,7 +41,7 @@ private:
 		pipeline::Output<LinearConstraints> _filtered;
 	};
 
-	void onInputSet(const pipeline::InputSet<MserParameters>& signal);
+	void onInputSet(const pipeline::InputSetBase& signal);
 
 	// optional mser parameters to override the program options
 	pipeline::Input<MserParameters> _mserParameters;
