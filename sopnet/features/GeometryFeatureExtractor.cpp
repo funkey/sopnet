@@ -14,6 +14,8 @@ logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[
 
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
 	_features(boost::make_shared<Features>()),
+	_overlap(false, false),
+	_alignedOverlap(false, true),
 	_distance(Slice::optionMaxDistanceMapValue.as<double>()) {
 
 	registerInput(_segments, "segments");
@@ -233,11 +235,11 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 
 	double alignedSetDifferenceRatio = setDifference/(sourceSize + targetSize);
 
-	double overlap = _overlap(*continuation.getSourceSlice(), *continuation.getTargetSlice(), false, false);
+	double overlap = _overlap(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
 	double overlapRatio = overlap/(sourceSize + targetSize - overlap);
 
-	double alignedOverlap = _overlap(*continuation.getSourceSlice(), *continuation.getTargetSlice(), false, true);
+	double alignedOverlap = _alignedOverlap(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
 	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize - overlap);
 
@@ -294,11 +296,11 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch) {
 
 	double alignedSetDifferenceRatio = alignedSetDifference/(sourceSize + targetSize1 + targetSize2);
 
-	double overlap = _overlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), false, false);
+	double overlap = _overlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
 
 	double overlapRatio = overlap/(sourceSize + targetSize1 + targetSize2 - overlap);
 
-	double alignedOverlap = _overlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), false, true);
+	double alignedOverlap = _alignedOverlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
 
 	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize1 + targetSize2 - alignedOverlap);
 

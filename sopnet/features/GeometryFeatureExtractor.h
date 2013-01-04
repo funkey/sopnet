@@ -34,6 +34,7 @@ private:
 	SetDifference _setDifference;
 
 	Overlap _overlap;
+	Overlap _alignedOverlap;
 
 	Distance _distance;
 

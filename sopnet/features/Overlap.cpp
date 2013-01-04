@@ -4,13 +4,13 @@
 #include "Overlap.h"
 
 double
-Overlap::operator()(const Slice& slice1, const Slice& slice2, bool normalized, bool align) {
+Overlap::operator()(const Slice& slice1, const Slice& slice2) {
 
 	// values to add to slice2's pixel positions
 	util::point<int> offset2(0, 0);
 
 	// ...only non-zero if we want to align both slices
-	if (align)
+	if (_align)
 		offset2 = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
 
 	unsigned int numOverlap = overlap(
@@ -18,7 +18,7 @@ Overlap::operator()(const Slice& slice1, const Slice& slice2, bool normalized, b
 			*slice2.getComponent(),
 			offset2);
 
-	if (normalized) {
+	if (_normalized) {
 
 		unsigned int totalSize = slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
 
@@ -31,13 +31,13 @@ Overlap::operator()(const Slice& slice1, const Slice& slice2, bool normalized, b
 }
 
 double
-Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, bool normalized, bool align) {
+Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& slice2) {
 
 	// values to add to slice2's pixel positions
 	util::point<int> offset2(0, 0);
 
 	// ...only non-zero if we want to align slice2 to both slice1s
-	if (align) {
+	if (_align) {
 
 		// the mean pixel location of slice1a and slice1b
 		util::point<double> center1 = 
@@ -61,7 +61,7 @@ Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& sli
 
 	unsigned int numOverlap = numOverlapa + numOverlapb;
 
-	if (normalized) {
+	if (_normalized) {
 
 		unsigned int totalSize = slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
 
@@ -71,6 +71,93 @@ Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& sli
 
 		return numOverlap;
 	}
+}
+
+bool
+Overlap::exceeds(const Slice& slice1, const Slice& slice2, double value) {
+
+	/**
+	 * First, compute the upper bound for the slice overlap based on the 
+	 * bounding boxes.
+	 */
+
+	// values to add to slice2's pixel positions
+	util::point<int> offset2(0, 0);
+
+	// ...only non-zero if we want to align both slices
+	if (_align)
+		offset2 = slice1.getComponent()->getCenter() - slice2.getComponent()->getCenter();
+
+	util::rect<double> bb_intersection = slice1.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+
+	double maxOverlap = bb_intersection.area();
+
+	if (_normalized) {
+
+		// total size is at least 1
+		unsigned int minTotalSize = static_cast<unsigned int>(std::max(1.0, slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - maxOverlap));
+
+		maxOverlap = maxOverlap/minTotalSize;
+	}
+
+	/**
+	 * If this exceeds the threshold, perform the exact computation of the 
+	 * overlap.
+	 */
+
+	if (maxOverlap <= value)
+		return false;
+
+	return (*this)(slice1, slice2) > value;
+}
+
+bool
+Overlap::exceeds(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, double value) {
+
+	/**
+	 * First, compute the upper bound for the slice overlap based on the 
+	 * bounding boxes.
+	 */
+
+	// values to add to slice2's pixel positions
+	util::point<int> offset2(0, 0);
+
+	// ...only non-zero if we want to align slice2 to both slice1s
+	if (_align) {
+
+		// the mean pixel location of slice1a and slice1b
+		util::point<double> center1 = 
+				(slice1a.getComponent()->getCenter()*slice1a.getComponent()->getSize()
+				 +
+				 slice1b.getComponent()->getCenter()*slice1b.getComponent()->getSize())
+				/
+				(double)(slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize());
+
+		offset2 = center1 - slice2.getComponent()->getCenter();
+	}
+
+	util::rect<double> bb_intersection_a = slice1a.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+	util::rect<double> bb_intersection_b = slice1b.getComponent()->getBoundingBox().intersection(slice2.getComponent()->getBoundingBox() + offset2);
+
+	double maxOverlap = bb_intersection_a.area() + bb_intersection_b.area();
+
+	if (_normalized) {
+
+		// total size is at least 1
+		unsigned int minTotalSize = static_cast<unsigned int>(std::max(1.0, slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - maxOverlap));
+
+		maxOverlap = maxOverlap/minTotalSize;
+	}
+
+	/**
+	 * If this exceeds the threshold, perform the exact computation of the 
+	 * overlap.
+	 */
+
+	if (maxOverlap <= value)
+		return false;
+
+	return (*this)(slice1a, slice1b, slice2) > value;
 }
 
 unsigned int

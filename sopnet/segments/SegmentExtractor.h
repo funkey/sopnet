@@ -62,6 +62,9 @@ private:
 	// functor to compute the number of overlapping pixels between slices
 	Overlap _overlap;
 
+	// the minimal overlap between slices of one segment
+	double _overlapThreshold;
+
 	// functor to compute the distance between slices
 	Distance _distance;
 

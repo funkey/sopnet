@@ -138,7 +138,9 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 
 	std::vector<Slices> slices = allSlices;
 
-	Overlap overlap;
+	Overlap overlap(true /* normalize */, false /* don't align */);
+
+	double overlapThreshold(optionSimilarityThreshold.as<double>());
 
 	// for all levels
 	for (unsigned int level = 0; level < slices.size(); level++) { 
@@ -158,7 +160,7 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 
 					// if the overlap exceeds the threshold, store subSlice as a
 					// duplicate of slice
-					if (overlap(*slice, *subSlice, true, false) >= optionSimilarityThreshold.as<double>()) {
+					if (overlap.exceeds(*slice, *subSlice, overlapThreshold)) {
 
 						duplicates.push_back(subSlice);
 						toBeRemoved.push_back(subSlice);
@@ -205,7 +207,7 @@ StackSliceExtractor::SliceCollector::extractSlices(const std::vector<Slices>& sl
 void
 StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices>& slices) {
 
-	Overlap overlap;
+	Overlap overlap(false /* don't normlize */, false /* don't align */);
 
 	std::vector<unsigned int> conflictIds(2);
 
@@ -224,7 +226,7 @@ StackSliceExtractor::SliceCollector::extractConstraints(const std::vector<Slices
 				foreach (boost::shared_ptr<Slice> subSlice, slices[subLevel]) {
 
 					// if there is overlap, add a consistency constraint
-					if (overlap(*slice, *subSlice, false, false) > 0) {
+					if (overlap.exceeds(*slice, *subSlice, 0)) {
 
 						conflictIds[0] = slice->getId();
 						conflictIds[1] = subSlice->getId();

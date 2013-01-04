@@ -11,6 +11,7 @@ util::ProgramOption optionEvaluatinMinOverlap(
 		util::_description_text = "The minimal normalized overlap between a result and ground-truth slice to consider them as a match.");
 
 ResultEvaluator::ResultEvaluator(double minOverlap) :
+	_overlap(true /* normalize */, false /* don't align */),
 	_minOverlap(optionEvaluatinMinOverlap ? optionEvaluatinMinOverlap : minOverlap) {
 
 	registerInput(_result, "result");
@@ -185,9 +186,7 @@ ResultEvaluator::getAllMappings(unsigned int section) {
 	foreach (boost::shared_ptr<Slice> resultSlice, resultSlices) {
 		foreach (boost::shared_ptr<Slice> groundTruthSlice, groundTruthSlices) {
 
-			float overlap = _overlap(*resultSlice, *groundTruthSlice, true /* normalize */, false /* don't align */);
-
-			if (overlap > _minOverlap) {
+			if (_overlap.exceeds(*resultSlice, *groundTruthSlice, _minOverlap)) {
 
 				resultPartners[resultSlice->getId()].push_back(groundTruthSlice->getId());
 			}

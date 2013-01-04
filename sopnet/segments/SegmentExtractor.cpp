@@ -32,6 +32,8 @@ util::ProgramOption optionSliceDistanceThreshold(
 		util::_default_value    = 10);
 
 SegmentExtractor::SegmentExtractor() :
+	_overlap(true /* normalize */, false /* don't align */),
+	_overlapThreshold(optionOverlapThreshold.as<double>()),
 	_distance(Slice::optionMaxDistanceMapValue.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
@@ -204,14 +206,11 @@ void
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
 
 	LOG_ALL(segmentextractorlog)
-			<< "overlap between slice " << prevSlice->getId()
+			<< "normalized overlap between slice " << prevSlice->getId()
 			<< " and " << nextSlice->getId() << " is "
-			<< _overlap(*prevSlice, *nextSlice, false, false)
-			<< ", normalized by the slice sizes (" << prevSlice->getComponent()->getSize()
-			<< " and " << nextSlice->getComponent()->getSize() << ") this is "
-			<< _overlap(*prevSlice, *nextSlice, true, false) << std::endl;
+			<< _overlap(*prevSlice, *nextSlice) << std::endl;
 
-	if (_overlap(*prevSlice, *nextSlice, true, false) < optionOverlapThreshold.as<double>()) {
+	if (!_overlap.exceeds(*prevSlice, *nextSlice, _overlapThreshold)) {
 
 		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
 		return;
@@ -235,14 +234,9 @@ SegmentExtractor::extractSegment(
 		Direction direction) {
 
 	LOG_ALL(segmentextractorlog)
-			<< "overlap between slice " << source->getId()
+			<< "normalized overlap between slice " << source->getId()
 			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
-			<< _overlap(*target1, *target2, *source, false, false)
-			<< "(" << _overlap(*target1, *source, false, false) << " + "
-			<< _overlap(*target2, *source, false, false) << ")"
-			<< ", normalized by the slice sizes (" << source->getComponent()->getSize()
-			<< " and " << target1->getComponent()->getSize() << " and " << target2->getComponent()->getSize()
-			<< ") this is " << _overlap(*target1, *target2, *source, true, false) << std::endl;
+			<< _overlap(*target1, *target2, *source) << std::endl;
 
 	double avgSliceDistance, maxSliceDistance;
 
@@ -253,7 +247,7 @@ SegmentExtractor::extractSegment(
 			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
 			<< avgSliceDistance << ", max is " << maxSliceDistance << std::endl;
 
-	if (_overlap(*target1, *target2, *source, true, false) < optionOverlapThreshold.as<double>()) {
+	if (!_overlap.exceeds(*target1, *target2, *source, _overlapThreshold)) {
 
 		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (overlap too small)" << std::endl;
 		return;
