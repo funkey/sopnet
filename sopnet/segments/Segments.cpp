@@ -1,5 +1,9 @@
 #include "Segments.h"
 
+std::vector<boost::shared_ptr<EndSegment> >          Segments::EmptyEnds;
+std::vector<boost::shared_ptr<ContinuationSegment> > Segments::EmptyContinuations;
+std::vector<boost::shared_ptr<BranchSegment> >       Segments::EmptyBranches;
+
 Segments::~Segments() {
 
 	clear();
@@ -127,19 +131,28 @@ Segments::addAll(boost::shared_ptr<Segments> segments) {
 }
 
 const std::vector<boost::shared_ptr<EndSegment> >&
-Segments::getEnds(int interval) {
+Segments::getEnds(unsigned int interval) {
+
+	if (interval >= _ends.size())
+		return EmptyEnds;
 
 	return _ends[interval];
 }
 
 const std::vector<boost::shared_ptr<ContinuationSegment> >&
-Segments::getContinuations(int interval) {
+Segments::getContinuations(unsigned int interval) {
+
+	if (interval >= _continuations.size())
+		return EmptyContinuations;
 
 	return _continuations[interval];
 }
 
 const std::vector<boost::shared_ptr<BranchSegment> >&
-Segments::getBranches(int interval) {
+Segments::getBranches(unsigned int interval) {
+
+	if (interval >= _branches.size())
+		return EmptyBranches;
 
 	return _branches[interval];
 }

@@ -149,17 +149,17 @@ public:
 	/**
 	 * Get all end segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(int interval);
+	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(unsigned int interval);
 
 	/**
 	 * Get all continuation segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(int interval);
+	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(unsigned int interval);
 
 	/**
 	 * Get all branch segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(int interval);
+	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(unsigned int interval);
 
 	/**
 	 * Find all end segments in the given inter-section interval that are close
@@ -253,6 +253,10 @@ public:
 	unsigned int size();
 
 private:
+
+	static std::vector<boost::shared_ptr<EndSegment> >          EmptyEnds;
+	static std::vector<boost::shared_ptr<ContinuationSegment> > EmptyContinuations;
+	static std::vector<boost::shared_ptr<BranchSegment> >       EmptyBranches;
 
 	// resize to hold segments in the given number of inter-section intervals
 	void resize(int numInterSectionInterval);
