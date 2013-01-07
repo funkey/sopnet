@@ -31,6 +31,12 @@ util::ProgramOption optionSliceDistanceThreshold(
 		                          "pixel of another slice.",
 		util::_default_value    = 10);
 
+util::ProgramOption optionDisableBranches(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "disableBranches",
+		util::_description_text = "Disable the extraction of branch segments.");
+
+
 SegmentExtractor::SegmentExtractor() :
 	_overlap(true /* normalize */, false /* don't align */),
 	_overlapThreshold(optionOverlapThreshold.as<double>()),
@@ -157,11 +163,14 @@ SegmentExtractor::extractSegments() {
 			extractSegment(prevSlice, nextSlice);
 
 		// ...and all pairs of next slices within a threshold distance
-		foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
-			foreach (boost::shared_ptr<Slice> nextSlice2, closeNextSlices)
-				if (nextSlice1->getId() < nextSlice2->getId())
-					if (!_nextSlices->areConflicting(nextSlice1->getId(), nextSlice2->getId()))
-						extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
+		if (!optionDisableBranches) {
+
+			foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
+				foreach (boost::shared_ptr<Slice> nextSlice2, closeNextSlices)
+					if (nextSlice1->getId() < nextSlice2->getId())
+						if (!_nextSlices->areConflicting(nextSlice1->getId(), nextSlice2->getId()))
+							extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
+		}
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
@@ -177,11 +186,14 @@ SegmentExtractor::extractSegments() {
 		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 
 		// ...and all pairs of prev slices within a threshold distance
-		foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
-			foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
-				if (prevSlice1->getId() < prevSlice2->getId())
-					if (!_prevSlices->areConflicting(prevSlice1->getId(), prevSlice2->getId()))
-						extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
+		if (!optionDisableBranches) {
+
+			foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
+				foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
+					if (prevSlice1->getId() < prevSlice2->getId())
+						if (!_prevSlices->areConflicting(prevSlice1->getId(), prevSlice2->getId()))
+							extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
+		}
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
