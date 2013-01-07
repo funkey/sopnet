@@ -42,9 +42,16 @@ PriorCostFunction::costs(
 
 	unsigned int i = 0;
 
+	unsigned int numSections = 0;
+	foreach (boost::shared_ptr<EndSegment> end, ends)
+		numSections = std::max(numSections, end->getInterSectionInterval());
+
 	foreach (boost::shared_ptr<EndSegment> end, ends) {
 
-		segmentCosts[i] += priorEndCosts;
+		// end segments out of the block are for free
+		if (end->getInterSectionInterval() != 0 && end->getInterSectionInterval() != numSections)
+			segmentCosts[i] += priorEndCosts;
+
 		i++;
 	}
 
