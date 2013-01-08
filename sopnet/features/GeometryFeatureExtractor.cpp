@@ -15,8 +15,7 @@ logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
 	_features(boost::make_shared<Features>()),
 	_overlap(false, false),
-	_alignedOverlap(false, true),
-	_distance(Slice::optionMaxDistanceMapValue.as<double>()) {
+	_alignedOverlap(false, true) {
 
 	registerInput(_segments, "segments");
 	registerOutput(_features, "features");
@@ -139,6 +138,9 @@ GeometryFeatureExtractor::updateOutputs() {
 		LOG_DEBUG(geometryfeatureextractorlog) << "reusing cache" << std::endl;
 
 	LOG_DEBUG(geometryfeatureextractorlog) << "done" << std::endl;
+
+	// free memory
+	_distance.clearCache();
 }
 
 template <typename SegmentType>

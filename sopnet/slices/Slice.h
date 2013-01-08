@@ -3,8 +3,6 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <vigra/multi_array.hxx>
-
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 
@@ -12,8 +10,6 @@
 class ConnectedComponent;
 
 class Slice {
-
-	typedef vigra::MultiArray<2, float> distance_map_type;
 
 public:
 
@@ -45,42 +41,18 @@ public:
 	boost::shared_ptr<ConnectedComponent> getComponent() const;
 
 	/**
-	 * Get the distance map of this slice. Up to a certain distance, this shows
-	 * the minimal distance of a pixel to any pixel of the slice.
-	 */
-	const distance_map_type& getDistanceMap() const { return _distanceMap; }
-
-	/**
-	 * Get the bounding box of the distance map.
-	 */
-	const util::rect<int>& getDistanceMapBoundingBox() const { return _distanceMapSize; }
-
-	/**
 	 * Intersect this slice with another one. Note that the result might not be
 	 * a single connected component any longer.
 	 */
 	void intersect(const Slice& other);
 
-	/**
-	 * Provide access to this program option to other modules.
-	 */
-	static util::ProgramOption optionMaxDistanceMapValue;
-
 private:
-
-	void computeDistanceMap();
 
 	unsigned int _id;
 
 	unsigned int _section;
 
 	boost::shared_ptr<ConnectedComponent> _component;
-
-	// a distance map for pixels surrounding this slice
-	distance_map_type _distanceMap;
-
-	// the upper left corner and extends of the distance map in the section
-	util::rect<int> _distanceMapSize;
 };
 
 #endif // CELLTRACKER_CELL_H__

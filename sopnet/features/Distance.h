@@ -1,9 +1,16 @@
 #ifndef SOPNET_FEATURES_DISTANCE_H__
 #define SOPNET_FEATURES_DISTANCE_H__
 
+#include <vigra/multi_array.hxx>
+
 // forward declarations
 class Slice;
 
+/**
+ * Distance functor. Computes the pixel average and maximal minimal pixel 
+ * distance between the pixels of one slice to all pixels of another slice.  
+ * Caches distance maps internally. Use clearCache() to free memory.
+ */
 class Distance {
 
 public:
@@ -14,8 +21,7 @@ public:
 	 * @param maxDistance The value to assign pixels that are lying outside the
 	 *                    distance map of the slice they are compared to.
 	 */
-	Distance(double maxDistance) :
-		_maxDistance(maxDistance) {}
+	Distance(double maxDistance = -1);
 
 	/**
 	 * Computes the average minimal pixel distance between two slices.
@@ -61,7 +67,17 @@ public:
 			double& avgSliceDistance,
 			double& maxSliceDistance);
 
+	/**
+	 * Free all the memory allocated for distance maps of previous slices.
+	 */
+	void clearCache() {
+
+		_distanceMaps.clear();
+	}
+
 private:
+
+	typedef vigra::MultiArray<2, float> distance_map_type;
 
 	void distance(
 			const Slice& slice1,
@@ -78,7 +94,15 @@ private:
 			double& avgSliceDistance,
 			double& maxSliceDistance);
 
+	const distance_map_type& getDistanceMap(const Slice& slice);
+
+	util::rect<int> getDistanceMapBoundingBox(const Slice& slice);
+
+	distance_map_type computeDistanceMap(const Slice& slice);
+
 	double _maxDistance;
+
+	std::map<unsigned int, distance_map_type> _distanceMaps;
 };
 
 #endif // SOPNET_FEATURES_DISTANCE_H__

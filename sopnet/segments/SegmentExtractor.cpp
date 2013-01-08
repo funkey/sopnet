@@ -40,14 +40,8 @@ util::ProgramOption optionDisableBranches(
 SegmentExtractor::SegmentExtractor() :
 	_overlap(true /* normalize */, false /* don't align */),
 	_overlapThreshold(optionOverlapThreshold.as<double>()),
-	_distance(Slice::optionMaxDistanceMapValue.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
-
-	LOG_DEBUG(segmentextractorlog)
-			<< "created distance functor with max value of "
-			<< Slice::optionMaxDistanceMapValue.as<double>()
-			<< std::endl;
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
@@ -90,6 +84,8 @@ SegmentExtractor::updateOutputs() {
 		assembleLinearConstraints();
 		_linearCosntraintsChanged = false;
 	}
+
+	_distance.clearCache();
 }
 
 struct CoordAccessor {

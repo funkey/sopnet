@@ -1,7 +1,24 @@
+#include <vigra/functorexpression.hxx>
+#include <vigra/distancetransform.hxx>
+#include <vigra/transformimage.hxx>
+
 #include <imageprocessing/ConnectedComponent.h>
 #include <util/rect.hpp>
 #include <sopnet/slices/Slice.h>
 #include "Distance.h"
+
+util::ProgramOption optionMaxDistanceMapValue(
+		util::_module           = "sopnet.features",
+		util::_long_name        = "maxDistanceMapValue",
+		util::_description_text = "The maximal Euclidean distance value to consider for point-to-slice comparisons. Points further away than this value will have this value.",
+		util::_default_value    = 50);
+
+Distance::Distance(double maxDistance) :
+	_maxDistance(maxDistance) {
+
+	if (_maxDistance < 0)
+		_maxDistance = optionMaxDistanceMapValue;
+}
 
 void
 Distance::operator()(
@@ -99,7 +116,7 @@ Distance::distance(
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<int> s2dmbb = s2.getDistanceMapBoundingBox();
+	const util::rect<int> s2dmbb = getDistanceMapBoundingBox(s2);
 
 	double totalDistance = 0.0;
 
@@ -122,7 +139,7 @@ Distance::distance(
 		p1 -= util::point<int>(s2dmbb.minX, s2dmbb.minY);
 
 		// add up the value
-		double dist = s2.getDistanceMap()(p1.x, p1.y);
+		double dist = getDistanceMap(s2)(p1.x, p1.y);
 		totalDistance += dist;
 		maxSliceDistance = std::max(maxSliceDistance, dist);
 	}
@@ -141,8 +158,8 @@ Distance::distance(
 
 	const ConnectedComponent& c1 = *s1.getComponent();
 
-	const util::rect<int> s2dmbba = s2a.getDistanceMapBoundingBox();
-	const util::rect<int> s2dmbbb = s2b.getDistanceMapBoundingBox();
+	const util::rect<int> s2dmbba = getDistanceMapBoundingBox(s2a);
+	const util::rect<int> s2dmbbb = getDistanceMapBoundingBox(s2b);
 
 	double totalDistance = 0.0;
 
@@ -169,7 +186,7 @@ Distance::distance(
 				p1a -= util::point<int>(s2dmbba.minX, s2dmbba.minY);
 
 				// add up the value
-				distancea = s2a.getDistanceMap()(p1a.x, p1a.y);
+				distancea = getDistanceMap(s2a)(p1a.x, p1a.y);
 			}
 		}
 
@@ -189,7 +206,7 @@ Distance::distance(
 				p1b -= util::point<int>(s2dmbbb.minX, s2dmbbb.minY);
 
 				// add up the value
-				distanceb = s2b.getDistanceMap()(p1b.x, p1b.y);
+				distanceb = getDistanceMap(s2b)(p1b.x, p1b.y);
 			}
 		}
 
@@ -200,4 +217,73 @@ Distance::distance(
 	}
 
 	avgSliceDistance = totalDistance/s1.getComponent()->getSize();
+}
+
+util::rect<int>
+Distance::getDistanceMapBoundingBox(const Slice& slice) {
+
+
+	const util::rect<int>& boundingBox = slice.getComponent()->getBoundingBox();
+
+	// comput size and offset of distance map
+	util::rect<int> distanceMapBoundingBox;
+	distanceMapBoundingBox.minX = boundingBox.minX - _maxDistance;
+	distanceMapBoundingBox.minY = boundingBox.minY - _maxDistance;
+	distanceMapBoundingBox.maxX = boundingBox.maxX + _maxDistance;
+	distanceMapBoundingBox.maxY = boundingBox.maxY + _maxDistance;
+
+	return distanceMapBoundingBox;
+}
+
+const Distance::distance_map_type&
+Distance::getDistanceMap(const Slice& slice) {
+
+	if (!_distanceMaps.count(slice.getId()))
+		_distanceMaps[slice.getId()] = computeDistanceMap(slice);
+
+	return _distanceMaps[slice.getId()];
+}
+
+Distance::distance_map_type
+Distance::computeDistanceMap(const Slice& slice) {
+
+	const util::rect<int>& boundingBox = slice.getComponent()->getBoundingBox();
+
+	// comput size and offset of distance map
+	util::rect<int> distanceMapBoundingBox = getDistanceMapBoundingBox(slice);
+
+	distance_map_type::size_type shape(distanceMapBoundingBox.width(), distanceMapBoundingBox.height());
+
+	// create object image
+	distance_map_type objectImage(shape, 0.0);
+
+	// copy slice pixels into object image
+	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
+
+		int x = pixel.x - boundingBox.minX + _maxDistance;
+		int y = pixel.y - boundingBox.minY + _maxDistance;
+
+		if (x < 0 || x >= (int)distanceMapBoundingBox.width() || y < 0 || y >= (int)distanceMapBoundingBox.height()) {
+
+			LOG_ERROR(logger::out) << "[Distance] invalid pixel position: " << x << ", " << y << std::endl;
+
+		} else {
+
+			objectImage(x, y) = 1.0;
+		}
+	}
+
+	// reshape distance map
+	distance_map_type distanceMap;
+	distanceMap.reshape(shape);
+
+	// perform distance transform with Euclidean norm
+	vigra::distanceTransform(srcImageRange(objectImage), destImage(distanceMap), 0.0, 2);
+
+	using namespace vigra::functor;
+
+	// cut values to maxDistance
+	vigra::transformImage(srcImageRange(distanceMap), destImage(distanceMap), min(Arg1(), Param(_maxDistance)));
+
+	return distanceMap;
 }
