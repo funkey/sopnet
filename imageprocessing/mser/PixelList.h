@@ -22,6 +22,12 @@ struct PixelList {
 		return prev.size();
 	}
 
+	void clear() {
+
+		std::vector<int>().swap(next);
+		std::vector<int>().swap(prev);
+	}
+
 	std::vector<int> prev;
 	std::vector<int> next;
 };

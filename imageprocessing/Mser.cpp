@@ -45,6 +45,8 @@ Mser::process() {
 
 	createComponentTree();
 
+	deallocate();
+
 	LOG_DEBUG(mserlog) << "done" << std::endl;
 }
 
@@ -62,6 +64,21 @@ Mser::allocate() {
 	_stacks.resize(256);
 	_histories.resize(_size);
 	_regions.resize(257);
+}
+
+void
+Mser::deallocate() {
+
+	LOG_ALL(mserlog) << "deallocating memory" << std::endl;
+
+	std::vector<unsigned char>().swap(_values);
+	std::vector<bool>().swap(_visited);
+	std::vector<unsigned char>().swap(_nextNeighbors);
+	std::vector<std::stack<unsigned int> >().swap(_stacks);
+	std::vector<GrowHistory>().swap(_histories);
+	std::vector<mser::Region>().swap(_regions);
+
+	_pixelList.clear();
 }
 
 void

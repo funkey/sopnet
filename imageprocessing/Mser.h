@@ -54,6 +54,11 @@ private:
 
 	void createComponentTree();
 
+	/**
+	 * Free all the memory that was needed to generate the component tree.
+	 */
+	void deallocate();
+
 	// creates a (partial) tree from an mser, gives back the top component tree
 	// node
 	boost::shared_ptr<ComponentTree::Node> createSubComponentTree(
@@ -91,7 +96,7 @@ private:
 	std::vector<bool>  _visited;
 
 	// the next nextNeighbors to explore for each pixel
-	std::vector<unsigned int> _nextNeighbors;
+	std::vector<unsigned char> _nextNeighbors;
 
 	// indices of the pixels in a linked list
 	PixelList _pixelList;
