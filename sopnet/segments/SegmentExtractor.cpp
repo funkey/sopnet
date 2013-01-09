@@ -137,7 +137,7 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
-	LOG_DEBUG(segmentextractorlog) << "extracting continuations and bisections to next section..." << std::endl;
+	LOG_DEBUG(segmentextractorlog) << "extracting continuations" << (optionDisableBranches ? "" : " and bisections") << " to next section..." << std::endl;
 
 	double distanceThreshold;
 
@@ -172,28 +172,28 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
-	LOG_DEBUG(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
+	if (!optionDisableBranches) {
 
-	// for all slices in next section...
-	foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
+		LOG_DEBUG(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
 
-		std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold);
+		// for all slices in next section...
+		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
-		LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
+			std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold);
 
-		// ...and all pairs of prev slices within a threshold distance
-		if (!optionDisableBranches) {
+			LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 
+			// ...and all pairs of prev slices within a threshold distance
 			foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
 				foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
 					if (prevSlice1->getId() < prevSlice2->getId())
 						if (!_prevSlices->areConflicting(prevSlice1->getId(), prevSlice2->getId()))
 							extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
 		}
-	}
 
-	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-	oldSize = _segments->size();
+		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+		oldSize = _segments->size();
+	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
 }
