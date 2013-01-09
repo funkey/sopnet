@@ -4,7 +4,7 @@
 logger::LogChannel segmentrandomforesttrainerlog("segmentrandomforesttrainerlog", "[SegmentRandomForestTrainer] ");
 
 util::ProgramOption optionNumTrees(
-		util::_module           = "sopnet",
+		util::_module           = "sopnet.training",
 		util::_long_name        = "numTrees",
 		util::_description_text = "The number of trees to use for the random forest.");
 
