@@ -34,6 +34,7 @@
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
 #include <sopnet/io/NeuronsImageWriter.h>
+#include <sopnet/inference/GridSearch.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <util/hdf5.h>
 #include <util/ProgramOptions.h>
@@ -127,6 +128,11 @@ util::ProgramOption optionSaveResultBasename(
 		_long_name        = "saveResultBasename",
 		_description_text = "The basenames of the images files created in the result directory. The default is \"result_\".",
 		_default_value    = "result_");
+
+util::ProgramOption optionPriorGridSearch(
+		_module           = "sopnet.inference",
+		_long_name        = "priorGridSearch",
+		_description_text = "Preform a grid search on the segment priors.");
 
 void handleException(boost::exception& e) {
 
@@ -515,20 +521,50 @@ int main(int optionc, char** optionv) {
 			LOG_USER(out) << "[main] training finished!" << std::endl;
 		}
 
-		boost::thread controlThread(boost::bind(&processEvents, controlWindow));
-		boost::thread resultThread(boost::bind(&processEvents, resultWindow));
-
 		if (optionSaveResultDirectory) {
 
-			LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
+			if (optionPriorGridSearch) {
 
-			boost::shared_ptr<NeuronsImageWriter> resultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
+				LOG_USER(out) << "[main] performing grid search" << std::endl;
 
-			resultWriter->setInput("neurons", neuronExtractor->getOutput());
-			resultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
+				boost::shared_ptr<GridSearch> gridSearch = boost::make_shared<GridSearch>();
 
-			resultWriter->write();
+				sopnet->setInput("prior cost parameters", gridSearch->getOutput("prior cost parameters"));
+
+				while (true) {
+
+					std::string parameterString = gridSearch->currentParameters();
+
+					LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
+
+					boost::shared_ptr<NeuronsImageWriter> gridResultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory.as<std::string>() + "/" + parameterString, optionSaveResultBasename);
+
+					gridResultWriter->setInput("neurons", neuronExtractor->getOutput());
+					gridResultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
+
+					gridResultWriter->write();
+
+					if (!gridSearch->next())
+						break;
+				}
+
+				LOG_USER(out) << "[main] grid search done." << std::endl;
+
+			} else {
+
+				LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
+
+				boost::shared_ptr<NeuronsImageWriter> resultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
+
+				resultWriter->setInput("neurons", neuronExtractor->getOutput());
+				resultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
+
+				resultWriter->write();
+			}
 		}
+
+		boost::thread controlThread(boost::bind(&processEvents, controlWindow));
+		boost::thread resultThread(boost::bind(&processEvents, resultWindow));
 
 		controlThread.join();
 
