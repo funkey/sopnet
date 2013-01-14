@@ -65,6 +65,9 @@ private:
 	// the minimal overlap between slices of one segment
 	double _overlapThreshold;
 
+	// the maximal slice distance between slices in branches
+	double _sliceDistanceThreshold;
+
 	// functor to compute the distance between slices
 	Distance _distance;
 

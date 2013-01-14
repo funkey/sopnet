@@ -40,6 +40,7 @@ util::ProgramOption optionDisableBranches(
 SegmentExtractor::SegmentExtractor() :
 	_overlap(true /* normalize */, false /* don't align */),
 	_overlapThreshold(optionOverlapThreshold.as<double>()),
+	_sliceDistanceThreshold(optionSliceDistanceThreshold.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
 
@@ -88,17 +89,6 @@ SegmentExtractor::updateOutputs() {
 	_distance.clearCache();
 }
 
-struct CoordAccessor {
-
-	double operator()(boost::shared_ptr<Slice> slice, size_t k) {
-
-		if (k == 0)
-			return slice->getComponent()->getCenter().x;
-		else
-			return slice->getComponent()->getCenter().y;
-	}
-};
-
 void
 SegmentExtractor::extractSegments() {
 
@@ -132,10 +122,10 @@ SegmentExtractor::extractSegments() {
 			extractSegment(nextSlice, Left);
 			extractSegment(nextSlice, Right);
 		}
-	}
 
-	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-	oldSize = _segments->size();
+		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+		oldSize = _segments->size();
+	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracting continuations" << (optionDisableBranches ? "" : " and bisections") << " to next section..." << std::endl;
 
@@ -150,7 +140,7 @@ SegmentExtractor::extractSegments() {
 	// for all slices in previous section...
 	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
 
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices = _nextSlices->find(prevSlice->getComponent()->getCenter(), distanceThreshold);
+		std::vector<boost::shared_ptr<Slice> > closeNextSlices = _nextSlices->find(prevSlice->getComponent()->getCenter(), distanceThreshold*distanceThreshold);
 
 		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
 
@@ -179,7 +169,7 @@ SegmentExtractor::extractSegments() {
 		// for all slices in next section...
 		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
 
-			std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold);
+			std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold*distanceThreshold);
 
 			LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
 
@@ -241,33 +231,15 @@ SegmentExtractor::extractSegment(
 		boost::shared_ptr<Slice> target2,
 		Direction direction) {
 
-	LOG_ALL(segmentextractorlog)
-			<< "normalized overlap between slice " << source->getId()
-			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
-			<< _overlap(*target1, *target2, *source) << std::endl;
+	if (!_overlap.exceeds(*target1, *target2, *source, _overlapThreshold))
+		return;
 
 	double avgSliceDistance, maxSliceDistance;
 
 	_distance(*target1, *target2, *source, true, false, avgSliceDistance, maxSliceDistance);
 
-	LOG_ALL(segmentextractorlog)
-			<< "average symmetric distance between slice " << source->getId()
-			<< " and both " << target1->getId() << " and " << target2->getId() << " is "
-			<< avgSliceDistance << ", max is " << maxSliceDistance << std::endl;
-
-	if (!_overlap.exceeds(*target1, *target2, *source, _overlapThreshold)) {
-
-		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (overlap too small)" << std::endl;
+	if (maxSliceDistance >= _sliceDistanceThreshold)
 		return;
-	}
-
-	if (maxSliceDistance >= optionSliceDistanceThreshold.as<double>()) {
-
-		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis (slice distance too big)" << std::endl;
-		return;
-	}
-
-	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
 
 	boost::shared_ptr<BranchSegment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
 
