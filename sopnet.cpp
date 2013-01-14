@@ -26,6 +26,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
+#include <sopnet/evaluation/VariationOfInformation.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
 #include <sopnet/gui/NeuronsView.h>
@@ -33,6 +34,7 @@
 #include <sopnet/gui/SegmentsView.h>
 #include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
+#include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/inference/GridSearch.h>
 #include <sopnet/neurons/NeuronExtractor.h>
@@ -358,15 +360,31 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
 
-		// create result evaluator if needed by anyone
-		boost::shared_ptr<ResultEvaluator> resultEvaluator;
+		// create result evaluator and variation of information if needed by 
+		// anyone
+		boost::shared_ptr<ResultEvaluator>        resultEvaluator;
+		boost::shared_ptr<VariationOfInformation> variationOfInformation;
 
-		if (optionShowErrors)
-			resultEvaluator = boost::make_shared<ResultEvaluator>();
+		if (optionShowErrors) {
+
+			resultEvaluator        = boost::make_shared<ResultEvaluator>();
+			variationOfInformation = boost::make_shared<VariationOfInformation>();
+		}
 
 		// create a neuron extractor
 		boost::shared_ptr<NeuronExtractor> neuronExtractor = boost::make_shared<NeuronExtractor>();
 		neuronExtractor->setInput("segments", sopnet->getOutput("solution"));
+
+		// create a result id map creator if needed
+		boost::shared_ptr<IdMapCreator> resultIdMapCreator;
+
+		if (optionShowErrors || optionSaveResultDirectory) {
+
+			resultIdMapCreator = boost::make_shared<IdMapCreator>();
+
+			resultIdMapCreator->setInput("neurons", neuronExtractor->getOutput());
+			resultIdMapCreator->setInput("reference", rawSectionsReader->getOutput());
+		}
 
 		if (optionShowAllSegments) {
 
@@ -505,7 +523,12 @@ int main(int optionc, char** optionv) {
 
 			resultEvaluator->setInput("result", sopnet->getOutput("solution"));
 			resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
-			errorsView->setInput(resultEvaluator->getOutput());
+
+			variationOfInformation->setInput("stack 1", groundTruthReader->getOutput());
+			variationOfInformation->setInput("stack 2", resultIdMapCreator->getOutput());
+
+			errorsView->setInput("errors", resultEvaluator->getOutput());
+			errorsView->setInput("variation of information", variationOfInformation->getOutput());
 			namedView->setInput(errorsView->getOutput());
 
 			resultContainer->addInput(namedView->getOutput());
@@ -537,11 +560,13 @@ int main(int optionc, char** optionv) {
 
 					LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
 
-					boost::shared_ptr<NeuronsImageWriter> gridResultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory.as<std::string>() + "/" + parameterString, optionSaveResultBasename);
+					boost::shared_ptr<IdMapCreator>       gridResultIdMapCreator = boost::make_shared<IdMapCreator>();
+					boost::shared_ptr<NeuronsImageWriter> gridResultWriter       = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory.as<std::string>() + "/" + parameterString, optionSaveResultBasename);
 
-					gridResultWriter->setInput("neurons", neuronExtractor->getOutput());
-					gridResultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
+					gridResultIdMapCreator->setInput("neurons", neuronExtractor->getOutput());
+					gridResultIdMapCreator->setInput("reference", rawSectionsReader->getOutput());
 
+					gridResultWriter->setInput(gridResultIdMapCreator->getOutput("id map"));
 					gridResultWriter->write();
 
 					if (!gridSearch->next())
@@ -556,9 +581,7 @@ int main(int optionc, char** optionv) {
 
 				boost::shared_ptr<NeuronsImageWriter> resultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
 
-				resultWriter->setInput("neurons", neuronExtractor->getOutput());
-				resultWriter->setInput("reference image stack", rawSectionsReader->getOutput());
-
+				resultWriter->setInput(resultIdMapCreator->getOutput("id map"));
 				resultWriter->write();
 			}
 		}

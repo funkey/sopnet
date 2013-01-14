@@ -13,8 +13,6 @@
  */
 class NeuronsImageWriter : public pipeline::SimpleProcessNode<> {
 
-	typedef vigra::MultiArray<2, unsigned int> id_image;
-
 public:
 
 	NeuronsImageWriter(std::string directory, std::string basename);
@@ -25,10 +23,7 @@ private:
 
 	void updateOutputs() {}
 
-	void drawSlice(const Slice& slice, std::vector<id_image>& idImages, unsigned int id);
-
-	pipeline::Input<SegmentTrees>    _neurons;
-	pipeline::Input<ImageStack> _reference;
+	pipeline::Input<ImageStack> _idMap;
 
 	std::string _directory;
 	std::string _basename;

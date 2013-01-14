@@ -14,6 +14,7 @@ public:
 	ErrorsView() {
 
 		registerInput(_errors, "errors");
+		registerInput(_variationOfInformation, "variation of information");
 		registerOutput(_painter, "painter");
 
 		_painter.registerForwardSlot(_sizeChanged);
@@ -29,7 +30,8 @@ private:
 				<< "false positives: " << _errors->numFalsePositives() << ", "
 				<< "false negatives: " << _errors->numFalseNegatives() << ", "
 				<< "false splits: " << _errors->numFalseSplits() << ", "
-				<< "false merges: " << _errors->numFalseMerges();
+				<< "false merges: " << _errors->numFalseMerges() << " -- "
+				<< "variation of information: " << *_variationOfInformation << std::endl;
 
 		_painter->setText(ss.str());
 
@@ -37,6 +39,7 @@ private:
 	}
 
 	pipeline::Input<Errors>            _errors;
+	pipeline::Input<double>            _variationOfInformation;
 	pipeline::Output<gui::TextPainter> _painter;
 
 	signals::Slot<const gui::SizeChanged> _sizeChanged;
