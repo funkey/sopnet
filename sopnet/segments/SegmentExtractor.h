@@ -26,6 +26,8 @@ private:
 
 	void extractSegments();
 
+	void buildOverlapMap();
+
 	void extractSegment(boost::shared_ptr<Slice> prevSlice, Direction direction);
 
 	void extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice);
@@ -48,13 +50,13 @@ private:
 	pipeline::Input<LinearConstraints> _prevLinearConstraints;
 	pipeline::Input<LinearConstraints> _nextLinearConstraints;
 
-	// the distance in pixels until which to consider slices to belong to the
-	// same segment
-	pipeline::Input<double> _distanceThreshold;
-
 	// the extracted segments and the linear constraints on them
 	pipeline::Output<Segments>          _segments;
 	pipeline::Output<LinearConstraints> _linearConstraints;
+
+	// a map from slices to overlapping slices
+	std::map<unsigned int, std::vector<unsigned int> > _nextOverlaps;
+	std::map<unsigned int, std::vector<unsigned int> > _prevOverlaps;
 
 	// a map from slice ids to segments (ids) they are used in
 	std::map<unsigned int, std::vector<unsigned int> > _sliceSegments;

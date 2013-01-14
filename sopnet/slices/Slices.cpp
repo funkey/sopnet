@@ -77,21 +77,6 @@ Slices::remove(boost::shared_ptr<Slice> slice) {
 	return;
 }
 
-bool
-Slices::areConflicting(unsigned int id1, unsigned int id2) {
-
-	// If we don't have any information about slice id1,
-	// we assume that there is no conflict.
-	if (!_conflicts.count(id1))
-		return false;
-
-	foreach (unsigned int conflictId, _conflicts[id1])
-		if (conflictId == id2)
-			return true;
-
-	return false;
-}
-
 std::vector<boost::shared_ptr<Slice> >
 Slices::find(const util::point<double>& center, double distance) {
 

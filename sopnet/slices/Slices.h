@@ -146,7 +146,19 @@ public:
 	/**
 	 * Check, whether to slices (given by their id) are in conflict.
 	 */
-	bool areConflicting(unsigned int id1, unsigned int id2);
+	inline bool areConflicting(unsigned int id1, unsigned int id2) {
+
+		// If we don't have any information about slice id1,
+		// we assume that there is no conflict.
+		if (!_conflicts.count(id1))
+			return false;
+
+		foreach (unsigned int conflictId, _conflicts[id1])
+			if (conflictId == id2)
+				return true;
+
+		return false;
+	}
 
 	const const_iterator begin() const { return _slices.begin(); }
 
@@ -157,6 +169,8 @@ public:
 	iterator end() { return _slices.end(); }
 
 	unsigned int size() const { return _slices.size(); }
+
+	boost::shared_ptr<Slice> operator[](unsigned int i) { return _slices[i]; }
 
 	/**
 	 * Find all slices within distance to the given center.

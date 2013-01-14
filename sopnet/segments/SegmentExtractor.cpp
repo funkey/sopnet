@@ -11,12 +11,6 @@
 
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
 
-util::ProgramOption optionDistanceThreshold(
-		util::_module           = "sopnet.segments",
-		util::_long_name        = "distanceThreshold",
-		util::_description_text = "The maximal center distance between slices to consider them for segment hypotheses.",
-		util::_default_value    = 50);
-
 util::ProgramOption optionOverlapThreshold(
 		util::_module           = "sopnet.segments",
 		util::_long_name        = "overlapThreshold",
@@ -48,7 +42,6 @@ SegmentExtractor::SegmentExtractor() :
 	registerInput(_nextSlices, "next slices");
 	registerInput(_prevLinearConstraints, "previous linear constraints");
 	registerInput(_nextLinearConstraints, "next linear constraints", pipeline::Optional);
-	registerInput(_distanceThreshold, "distance threshold", pipeline::Optional);
 
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
@@ -92,13 +85,15 @@ SegmentExtractor::updateOutputs() {
 void
 SegmentExtractor::extractSegments() {
 
-	unsigned int oldSize = 0;
-
-	LOG_DEBUG(segmentextractorlog) << "extracting segments..." << std::endl;
-
 	LOG_DEBUG(segmentextractorlog)
 			<< "previous sections contains " << _prevSlices->size() << " slices,"
 			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
+
+	buildOverlapMap();
+
+	unsigned int oldSize = 0;
+
+	LOG_DEBUG(segmentextractorlog) << "extracting segments..." << std::endl;
 
 	LOG_DEBUG(segmentextractorlog) << "extracting ends to and from previous section..." << std::endl;
 
@@ -127,36 +122,16 @@ SegmentExtractor::extractSegments() {
 		oldSize = _segments->size();
 	}
 
-	LOG_DEBUG(segmentextractorlog) << "extracting continuations" << (optionDisableBranches ? "" : " and bisections") << " to next section..." << std::endl;
-
-	double distanceThreshold;
-
-	// prefer the distance threshold that was set via the input, if available
-	if (_distanceThreshold)
-		distanceThreshold = *_distanceThreshold;
-	else
-		distanceThreshold = optionDistanceThreshold;
+	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
 	// for all slices in previous section...
-	foreach (boost::shared_ptr<Slice> prevSlice, *_prevSlices) {
+	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
 
-		std::vector<boost::shared_ptr<Slice> > closeNextSlices = _nextSlices->find(prevSlice->getComponent()->getCenter(), distanceThreshold*distanceThreshold);
+		LOG_ALL(segmentextractorlog) << "found " << _nextOverlaps[i].size() << " partners" << std::endl;
 
-		LOG_ALL(segmentextractorlog) << "found " << closeNextSlices.size() << " partners" << std::endl;
-
-		// ...and all next slices within a threshold distance
-		foreach (boost::shared_ptr<Slice> nextSlice, closeNextSlices)
-			extractSegment(prevSlice, nextSlice);
-
-		// ...and all pairs of next slices within a threshold distance
-		if (!optionDisableBranches) {
-
-			foreach (boost::shared_ptr<Slice> nextSlice1, closeNextSlices)
-				foreach (boost::shared_ptr<Slice> nextSlice2, closeNextSlices)
-					if (nextSlice1->getId() < nextSlice2->getId())
-						if (!_nextSlices->areConflicting(nextSlice1->getId(), nextSlice2->getId()))
-							extractSegment(prevSlice, nextSlice1, nextSlice2, Right);
-		}
+		// ...and all overlapping slices in the next section
+		foreach (unsigned int j, _nextOverlaps[i])
+			extractSegment((*_prevSlices)[i], (*_nextSlices)[j]);
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
@@ -164,28 +139,71 @@ SegmentExtractor::extractSegments() {
 
 	if (!optionDisableBranches) {
 
+		LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
+
+		for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+
+			for (unsigned int j1_index = 0; j1_index < _nextOverlaps[i].size(); j1_index++)
+				for (unsigned int j2_index = j1_index + 1; j2_index < _nextOverlaps[i].size(); j2_index++) {
+
+					const unsigned int j1 = _nextOverlaps[i][j1_index];
+					const unsigned int j2 = _nextOverlaps[i][j2_index];
+
+					if (!_nextSlices->areConflicting((*_nextSlices)[j1]->getId(), (*_nextSlices)[j2]->getId()))
+						extractSegment((*_prevSlices)[i], (*_nextSlices)[j1], (*_nextSlices)[j2], Right);
+				}
+		}
+
 		LOG_DEBUG(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
 
-		// for all slices in next section...
-		foreach (boost::shared_ptr<Slice> nextSlice, *_nextSlices) {
+		for (unsigned int i = 0; i < _nextSlices->size(); i++) {
 
-			std::vector<boost::shared_ptr<Slice> > closePrevSlices = _prevSlices->find(nextSlice->getComponent()->getCenter(), distanceThreshold*distanceThreshold);
+			for (unsigned int j1_index = 0; j1_index < _prevOverlaps[i].size(); j1_index++)
+				for (unsigned int j2_index = j1_index + 1; j2_index < _prevOverlaps[i].size(); j2_index++) {
 
-			LOG_ALL(segmentextractorlog) << "found " << closePrevSlices.size() << " partners" << std::endl;
+					const unsigned int j1 = _prevOverlaps[i][j1_index];
+					const unsigned int j2 = _prevOverlaps[i][j2_index];
 
-			// ...and all pairs of prev slices within a threshold distance
-			foreach (boost::shared_ptr<Slice> prevSlice1, closePrevSlices)
-				foreach (boost::shared_ptr<Slice> prevSlice2, closePrevSlices)
-					if (prevSlice1->getId() < prevSlice2->getId())
-						if (!_prevSlices->areConflicting(prevSlice1->getId(), prevSlice2->getId()))
-							extractSegment(nextSlice, prevSlice1, prevSlice2, Left);
+					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId()))
+						extractSegment((*_nextSlices)[i], (*_prevSlices)[j1], (*_prevSlices)[j2], Right);
+				}
 		}
 
 		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
-		oldSize = _segments->size();
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
+}
+
+void
+SegmentExtractor::buildOverlapMap() {
+
+	LOG_DEBUG(segmentextractorlog) << "building overlap maps..." << std::endl;
+
+	_prevOverlaps.clear();
+	_nextOverlaps.clear();
+
+	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+
+		for (unsigned int j = 0; j < _nextSlices->size(); j++) {
+
+			const Slice& prev = *(*_prevSlices)[i];
+			const Slice& next = *(*_nextSlices)[j];
+
+			if (_overlap.exceeds(prev, next, 0)) {
+
+				_nextOverlaps[i].push_back(j);
+				_prevOverlaps[j].push_back(i);
+			}
+		}
+
+		if (i % (_prevSlices->size()/10) == 0) {
+
+			LOG_DEBUG(segmentextractorlog) << static_cast<double>(i)*100/_prevSlices->size() << "%" << std::endl;
+		}
+	}
+
+	LOG_DEBUG(segmentextractorlog) << "done." << std::endl;
 }
 
 void
