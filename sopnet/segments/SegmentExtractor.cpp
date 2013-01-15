@@ -11,10 +11,22 @@
 
 static logger::LogChannel segmentextractorlog("segmentextractorlog", "[SegmentExtractor] ");
 
-util::ProgramOption optionOverlapThreshold(
+util::ProgramOption optionContinuationOverlapThreshold(
 		util::_module           = "sopnet.segments",
-		util::_long_name        = "overlapThreshold",
-		util::_description_text = "The minimal normalized overlap between slices to consider them for segment hypotheses.",
+		util::_long_name        = "continuationOverlapThreshold",
+		util::_description_text = "The minimal normalized overlap between slices to consider them for continuation segment hypotheses.",
+		util::_default_value    = 0.5);
+
+util::ProgramOption optionBranchOverlapThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "branchOverlapThreshold",
+		util::_description_text = "The minimal normalized overlap between slices to consider them for branch segment hypotheses.",
+		util::_default_value    = 0.5);
+
+util::ProgramOption optionBranchSizeRatioThreshold(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "branchSizeRatioThreshold",
+		util::_description_text = "The maximal size ratio (between 0 and 1) of the two target slices of a branch.",
 		util::_default_value    = 0.5);
 
 util::ProgramOption optionSliceDistanceThreshold(
@@ -32,8 +44,10 @@ util::ProgramOption optionDisableBranches(
 
 
 SegmentExtractor::SegmentExtractor() :
-	_overlap(true /* normalize */, false /* don't align */),
-	_overlapThreshold(optionOverlapThreshold.as<double>()),
+	_overlap(false /* don't normalize */, false /* don't align */),
+	_continuationOverlapThreshold(optionContinuationOverlapThreshold.as<double>()),
+	_branchOverlapThreshold(optionBranchOverlapThreshold.as<double>()),
+	_branchSizeRatioThreshold(optionBranchSizeRatioThreshold.as<double>()),
 	_sliceDistanceThreshold(optionSliceDistanceThreshold.as<double>()),
 	_slicesChanged(true),
 	_linearCosntraintsChanged(true) {
@@ -129,9 +143,13 @@ SegmentExtractor::extractSegments() {
 
 		LOG_ALL(segmentextractorlog) << "found " << _nextOverlaps[i].size() << " partners" << std::endl;
 
-		// ...and all overlapping slices in the next section
-		foreach (unsigned int j, _nextOverlaps[i])
-			extractSegment((*_prevSlices)[i], (*_nextSlices)[j]);
+		// ...and all overlapping slices in the next section...
+		unsigned int j, overlap;
+		foreach (boost::tie(overlap, j), _nextOverlaps[i]) {
+
+			// ...try to extract the segment
+			extractSegment((*_prevSlices)[i], (*_nextSlices)[j], overlap);
+		}
 	}
 
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
@@ -146,11 +164,16 @@ SegmentExtractor::extractSegments() {
 			for (unsigned int j1_index = 0; j1_index < _nextOverlaps[i].size(); j1_index++)
 				for (unsigned int j2_index = j1_index + 1; j2_index < _nextOverlaps[i].size(); j2_index++) {
 
-					const unsigned int j1 = _nextOverlaps[i][j1_index];
-					const unsigned int j2 = _nextOverlaps[i][j2_index];
+					const unsigned int j1 = _nextOverlaps[i][j1_index].second;
+					const unsigned int j2 = _nextOverlaps[i][j2_index].second;
 
-					if (!_nextSlices->areConflicting((*_nextSlices)[j1]->getId(), (*_nextSlices)[j2]->getId()))
-						extractSegment((*_prevSlices)[i], (*_nextSlices)[j1], (*_nextSlices)[j2], Right);
+					const unsigned int overlap1 = _nextOverlaps[i][j1_index].first;
+					const unsigned int overlap2 = _nextOverlaps[i][j2_index].first;
+
+					if (!_nextSlices->areConflicting((*_nextSlices)[j1]->getId(), (*_nextSlices)[j2]->getId())) {
+
+						extractSegment((*_prevSlices)[i], (*_nextSlices)[j1], (*_nextSlices)[j2], Right, overlap1, overlap2);
+					}
 				}
 		}
 
@@ -161,11 +184,16 @@ SegmentExtractor::extractSegments() {
 			for (unsigned int j1_index = 0; j1_index < _prevOverlaps[i].size(); j1_index++)
 				for (unsigned int j2_index = j1_index + 1; j2_index < _prevOverlaps[i].size(); j2_index++) {
 
-					const unsigned int j1 = _prevOverlaps[i][j1_index];
-					const unsigned int j2 = _prevOverlaps[i][j2_index];
+					const unsigned int j1 = _prevOverlaps[i][j1_index].second;
+					const unsigned int j2 = _prevOverlaps[i][j2_index].second;
 
-					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId()))
-						extractSegment((*_nextSlices)[i], (*_prevSlices)[j1], (*_prevSlices)[j2], Right);
+					const unsigned int overlap1 = _prevOverlaps[i][j1_index].first;
+					const unsigned int overlap2 = _prevOverlaps[i][j2_index].first;
+
+					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId())) {
+
+						extractSegment((*_nextSlices)[i], (*_prevSlices)[j1], (*_prevSlices)[j2], Left, overlap1, overlap2);
+					}
 				}
 		}
 
@@ -190,23 +218,25 @@ SegmentExtractor::buildOverlapMap() {
 			const Slice& prev = *(*_prevSlices)[i];
 			const Slice& next = *(*_nextSlices)[j];
 
-			if (_overlap.exceeds(prev, next, 0)) {
+			double value;
 
-				_nextOverlaps[i].push_back(j);
-				_prevOverlaps[j].push_back(i);
+			if (_overlap.exceeds(prev, next, 0, value)) {
+
+				_nextOverlaps[i].push_back(std::make_pair(static_cast<unsigned int>(value), j));
+				_prevOverlaps[j].push_back(std::make_pair(static_cast<unsigned int>(value), i));
 			}
 		}
 
 		if (i % (_prevSlices->size()/10) == 0) {
 
-			LOG_DEBUG(segmentextractorlog) << static_cast<double>(i)*100/_prevSlices->size() << "%" << std::endl;
+			LOG_DEBUG(segmentextractorlog) << round(static_cast<double>(i)*100/_prevSlices->size()) << "%" << std::endl;
 		}
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "done." << std::endl;
 }
 
-void
+bool
 SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direction) {
 
 	boost::shared_ptr<EndSegment> segment = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), direction, slice);
@@ -216,20 +246,19 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> slice, Direction direc
 	// only for ends that have the slice on the left side
 	if (direction == Right)
 		_sliceSegments[slice->getId()].push_back(segment->getId());
+
+	return true;
 }
 
-void
-SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
+bool
+SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice, unsigned int overlap) {
 
-	LOG_ALL(segmentextractorlog)
-			<< "normalized overlap between slice " << prevSlice->getId()
-			<< " and " << nextSlice->getId() << " is "
-			<< _overlap(*prevSlice, *nextSlice) << std::endl;
+	double normalizedOverlap = Overlap::normalize(*prevSlice, *nextSlice, overlap);
 
-	if (!_overlap.exceeds(*prevSlice, *nextSlice, _overlapThreshold)) {
+	if (normalizedOverlap < _continuationOverlapThreshold) {
 
 		LOG_ALL(segmentextractorlog) << "discarding this segment hypothesis" << std::endl;
-		return;
+		return false;
 	}
 
 	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
@@ -240,24 +269,49 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 
 	// only for the left slice
 	_sliceSegments[prevSlice->getId()].push_back(segment->getId());
+
+	return true;
 }
 
-void
+bool
 SegmentExtractor::extractSegment(
 		boost::shared_ptr<Slice> source,
 		boost::shared_ptr<Slice> target1,
 		boost::shared_ptr<Slice> target2,
-		Direction direction) {
+		Direction direction,
+		unsigned int overlap1,
+		unsigned int overlap2) {
 
-	if (!_overlap.exceeds(*target1, *target2, *source, _overlapThreshold))
-		return;
+	double normalizedOverlap = Overlap::normalize(*target1, *target2, *source, overlap1 + overlap2);
 
-	double avgSliceDistance, maxSliceDistance;
+	if (normalizedOverlap > 1) {
 
-	_distance(*target1, *target2, *source, true, false, avgSliceDistance, maxSliceDistance);
+		LOG_DEBUG(segmentextractorlog) << normalizedOverlap << std::endl;
+		LOG_DEBUG(segmentextractorlog) << overlap1 << std::endl;
+		LOG_DEBUG(segmentextractorlog) << overlap2 << std::endl;
+		LOG_DEBUG(segmentextractorlog) << target1->getComponent()->getSize() << std::endl;
+		LOG_DEBUG(segmentextractorlog) << target2->getComponent()->getSize() << std::endl;
+		LOG_DEBUG(segmentextractorlog) << source->getComponent()->getSize() << std::endl;
+		LOG_DEBUG(segmentextractorlog) << std::endl;
+	}
 
-	if (maxSliceDistance >= _sliceDistanceThreshold)
-		return;
+	if (normalizedOverlap < _branchOverlapThreshold)
+		return false;
+
+	unsigned int size1 = target1->getComponent()->getSize();
+	unsigned int size2 = target2->getComponent()->getSize();
+
+	double sizeRatio = static_cast<double>(std::min(size1, size2))/std::max(size1, size2);
+
+	if (sizeRatio < _branchSizeRatioThreshold)
+		return false;
+
+	//double avgSliceDistance, maxSliceDistance;
+
+	//_distance(*target1, *target2, *source, true, false, avgSliceDistance, maxSliceDistance);
+
+	//if (maxSliceDistance >= _sliceDistanceThreshold)
+		//return;
 
 	boost::shared_ptr<BranchSegment> segment = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, source, target1, target2);
 
@@ -274,6 +328,8 @@ SegmentExtractor::extractSegment(
 
 		_sliceSegments[source->getId()].push_back(segment->getId());
 	}
+
+	return true;
 }
 
 void

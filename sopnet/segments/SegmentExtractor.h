@@ -28,15 +28,17 @@ private:
 
 	void buildOverlapMap();
 
-	void extractSegment(boost::shared_ptr<Slice> prevSlice, Direction direction);
+	inline bool extractSegment(boost::shared_ptr<Slice> prevSlice, Direction direction);
 
-	void extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice);
+	inline bool extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice, unsigned int overlap);
 
-	void extractSegment(
+	inline bool extractSegment(
 			boost::shared_ptr<Slice> source,
 			boost::shared_ptr<Slice> target1,
 			boost::shared_ptr<Slice> target2,
-			Direction direction);
+			Direction direction,
+			unsigned int overlap1,
+			unsigned int overlap2);
 
 	void assembleLinearConstraints();
 
@@ -54,9 +56,9 @@ private:
 	pipeline::Output<Segments>          _segments;
 	pipeline::Output<LinearConstraints> _linearConstraints;
 
-	// a map from slices to overlapping slices
-	std::map<unsigned int, std::vector<unsigned int> > _nextOverlaps;
-	std::map<unsigned int, std::vector<unsigned int> > _prevOverlaps;
+	// a map from slices to overlapping slices and the overlap value
+	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _nextOverlaps;
+	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _prevOverlaps;
 
 	// a map from slice ids to segments (ids) they are used in
 	std::map<unsigned int, std::vector<unsigned int> > _sliceSegments;
@@ -65,7 +67,11 @@ private:
 	Overlap _overlap;
 
 	// the minimal overlap between slices of one segment
-	double _overlapThreshold;
+	double _continuationOverlapThreshold;
+	double _branchOverlapThreshold;
+
+	// the maximal size ratio for targets in a branch
+	double _branchSizeRatioThreshold;
 
 	// the maximal slice distance between slices in branches
 	double _sliceDistanceThreshold;
