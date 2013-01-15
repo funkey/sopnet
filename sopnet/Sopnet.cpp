@@ -76,6 +76,8 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
 	registerOutput(_problemAssembler->getOutput("segments"), "segments");
+	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
+	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
 	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
 	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
