@@ -1,6 +1,7 @@
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/Mser.h>
 #include <sopnet/features/Overlap.h>
+#include <sopnet/features/SetDifference.h>
 #include <util/ProgramOptions.h>
 #include "ComponentTreeConverter.h"
 #include "StackSliceExtractor.h"
@@ -12,6 +13,12 @@ util::ProgramOption optionSimilarityThreshold(
 		util::_long_name        = "similarityThreshold",
 		util::_description_text = "The minimum normalized overlap [#overlap/(#size1 + #size2 - #overlap)] for which two slices are considered the same.",
 		util::_default_value    = 0.75);
+
+util::ProgramOption optionSetDifferenceThreshold(
+		util::_module           = "sopnet.slices",
+		util::_long_name        = "setDifferenceThreshold",
+		util::_description_text = "The maximal set difference for which two slices are considered the same.",
+		util::_default_value    = 200);
 
 StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	_section(section),
@@ -139,8 +146,10 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 	std::vector<Slices> slices = allSlices;
 
 	Overlap overlap(true /* normalize */, false /* don't align */);
+	SetDifference setDifference;
 
-	double overlapThreshold(optionSimilarityThreshold.as<double>());
+	double overlapThreshold             = optionSimilarityThreshold;
+	unsigned int setDifferenceThreshold = optionSetDifferenceThreshold;
 
 	// for all levels
 	for (unsigned int level = 0; level < slices.size(); level++) { 
@@ -160,7 +169,7 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 
 					// if the overlap exceeds the threshold, store subSlice as a
 					// duplicate of slice
-					if (overlap.exceeds(*slice, *subSlice, overlapThreshold)) {
+					if (overlap.exceeds(*slice, *subSlice, overlapThreshold) && setDifference(*slice, *subSlice, false, false) < setDifferenceThreshold) {
 
 						duplicates.push_back(subSlice);
 						toBeRemoved.push_back(subSlice);
