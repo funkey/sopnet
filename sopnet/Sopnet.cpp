@@ -32,6 +32,11 @@ util::ProgramOption optionRandomForestFile(
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
 
+util::ProgramOption optionDisableSegmentationCosts(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "disableSegmentationCosts",
+		util::_description_text = "Disable the segmentation costs in the objective.");
+
 Sopnet::Sopnet(const std::string& projectDirectory) :
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
@@ -254,8 +259,10 @@ Sopnet::createInferencePipeline() {
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
 	_objectiveGenerator->addInput("cost functions", _randomForestCostFunction->getOutput("cost function"));
-	_objectiveGenerator->addInput("cost functions", _segmentationCostFunction->getOutput("cost function"));
 	_objectiveGenerator->addInput("cost functions", _priorCostFunction->getOutput("cost function"));
+
+	if (!optionDisableSegmentationCosts)
+		_objectiveGenerator->addInput("cost functions", _segmentationCostFunction->getOutput("cost function"));
 
 	// feed objective and linear constraints to ilp creator
 	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
