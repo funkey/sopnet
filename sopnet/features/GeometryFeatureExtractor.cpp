@@ -12,10 +12,17 @@
 
 logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[GeometryFeatureExtractor] ");
 
+util::ProgramOption optionDisableSliceDistanceFeature(
+		util::_module           = "sopnet.features",
+		util::_long_name        = "disableSliceDistanceFeature",
+		util::_description_text = "Disable the use of slice distance features.",
+		util::_default_value    = 50);
+
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
 	_features(boost::make_shared<Features>()),
 	_overlap(false, false),
-	_alignedOverlap(false, true) {
+	_alignedOverlap(false, true),
+	_noSliceDistance(optionDisableSliceDistanceFeature) {
 
 	registerInput(_segments, "segments");
 	registerOutput(_features, "features");
@@ -28,7 +35,10 @@ GeometryFeatureExtractor::updateOutputs() {
 
 	_features->clear();
 
-	_features->resize(_segments->size(), 14);
+	if (_noSliceDistance)
+		_features->resize(_segments->size(), 10);
+	else
+		_features->resize(_segments->size(), 14);
 
 	_features->addName("center distance");
 	_features->addName("set difference");
@@ -40,13 +50,13 @@ GeometryFeatureExtractor::updateOutputs() {
 	_features->addName("overlap ratio");
 	_features->addName("aligned overlap");
 	_features->addName("aligned overlap ratio");
-	_features->addName("average slice distance");
-	_features->addName("max slice distance");
-	_features->addName("aligned average slice distance");
-	_features->addName("aligned max slice distance");
 
+	if (!_noSliceDistance) {
 
-
+		_features->addName("average slice distance");
+		_features->addName("max slice distance");
+		_features->addName("aligned average slice distance");
+		_features->addName("aligned max slice distance");
 	}
 
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
@@ -86,11 +96,14 @@ GeometryFeatureExtractor::computeFeatures(const EndSegment& end, std::vector<dou
 	features[7] = Features::NoFeatureValue;
 	features[8] = Features::NoFeatureValue;
 	features[9] = Features::NoFeatureValue;
-	features[10] = Features::NoFeatureValue;
-	features[11] = Features::NoFeatureValue;
-	features[12] = Features::NoFeatureValue;
-	features[13] = Features::NoFeatureValue;
 
+	if (!_noSliceDistance) {
+
+		features[10] = Features::NoFeatureValue;
+		features[11] = Features::NoFeatureValue;
+		features[12] = Features::NoFeatureValue;
+		features[13] = Features::NoFeatureValue;
+	}
 }
 
 void
@@ -122,16 +135,6 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 
 	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize - overlap);
 
-	double averageSliceDistance, maxSliceDistance;
-
-	_distance(*continuation.getSourceSlice(), *continuation.getTargetSlice(), true, false, averageSliceDistance, maxSliceDistance);
-
-	double alignedAverageSliceDistance, alignedMaxSliceDistance;
-
-	_distance(*continuation.getSourceSlice(), *continuation.getTargetSlice(), true, true, alignedAverageSliceDistance, alignedMaxSliceDistance);
-
-	std::vector<double> features(14);
-
 	features[0] = distance;
 	features[1] = setDifference;
 	features[2] = setDifferenceRatio;
@@ -144,11 +147,22 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 	features[7] = overlapRatio;
 	features[8] = alignedOverlap;
 	features[9] = alignedOverlapRatio;
-	features[10] = averageSliceDistance;
-	features[11] = maxSliceDistance;
-	features[12] = alignedAverageSliceDistance;
-	features[13] = alignedMaxSliceDistance;
 
+	if (!_noSliceDistance) {
+
+		double averageSliceDistance, maxSliceDistance;
+
+		_distance(*continuation.getSourceSlice(), *continuation.getTargetSlice(), true, false, averageSliceDistance, maxSliceDistance);
+
+		double alignedAverageSliceDistance, alignedMaxSliceDistance;
+
+		_distance(*continuation.getSourceSlice(), *continuation.getTargetSlice(), true, true, alignedAverageSliceDistance, alignedMaxSliceDistance);
+
+		features[10] = averageSliceDistance;
+		features[11] = maxSliceDistance;
+		features[12] = alignedAverageSliceDistance;
+		features[13] = alignedMaxSliceDistance;
+	}
 }
 
 void
@@ -182,16 +196,6 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vect
 
 	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize1 + targetSize2 - alignedOverlap);
 
-	double averageSliceDistance, maxSliceDistance;
-
-	_distance(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), true, false, averageSliceDistance, maxSliceDistance);
-
-	double alignedAverageSliceDistance, alignedMaxSliceDistance;
-
-	_distance(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), true, true, alignedAverageSliceDistance, alignedMaxSliceDistance);
-
-	std::vector<double> features(14);
-
 	features[0] = distance;
 	features[1] = setDifference;
 	features[2] = setDifferenceRatio;
@@ -205,9 +209,20 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vect
 	features[7] = overlapRatio;
 	features[8] = alignedOverlap;
 	features[9] = alignedOverlapRatio;
-	features[10] = averageSliceDistance;
-	features[11] = maxSliceDistance;
-	features[12] = alignedAverageSliceDistance;
-	features[13] = alignedMaxSliceDistance;
 
+	if (!_noSliceDistance) {
+
+		double averageSliceDistance, maxSliceDistance;
+
+		_distance(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), true, false, averageSliceDistance, maxSliceDistance);
+
+		double alignedAverageSliceDistance, alignedMaxSliceDistance;
+
+		_distance(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), true, true, alignedAverageSliceDistance, alignedMaxSliceDistance);
+
+		features[10] = averageSliceDistance;
+		features[11] = maxSliceDistance;
+		features[12] = alignedAverageSliceDistance;
+		features[13] = alignedMaxSliceDistance;
+	}
 }

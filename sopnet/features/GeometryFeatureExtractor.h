@@ -38,6 +38,7 @@ private:
 
 	Distance _distance;
 
+	bool _noSliceDistance;
 };
 
 #endif // SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_
