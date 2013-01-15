@@ -20,9 +20,7 @@ Overlap::operator()(const Slice& slice1, const Slice& slice2) {
 
 	if (_normalized) {
 
-		unsigned int totalSize = slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
-
-		return static_cast<double>(numOverlap)/totalSize;
+		return normalize(slice1, slice2, numOverlap);
 
 	} else {
 
@@ -63,9 +61,7 @@ Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& sli
 
 	if (_normalized) {
 
-		unsigned int totalSize = slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - numOverlap;
-
-		return static_cast<double>(numOverlap)/totalSize;
+		return normalize(slice1a, slice1b, slice2, numOverlap);
 
 	} else {
 
@@ -75,6 +71,13 @@ Overlap::operator()(const Slice& slice1a, const Slice& slice1b, const Slice& sli
 
 bool
 Overlap::exceeds(const Slice& slice1, const Slice& slice2, double value) {
+
+	double _;
+	return exceeds(slice1, slice2, value, _);
+}
+
+bool
+Overlap::exceeds(const Slice& slice1, const Slice& slice2, double value, double& exceededValue) {
 
 	/**
 	 * First, compute the upper bound for the slice overlap based on the 
@@ -92,23 +95,23 @@ Overlap::exceeds(const Slice& slice1, const Slice& slice2, double value) {
 
 	double maxOverlap = bb_intersection.area();
 
-	if (_normalized) {
-
-		// total size is at least 1
-		unsigned int minTotalSize = static_cast<unsigned int>(std::max(1.0, slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - maxOverlap));
-
-		maxOverlap = maxOverlap/minTotalSize;
-	}
+	if (_normalized)
+		maxOverlap = normalize(slice1, slice2, maxOverlap);
 
 	/**
 	 * If this exceeds the threshold, perform the exact computation of the 
 	 * overlap.
 	 */
 
-	if (maxOverlap <= value)
-		return false;
+	if (maxOverlap <= value) {
 
-	return (*this)(slice1, slice2) > value;
+		exceededValue = value;
+		return false;
+	}
+
+	exceededValue = (*this)(slice1, slice2);
+
+	return exceededValue > value;
 }
 
 bool
@@ -141,13 +144,8 @@ Overlap::exceeds(const Slice& slice1a, const Slice& slice1b, const Slice& slice2
 
 	double maxOverlap = bb_intersection_a.area() + bb_intersection_b.area();
 
-	if (_normalized) {
-
-		// total size is at least 1
-		unsigned int minTotalSize = static_cast<unsigned int>(std::max(1.0, slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - maxOverlap));
-
-		maxOverlap = maxOverlap/minTotalSize;
-	}
+	if (_normalized)
+		maxOverlap = normalize(slice1a, slice1b, slice2, maxOverlap);
 
 	/**
 	 * If this exceeds the threshold, perform the exact computation of the 
@@ -200,3 +198,24 @@ Overlap::overlap(
 	return numOverlap;
 }
 
+double
+Overlap::normalize(const Slice& slice1, const Slice& slice2, unsigned int overlap) {
+
+	int totalSize = slice1.getComponent()->getSize() + slice2.getComponent()->getSize() - overlap;
+
+	if (totalSize <= 0)
+		totalSize = 1;
+
+	return static_cast<double>(overlap)/totalSize;
+}
+
+double
+Overlap::normalize(const Slice& slice1a, const Slice& slice1b, const Slice& slice2, unsigned int overlap) {
+
+	int totalSize = slice1a.getComponent()->getSize() + slice1b.getComponent()->getSize() + slice2.getComponent()->getSize() - overlap;
+
+	if (totalSize <= 0)
+		totalSize = 1;
+
+	return static_cast<double>(overlap)/totalSize;
+}
