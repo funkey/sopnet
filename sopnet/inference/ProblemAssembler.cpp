@@ -6,15 +6,14 @@
 
 static logger::LogChannel problemassemblerlog("problemassemblerlog", "[ProblemAssembler] ");
 
-ProblemAssembler::ProblemAssembler() :
-	_segmentIdsToVariables(std::map<unsigned int, unsigned int>()) {
+ProblemAssembler::ProblemAssembler() {
 
 	registerInputs(_segments, "segments");
 	registerInputs(_linearConstraints, "linear constraints");
 
 	registerOutput(_allSegments, "segments");
 	registerOutput(_allLinearConstraints, "linear constraints");
-	registerOutput(_segmentIdsToVariables, "segment ids map");
+	registerOutput(_problemConfiguration, "problem configuration");
 }
 
 void
@@ -104,9 +103,11 @@ ProblemAssembler::collectLinearConstraints() {
 
 			LinearConstraint mappedConstraint;
 
-			typedef std::map<unsigned int, double>::value_type pair_t;
-			foreach(const pair_t& pair, linearConstraint.getCoefficients())
-				mappedConstraint.setCoefficient((*_segmentIdsToVariables)[pair.first], pair.second);
+			unsigned int id;
+			double value;
+
+			foreach(boost::tie(id, value), linearConstraint.getCoefficients())
+				mappedConstraint.setCoefficient(_problemConfiguration->getVariable(id), value);
 
 			mappedConstraint.setRelation(linearConstraint.getRelation());
 
@@ -137,7 +138,7 @@ ProblemAssembler::setCoefficient(const EndSegment& end) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	(*_segmentIdsToVariables)[end.getId()] = _numSegments;
+	_problemConfiguration->setVariable(end.getId(), _numSegments);
 
 	_numSegments++;
 }
@@ -167,7 +168,7 @@ ProblemAssembler::setCoefficient(const ContinuationSegment& continuation) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	(*_segmentIdsToVariables)[continuation.getId()] = _numSegments;
+	_problemConfiguration->setVariable(continuation.getId(), _numSegments);
 
 	_numSegments++;
 }
@@ -200,7 +201,7 @@ ProblemAssembler::setCoefficient(const BranchSegment& branch) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	(*_segmentIdsToVariables)[branch.getId()] = _numSegments;
+	_problemConfiguration->setVariable(branch.getId(), _numSegments);
 
 	_numSegments++;
 }

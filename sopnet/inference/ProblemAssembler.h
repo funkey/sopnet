@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
 #include <sopnet/segments/Segments.h>
+#include "ProblemConfiguration.h"
 
 class ProblemAssembler : public pipeline::SimpleProcessNode<> {
 
@@ -52,7 +53,7 @@ private:
 	pipeline::Output<LinearConstraints> _allLinearConstraints;
 
 	// mapping of segment ids to a continous range of variable numbers
-	pipeline::Output<std::map<unsigned int, unsigned int> > _segmentIdsToVariables;
+	pipeline::Output<ProblemConfiguration> _problemConfiguration;
 
 	// the consistency constraints extracted for the segments
 	LinearConstraints _consistencyConstraints;
