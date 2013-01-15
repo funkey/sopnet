@@ -19,11 +19,11 @@ private:
 	template <typename SegmentType>
 	void getFeatures(const SegmentType& segment);
 
-	std::vector<double> computeFeatures(const EndSegment& end);
+	void computeFeatures(const EndSegment& end, std::vector<double>& features);
 
-	std::vector<double> computeFeatures(const ContinuationSegment& continuation);
+	void computeFeatures(const ContinuationSegment& continuation, std::vector<double>& features);
 
-	std::vector<double> computeFeatures(const BranchSegment& branch);
+	void computeFeatures(const BranchSegment& branch, std::vector<double>& features);
 
 	void updateOutputs();
 
@@ -38,10 +38,6 @@ private:
 
 	Distance _distance;
 
-	// number of cache hits
-	unsigned int _numChecked;
-
-	bool _useCache;
 };
 
 #endif // SOPNET_GEOMETRY_FEATURE_EXTRACTOR_H_

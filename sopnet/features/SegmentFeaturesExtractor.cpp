@@ -57,10 +57,18 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 
 		if (_allFeatures->size() == 0) {
 
-			LOG_ALL(segmentfeaturesextractorlog) << "initialising all features with " << features->size() << " features from current feature group" << std::endl;
+			LOG_ALL(segmentfeaturesextractorlog) << "initialising all features with " << features->size() << " feature vectors from current feature group" << std::endl;
 
-			foreach (const std::vector<double>& feature, *features)
-				_allFeatures->add(0 /*dummy id*/, feature);
+			unsigned int numFeatures = (features->size() > 0  ? (*features)[0].size() : 0);
+
+			_allFeatures->resize(features->size(), numFeatures);
+
+			unsigned int i = 0;
+			foreach (const std::vector<double>& feature, *features) {
+
+				std::copy(feature.begin(), feature.end(), (*_allFeatures)[i].begin());
+				i++;
+			}
 
 		} else {
 

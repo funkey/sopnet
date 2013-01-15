@@ -3,6 +3,9 @@
 
 double Features::NoFeatureValue = -100;
 
+Features::Features() :
+	_nextSegmentIndex(0) {}
+
 void
 Features::addName(const std::string& name) {
 
@@ -21,26 +24,28 @@ Features::clear(){
 	_features.clear();
 	_featureNames.clear();
 	_segmentIdsMap.clear();
+
+	_nextSegmentIndex = 0;
 }
 
 void
-Features::add(unsigned int segmentId, const std::vector<double>& features){
+Features::resize(unsigned int numVectors, unsigned int numFeatures) {
 
-	_segmentIdsMap[segmentId] = _features.size();
+	std::vector<double> templ(numFeatures, 0.0);
 
-	_features.push_back(features);
+	_features.resize(numVectors, templ);
 }
 
-const std::vector<double>&
+std::vector<double>&
 Features::get(unsigned int segmentId) {
 
-	if (_segmentIdsMap.count(segmentId))
+	if (!_segmentIdsMap.count(segmentId)) {
 
-		return _features[_segmentIdsMap[segmentId]];
+		_segmentIdsMap[segmentId] = _nextSegmentIndex;
+		_nextSegmentIndex++;
+	}
 
-	else
-
-		BOOST_THROW_EXCEPTION(NoSuchSegment() << error_message("invalid segment id given") << STACK_TRACE);
+	return _features[_segmentIdsMap[segmentId]];
 }
 
 unsigned int

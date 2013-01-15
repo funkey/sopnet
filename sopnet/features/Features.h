@@ -16,6 +16,8 @@ class Features : public pipeline::Data {
 
 public:
 
+	Features();
+
 	typedef features_type::iterator iterator;
 
 	typedef features_type::const_iterator const_iterator;
@@ -26,9 +28,9 @@ public:
 
 	void clear();
 
-	void add(unsigned int segmentId, const std::vector<double>& features);
+	void resize(unsigned int numVectors, unsigned int numFeatures);
 
-	const std::vector<double>& get(unsigned int segmentId);
+	std::vector<double>& get(unsigned int segmentId);
 
 	unsigned int size();
 
@@ -67,6 +69,8 @@ private:
 
 	// a map from segment ids to the corresponding feature
 	segment_ids_map          _segmentIdsMap;
+
+	unsigned int             _nextSegmentIndex;
 };
 
 std::ostream&

@@ -16,11 +16,11 @@ private:
 
 	void updateOutputs();
 
-	std::vector<double> getFeatures(const EndSegment& end);
+	void getFeatures(const EndSegment& end, std::vector<double>& slice);
 
-	std::vector<double> getFeatures(const ContinuationSegment& continuation);
+	void getFeatures(const ContinuationSegment& continuation, std::vector<double>& slice);
 
-	std::vector<double> getFeatures(const BranchSegment& branch);
+	void getFeatures(const BranchSegment& branch, std::vector<double>& slice);
 
 	std::vector<double> computeHistogram(const Slice& slice);
 
