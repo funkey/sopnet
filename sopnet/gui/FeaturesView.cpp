@@ -5,6 +5,8 @@ FeaturesView::FeaturesView() {
 
 	registerInput(_segments, "segments");
 	registerInput(_features, "features");
+	registerInput(_problemConfiguration, "problem configuration");
+	registerInput(_objective, "objective");
 	registerOutput(_painter, "painter");
 }
 
@@ -26,6 +28,11 @@ FeaturesView::updateOutputs() {
 
 void
 FeaturesView::appendFeatures(std::stringstream& stream, unsigned int segmentId) {
+
+	const unsigned int variable = _problemConfiguration->getVariable(segmentId);
+	const double costs = _objective->getCoefficients()[variable];
+
+	stream << "costs: " << costs << "; ";
 
 	const std::vector<double>&      features = _features->get(segmentId);
 	const std::vector<std::string>& names    = _features->getNames();

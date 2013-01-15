@@ -3,7 +3,9 @@
 
 #include <pipeline/all.h>
 #include <gui/TextPainter.h>
+#include <inference/LinearObjective.h>
 #include <sopnet/features/Features.h>
+#include <sopnet/inference/ProblemConfiguration.h>
 #include <sopnet/segments/Segments.h>
 
 class FeaturesView : public pipeline::SimpleProcessNode<> {
@@ -18,8 +20,10 @@ private:
 
 	void appendFeatures(std::stringstream& stream, unsigned int segmentId);
 
-	pipeline::Input<Segments> _segments;
-	pipeline::Input<Features> _features;
+	pipeline::Input<Segments>             _segments;
+	pipeline::Input<Features>             _features;
+	pipeline::Input<ProblemConfiguration> _problemConfiguration;
+	pipeline::Input<LinearObjective>      _objective;
 
 	pipeline::Output<gui::TextPainter> _painter;
 };

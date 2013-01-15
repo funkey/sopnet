@@ -409,9 +409,11 @@ int main(int optionc, char** optionv) {
 
 			if (optionShowSegmentFeatures) {
 
-				boost::shared_ptr<FeaturesView>                      featuresView = boost::make_shared<FeaturesView>();
+				boost::shared_ptr<FeaturesView> featuresView = boost::make_shared<FeaturesView>();
 				featuresView->setInput("segments", stackView->getOutput("visible segments"));
 				featuresView->setInput("features", sopnet->getOutput("all features"));
+				featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
+				featuresView->setInput("objective", sopnet->getOutput("objective"));
 				container->addInput(featuresView->getOutput());
 			}
 
