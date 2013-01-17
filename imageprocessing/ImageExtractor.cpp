@@ -16,7 +16,7 @@ ImageExtractor::ImageExtractor() {
 void
 ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 
-	LOG_DEBUG(imageextractorlog) << "input image stack set" << std::endl;
+	LOG_ALL(imageextractorlog) << "input image stack set" << std::endl;
 
 	updateInputs();
 
@@ -40,7 +40,7 @@ ImageExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 
 		LOG_ALL(imageextractorlog) << "image is " << _images[i]->width() << "x" << _images[i]->height() << std::endl;
 
-		LOG_DEBUG(imageextractorlog) << "registering output 'image " << i << "'" << std::endl;
+		LOG_ALL(imageextractorlog) << "registering output 'image " << i << "'" << std::endl;
 
 		registerOutput(_images[i], "image " + boost::lexical_cast<std::string>(i));
 	}
