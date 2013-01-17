@@ -131,10 +131,10 @@ util::ProgramOption optionSaveResultBasename(
 		_description_text = "The basenames of the images files created in the result directory. The default is \"result_\".",
 		_default_value    = "result_");
 
-util::ProgramOption optionPriorGridSearch(
+util::ProgramOption optionGridSearch(
 		_module           = "sopnet.inference",
-		_long_name        = "priorGridSearch",
-		_description_text = "Preform a grid search on the segment priors.");
+		_long_name        = "gridSearch",
+		_description_text = "Preform a grid search.");
 
 void handleException(boost::exception& e) {
 
@@ -365,7 +365,7 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<ResultEvaluator>        resultEvaluator;
 		boost::shared_ptr<VariationOfInformation> variationOfInformation;
 
-		if (optionShowErrors) {
+		if (optionShowErrors || optionGridSearch) {
 
 			resultEvaluator        = boost::make_shared<ResultEvaluator>();
 			variationOfInformation = boost::make_shared<VariationOfInformation>();
@@ -548,13 +548,14 @@ int main(int optionc, char** optionv) {
 
 		if (optionSaveResultDirectory) {
 
-			if (optionPriorGridSearch) {
+			if (optionGridSearch) {
 
 				LOG_USER(out) << "[main] performing grid search" << std::endl;
 
 				boost::shared_ptr<GridSearch> gridSearch = boost::make_shared<GridSearch>();
 
 				sopnet->setInput("prior cost parameters", gridSearch->getOutput("prior cost parameters"));
+				sopnet->setInput("segmentation cost parameters", gridSearch->getOutput("segmentation cost parameters"));
 
 				while (true) {
 
@@ -568,7 +569,8 @@ int main(int optionc, char** optionv) {
 					gridResultIdMapCreator->setInput("neurons", neuronExtractor->getOutput());
 					gridResultIdMapCreator->setInput("reference", rawSectionsReader->getOutput());
 
-					gridResultWriter->setInput(gridResultIdMapCreator->getOutput("id map"));
+					gridResultWriter->setInput("id map", gridResultIdMapCreator->getOutput("id map"));
+					gridResultWriter->setInput("annotation", variationOfInformation->getOutput());
 					gridResultWriter->write();
 
 					if (!gridSearch->next())

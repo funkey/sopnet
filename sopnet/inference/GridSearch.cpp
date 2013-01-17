@@ -54,17 +54,51 @@ util::ProgramOption optionPriorGridSearchStepBranch(
 		util::_description_text = "Incement of the grid search for priors on the branch segments.",
 		util::_default_value    = "1000000");
 
+util::ProgramOption optionSegmentationGridSearchStartPotts(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchStartPotts",
+		util::_default_value    = "1");
+
+util::ProgramOption optionSegmentationGridSearchEndPotts(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchEndPotts",
+		util::_default_value    = "1");
+
+util::ProgramOption optionSegmentationGridSearchStepPotts(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchStepPotts",
+		util::_default_value    = "0.1");
+
+util::ProgramOption optionSegmentationGridSearchStartForeground(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchStartForeground",
+		util::_default_value    = "0.5");
+
+util::ProgramOption optionSegmentationGridSearchEndForeground(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchEndForeground",
+		util::_default_value    = "0.5");
+
+util::ProgramOption optionSegmentationGridSearchStepForeground(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "segmentationGridSearchStepForeground",
+		util::_default_value    = "0.1");
+
 GridSearch::GridSearch() :
-		_priorCostFunctionParameters(boost::make_shared<PriorCostFunctionParameters>()) {
+		_priorCostFunctionParameters(boost::make_shared<PriorCostFunctionParameters>()),
+		_segmentationCostFunctionParameters(boost::make_shared<SegmentationCostFunctionParameters>()) {
 
 	// set initial values
 	_priorCostFunctionParameters->priorEnd          = optionPriorGridSearchStartEnd;
 	_priorCostFunctionParameters->priorContinuation = optionPriorGridSearchStartContinuation;
 	_priorCostFunctionParameters->priorBranch       = optionPriorGridSearchStartBranch;
+	_segmentationCostFunctionParameters->weight          = SegmentationCostFunctionParameters::optionSegmentationCostFunctionWeight;
+	_segmentationCostFunctionParameters->weightPotts     = optionSegmentationGridSearchStartPotts;
+	_segmentationCostFunctionParameters->priorForeground = optionSegmentationGridSearchStartForeground;
 
 	registerOutput(_priorCostFunctionParameters, "prior cost parameters");
+	registerOutput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 }
-
 
 bool
 GridSearch::next() {
@@ -82,15 +116,26 @@ GridSearch::next() {
 			_priorCostFunctionParameters->priorContinuation = optionPriorGridSearchStartContinuation.as<double>();
 
 			_priorCostFunctionParameters->priorBranch += optionPriorGridSearchStepBranch.as<double>();
+
+			if (_priorCostFunctionParameters->priorBranch > optionPriorGridSearchEndBranch.as<double>()) {
+
+				_priorCostFunctionParameters->priorBranch = optionPriorGridSearchStartBranch.as<double>();
+
+				_segmentationCostFunctionParameters->weightPotts += optionSegmentationGridSearchStepPotts.as<double>();
+
+				if (_segmentationCostFunctionParameters->weightPotts > optionSegmentationGridSearchEndPotts.as<double>()) {
+
+					_segmentationCostFunctionParameters->weightPotts = optionSegmentationGridSearchStartPotts.as<double>();
+
+					_segmentationCostFunctionParameters->priorForeground += optionSegmentationGridSearchStepForeground.as<double>();
+
+					if (_segmentationCostFunctionParameters->priorForeground > optionSegmentationGridSearchEndForeground.as<double>()) {
+
+						return false;
+					}
+				}
+			}
 		}
-	}
-
-	if (
-			_priorCostFunctionParameters->priorEnd          > optionPriorGridSearchEndEnd.as<double>()          ||
-			_priorCostFunctionParameters->priorContinuation > optionPriorGridSearchEndContinuation.as<double>() ||
-			_priorCostFunctionParameters->priorBranch       > optionPriorGridSearchEndBranch.as<double>()) {
-
-		return false;
 	}
 
 	setDirty(_priorCostFunctionParameters);
