@@ -17,6 +17,12 @@ util::ProgramOption optionContinuationOverlapThreshold(
 		util::_description_text = "The minimal normalized overlap between slices to consider them for continuation segment hypotheses.",
 		util::_default_value    = 0.5);
 
+util::ProgramOption optionMinContinuationPartners(
+		util::_module           = "sopnet.segments",
+		util::_long_name        = "minContinuationPartners",
+		util::_description_text = "The minimal number of continuation partners for each slice, even if they do not meet the overlap threshold.",
+		util::_default_value    = 0);
+
 util::ProgramOption optionBranchOverlapThreshold(
 		util::_module           = "sopnet.segments",
 		util::_long_name        = "branchOverlapThreshold",
@@ -47,6 +53,7 @@ SegmentExtractor::SegmentExtractor() :
 	_overlap(false /* don't normalize */, false /* don't align */),
 	_continuationOverlapThreshold(optionContinuationOverlapThreshold.as<double>()),
 	_branchOverlapThreshold(optionBranchOverlapThreshold.as<double>()),
+	_minContinuationPartners(optionMinContinuationPartners.as<unsigned int>()),
 	_branchSizeRatioThreshold(optionBranchSizeRatioThreshold.as<double>()),
 	_sliceDistanceThreshold(optionSliceDistanceThreshold.as<double>()),
 	_slicesChanged(true),
@@ -155,6 +162,13 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
 	oldSize = _segments->size();
 
+	LOG_DEBUG(segmentextractorlog) << "ensuring at least " << _minContinuationPartners << " continuation partners for each slice..." << std::endl;
+
+	ensureMinContinuationPartners();
+
+	LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
+	oldSize = _segments->size();
+
 	if (!optionDisableBranches) {
 
 		LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
@@ -201,6 +215,70 @@ SegmentExtractor::extractSegments() {
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "extracted " << _segments->size() << " segments in total" << std::endl;
+}
+
+void
+SegmentExtractor::ensureMinContinuationPartners() {
+
+	// for all slices with fewer than the required number of partners
+	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+
+		unsigned int prevId = (*_prevSlices)[i]->getId();
+
+		unsigned int numPartners = _continuationPartners[prevId].size();
+
+		if (numPartners < _minContinuationPartners) {
+
+			// ...and all overlapping slices in the next section...
+			unsigned int j, overlap;
+			foreach (boost::tie(overlap, j), _nextOverlaps[i]) {
+
+				unsigned int nextId = (*_nextSlices)[j]->getId();
+
+				// ...if not already a partner...
+				if (std::count(_continuationPartners[prevId].begin(), _continuationPartners[prevId].end(), nextId))
+					continue;
+
+				// ...extract the segment
+				extractSegment((*_prevSlices)[i], (*_nextSlices)[j]);
+
+				numPartners++;
+
+				if (numPartners == _minContinuationPartners)
+					break;
+			}
+		}
+	}
+
+	// for all slices with fewer than the required number of partners
+	for (unsigned int i = 0; i < _nextSlices->size(); i++) {
+
+		unsigned int nextId = (*_nextSlices)[i]->getId();
+
+		unsigned int numPartners = _continuationPartners[nextId].size();
+
+		if (numPartners < _minContinuationPartners) {
+
+			// ...and all overlapping slices in the prev section...
+			unsigned int j, overlap;
+			foreach (boost::tie(overlap, j), _prevOverlaps[i]) {
+
+				unsigned int prevId = (*_prevSlices)[j]->getId();
+
+				// ...if not already a partner...
+				if (std::count(_continuationPartners[nextId].begin(), _continuationPartners[nextId].end(), prevId))
+					continue;
+
+				// ...extract the segment
+				extractSegment((*_prevSlices)[j], (*_nextSlices)[i]);
+
+				numPartners++;
+
+				if (numPartners == _minContinuationPartners)
+					break;
+			}
+		}
+	}
 }
 
 void
@@ -263,6 +341,15 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 
 	LOG_ALL(segmentextractorlog) << "accepting this segment hypothesis" << std::endl;
 
+	extractSegment(prevSlice, nextSlice);
+
+	return true;
+}
+
+
+void
+SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice) {
+
 	boost::shared_ptr<ContinuationSegment> segment = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice);
 
 	_segments->add(segment);
@@ -270,7 +357,8 @@ SegmentExtractor::extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shar
 	// only for the left slice
 	_sliceSegments[prevSlice->getId()].push_back(segment->getId());
 
-	return true;
+	_continuationPartners[prevSlice->getId()].push_back(nextSlice->getId());
+	_continuationPartners[nextSlice->getId()].push_back(prevSlice->getId());
 }
 
 bool

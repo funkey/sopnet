@@ -24,6 +24,8 @@ private:
 
 	void updateOutputs();
 
+	void ensureMinContinuationPartners();
+
 	void extractSegments();
 
 	void buildOverlapMap();
@@ -31,6 +33,8 @@ private:
 	inline bool extractSegment(boost::shared_ptr<Slice> prevSlice, Direction direction);
 
 	inline bool extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice, unsigned int overlap);
+
+	inline void extractSegment(boost::shared_ptr<Slice> prevSlice, boost::shared_ptr<Slice> nextSlice);
 
 	inline bool extractSegment(
 			boost::shared_ptr<Slice> source,
@@ -60,6 +64,9 @@ private:
 	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _nextOverlaps;
 	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _prevOverlaps;
 
+	// map from slice ids to slice ids if connected by a continuation
+	std::map<unsigned int, std::vector<unsigned int> > _continuationPartners;
+
 	// a map from slice ids to segments (ids) they are used in
 	std::map<unsigned int, std::vector<unsigned int> > _sliceSegments;
 
@@ -69,6 +76,9 @@ private:
 	// the minimal overlap between slices of one segment
 	double _continuationOverlapThreshold;
 	double _branchOverlapThreshold;
+
+	// the minimal number of continuation partners per slice
+	unsigned int _minContinuationPartners;
 
 	// the maximal size ratio for targets in a branch
 	double _branchSizeRatioThreshold;
