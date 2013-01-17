@@ -1,3 +1,5 @@
+#include <limits>
+
 #include <util/Logger.h>
 #include <util/point.hpp>
 #include <imageprocessing/ConnectedComponent.h>
@@ -8,8 +10,15 @@
 
 static logger::LogChannel randomforestcostfunctionlog("randomforestcostfunctionlog", "[RandomForestCostFunction] ");
 
+util::ProgramOption optionMinSegmentProbability(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "minSegmentProbability",
+		util::_description_text = "The minimal probability a segments needs to have (according to the RF-classifier) to accept it.",
+		util::_default_value    = "0.05");
+
 RandomForestCostFunction::RandomForestCostFunction() :
-	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4)) {
+	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4)),
+	_maxSegmentCosts(-std::log(optionMinSegmentProbability.as<double>())) {
 
 	registerInput(_features, "features");
 	registerInput(_randomForest, "random forest");
@@ -66,16 +75,26 @@ RandomForestCostFunction::costs(
 
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
 
-		segmentCosts[i] += costs(*continuation);
-		_cache[i] = costs(*continuation);
+		double c = costs(*continuation);
+
+		if (c >= _maxSegmentCosts)
+			c = std::numeric_limits<double>::infinity();
+
+		segmentCosts[i] += c;
+		_cache[i] = c;
 
 		i++;
 	}
 
 	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
 
-		segmentCosts[i] += costs(*branch);
-		_cache[i] = costs(*branch);
+		double c = costs(*branch);
+
+		if (c >= _maxSegmentCosts)
+			c = std::numeric_limits<double>::infinity();
+
+		segmentCosts[i] += c;
+		_cache[i] = c;
 
 		i++;
 	}
@@ -86,6 +105,7 @@ RandomForestCostFunction::costs(const Segment& segment) {
 
 	double prob = _randomForest->getProbabilities(_features->get(segment.getId()))[1];
 
-	return -log(std::max(0.001, std::min(0.999, prob)));
+	// [23.02, 0.0]
+	return -log(std::max(1e-10, prob));
 }
 

@@ -39,6 +39,9 @@ private:
 	pipeline::Output<costs_function_type> _costFunction;
 
 	std::vector<double> _cache;
+
+	// segments above this value will have infinite costs
+	double _maxSegmentCosts;
 };
 
 #endif // SOPNET_SEGMENT_RANDOM_FOREST_EVALUATOR_H__
