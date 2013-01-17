@@ -11,12 +11,21 @@ NeuronsImageWriter::NeuronsImageWriter(std::string directory, std::string basena
 		_basename(basename) {
 
 	registerInput(_idMap, "id map");
+	registerInput(_annotation, "annotation", pipeline::Optional);
 }
 
 void
 NeuronsImageWriter::write() {
 
+	// make sure we have a recent id map
+	updateInputs();
+
 	unsigned int numSections = _idMap->size();
+
+	if (_annotation) {
+
+		_directory += std::string("_") + boost::lexical_cast<std::string>(*_annotation);
+	}
 
 	// prepare the output directory
 	boost::filesystem::path directory(_directory);
@@ -29,9 +38,6 @@ NeuronsImageWriter::write() {
 
 		BOOST_THROW_EXCEPTION(IOError() << error_message(std::string("\"") + _directory + "\" is not a directory") << STACK_TRACE);
 	}
-
-	// make sure we have a recent id map
-	updateInputs();
 
 	// save output images
 	for (unsigned int i = 0; i < numSections; i++) {

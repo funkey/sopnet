@@ -24,6 +24,7 @@ private:
 	void updateOutputs() {}
 
 	pipeline::Input<ImageStack> _idMap;
+	pipeline::Input<double>     _annotation;
 
 	std::string _directory;
 	std::string _basename;
