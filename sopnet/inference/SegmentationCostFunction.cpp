@@ -172,6 +172,9 @@ SegmentationCostFunction::computeBoundaryLength(const BranchSegment& branch) {
 double
 SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 
+	if (_sliceSegmentationCosts.count(slice.getId()))
+		return _sliceSegmentationCosts[slice.getId()];
+
 	unsigned int section = slice.getSection();
 
 	double costs = 0.0;
@@ -210,11 +213,16 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 		costs += costsNeuron - costsMembrane;
 	}
 
+	_sliceSegmentationCosts[slice.getId()] = costs;
+
 	return costs;
 }
 
 unsigned int
 SegmentationCostFunction::computeBoundaryLength(const Slice& slice) {
+
+	if (_sliceBoundaryLengths.count(slice.getId()))
+		return _sliceBoundaryLengths[slice.getId()];
 
 	boost::shared_ptr<ConnectedComponent> component = slice.getComponent();
 
@@ -257,6 +265,8 @@ SegmentationCostFunction::computeBoundaryLength(const Slice& slice) {
 		if (y == height - 1 || !pixels[x + (y + 1)*width])
 			boundaryLength++;
 	}
+
+	_sliceBoundaryLengths[slice.getId()] = boundaryLength;
 
 	return boundaryLength;
 }

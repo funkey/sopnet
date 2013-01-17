@@ -71,6 +71,10 @@ private:
 	std::vector<unsigned int> _boundaryLengths;
 
 	SegmentationCostFunctionParameters _prevParameters;
+
+	std::map<unsigned int, double> _sliceSegmentationCosts;
+
+	std::map<unsigned int, unsigned int> _sliceBoundaryLengths;
 };
 
 #endif // SOPNET_INFERENCE_SEGMENTATION_COST_FUNCTION_H__
