@@ -60,6 +60,9 @@ private:
 	// dump the current problem to a file
 	void dumpProblem(std::string filename);
 
+	// set the optimality gap
+	void setMIPGap(double gap);
+
 	/**
 	 * Enable solver output.
 	 */

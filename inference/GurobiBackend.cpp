@@ -3,11 +3,18 @@
 #include <sstream>
 
 #include <util/Logger.h>
+#include <util/ProgramOptions.h>
 #include "GurobiBackend.h"
 
 using namespace logger;
 
 LogChannel gurobilog("gurobilog", "[GurobiBackend] ");
+
+util::ProgramOption optionGurobiMIPGap(
+		util::_module           = "inference.gurobi",
+		util::_long_name        = "mipGap",
+		util::_description_text = "The Gurobi relative optimality gap.",
+		util::_default_value    = 0.0001);
 
 GurobiBackend::GurobiBackend() :
 	_variables(0),
@@ -29,6 +36,8 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		setVerbose(true);
 	else
 		setVerbose(false);
+
+	setMIPGap(optionGurobiMIPGap);
 
 	_numVariables = numVariables;
 
@@ -215,6 +224,12 @@ GurobiBackend::solve(Solution& x, double& value, std::string& msg) {
 	}
 
 	return true;
+}
+
+void
+GurobiBackend::setMIPGap(double gap) {
+
+	_model.getEnv().set(GRB_DoubleParam_MIPGap, gap);
 }
 
 void
