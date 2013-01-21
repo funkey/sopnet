@@ -63,6 +63,9 @@ private:
 	// set the optimality gap
 	void setMIPGap(double gap);
 
+	// set the mpi focus
+	void setMIPFocus(unsigned int focus);
+
 	/**
 	 * Enable solver output.
 	 */

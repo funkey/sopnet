@@ -16,6 +16,12 @@ util::ProgramOption optionGurobiMIPGap(
 		util::_description_text = "The Gurobi relative optimality gap.",
 		util::_default_value    = 0.0001);
 
+util::ProgramOption optionGurobiMIPFocus(
+		util::_module           = "inference.gurobi",
+		util::_long_name        = "mipFocus",
+		util::_description_text = "The Gurobi MIP focus: 0 = balanced, 1 = feasible solutions, 2 = optimal solution, 3 = bound.",
+		util::_default_value    = 0);
+
 GurobiBackend::GurobiBackend() :
 	_variables(0),
 	_model(_env) {
@@ -38,6 +44,11 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		setVerbose(false);
 
 	setMIPGap(optionGurobiMIPGap);
+
+	if (optionGurobiMIPFocus.as<unsigned int>() <= 3)
+		setMIPGap(optionGurobiMIPGap);
+	else
+		LOG_ERROR(gurobilog) << "Invalid value for MPI focus!" << std::endl;
 
 	_numVariables = numVariables;
 
@@ -230,6 +241,12 @@ void
 GurobiBackend::setMIPGap(double gap) {
 
 	_model.getEnv().set(GRB_DoubleParam_MIPGap, gap);
+}
+
+void
+GurobiBackend::setMIPFocus(unsigned int focus) {
+
+	_model.getEnv().set(GRB_IntParam_MIPFocus, focus);
 }
 
 void
