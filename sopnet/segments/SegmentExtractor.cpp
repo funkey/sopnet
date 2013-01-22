@@ -305,9 +305,9 @@ SegmentExtractor::buildOverlapMap() {
 			}
 		}
 
-		if (i % (_prevSlices->size()/10) == 0) {
+		if (i % (std::max(static_cast<unsigned int>(1), _prevSlices->size()/10)) == 0) {
 
-			LOG_DEBUG(segmentextractorlog) << round(static_cast<double>(i)*100/_prevSlices->size()) << "%" << std::endl;
+			LOG_DEBUG(segmentextractorlog) << round(static_cast<double>(i)*100/std::max(static_cast<unsigned int>(1), _prevSlices->size())) << "%" << std::endl;
 		}
 	}
 
