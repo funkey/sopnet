@@ -72,6 +72,18 @@ util::ProgramOption optionLastSection(
 		_description_text = "The number of the last section to process. If set to -1, all sections after <firstSection> will be used.",
 		_default_value    = -1);
 
+util::ProgramOption optionOriginSection(
+		_module           = "sopnet",
+		_long_name        = "originSection",
+		_description_text = "The number of the origin section.",
+		_default_value    = 0);
+
+util::ProgramOption optionTargetSection(
+		_module           = "sopnet",
+		_long_name        = "targetSection",
+		_description_text = "The number of the origin section.",
+		_default_value    = 1);
+
 
 int main(int optionc, char** optionv) {
 
@@ -198,7 +210,7 @@ int main(int optionc, char** optionv) {
 	boost::shared_ptr<ProblemGraphWriter> problemWriter = boost::make_shared<ProblemGraphWriter>();
 
 	// create sopnet pipeline
-	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
+	boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented", problemWriter);
 
 	// set input to sopnet pipeline
 	sopnet->setInput("raw sections", rawSectionsReader->getOutput());
@@ -217,6 +229,9 @@ int main(int optionc, char** optionv) {
 	sopnet->setInput("segmentation cost parameters", boost::make_shared<SegmentationCostFunctionParameters>());
 	sopnet->setInput("prior cost parameters", priors);
 	sopnet->setInput("force explanation", boost::make_shared<pipeline::Wrap<bool> >(true));
+
+	int originSection = optionOriginSection;
+	int targetSection  = optionTargetSection;
 
 	problemWriter->write("./dump/slices.txt", "./dump/segments.txt", "./dump/constraints.txt", "./dump/slices/", originSection, targetSection);
 

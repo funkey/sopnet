@@ -34,7 +34,7 @@ ProblemGraphWriter::write(
 		int originSlice,
 		int targetSlice) {
 
-	if (!_segments || !_segmentIdsToVariables || !_objective) {
+	if (!_segments || !_problemConfiguration || !_objective) {
 
 		LOG_DEBUG(problemgraphwriterlog) << "not all required inputs are present -- skip dumping" << std::endl;
 		return;
@@ -93,8 +93,10 @@ ProblemGraphWriter::writeSegments(const std::string& segmentsFile, int originSli
 	const std::vector<std::string>& names    = _features->getNames();
 
 	for (unsigned int i = 0; i < names.size(); i++) {
-		if (i < names.size())
+		if (i < names.size()) {
+			LOG_DEBUG(problemgraphwriterlog) << "write feature name " << names[i] << std::endl;
 			out << names[i] << ",";
+		}
 	}
 
 	out << std::endl;
@@ -203,7 +205,7 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
     out << " " << segment.getDirection() << " ";
 
 	const std::vector<double>&      features = _features->get(segment.getId());
-	const std::vector<std::string>& names    = _features->getNames();
+	// const std::vector<std::string>& names    = _features->getNames();
 
 	for (unsigned int i = 0; i < features.size(); i++) {
 		out << features[i] << " ";
