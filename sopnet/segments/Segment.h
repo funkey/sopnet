@@ -55,6 +55,8 @@ public:
 	 */
 	static unsigned int getNextSegmentId();
 
+	virtual std::vector<boost::shared_ptr<Slice> > getSlices() const = 0;
+
 private:
 
 	static unsigned int NextSegmentId;

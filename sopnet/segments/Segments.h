@@ -134,17 +134,22 @@ public:
 	/**
 	 * Get all end segments.
 	 */
-	std::vector<boost::shared_ptr<EndSegment> > getEnds();
+	std::vector<boost::shared_ptr<EndSegment> > getEnds() const;
 
 	/**
 	 * Get all continuation segments.
 	 */
-	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations();
+	std::vector<boost::shared_ptr<ContinuationSegment> > getContinuations() const;
 
 	/**
 	 * Get all branch segments.
 	 */
-	std::vector<boost::shared_ptr<BranchSegment> > getBranches();
+	std::vector<boost::shared_ptr<BranchSegment> > getBranches() const;
+
+	/**
+	 * Get all segments.
+	 */
+	std::vector<boost::shared_ptr<Segment> > getSegments() const;
 
 	/**
 	 * Get all end segments in the given inter-section interval.
@@ -263,7 +268,7 @@ private:
 
 	template <typename SegmentType>
 	std::vector<boost::shared_ptr<SegmentType> > get(
-			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments) {
+			const std::vector<std::vector<boost::shared_ptr<SegmentType> > >& allSegments) const {
 
 		std::vector<boost::shared_ptr<SegmentType> > segments;
 

@@ -27,3 +27,14 @@ ContinuationSegment::getTargetSlice() const {
 
 	return _targetSlice;
 }
+
+std::vector<boost::shared_ptr<Slice> >
+ContinuationSegment::getSlices() const {
+
+	std::vector<boost::shared_ptr<Slice> > slices;
+
+	slices.push_back(getSourceSlice());
+	slices.push_back(getTargetSlice());
+
+	return slices;
+}

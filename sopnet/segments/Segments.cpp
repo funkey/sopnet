@@ -158,21 +158,37 @@ Segments::getBranches(unsigned int interval) {
 }
 
 std::vector<boost::shared_ptr<EndSegment> >
-Segments::getEnds() {
+Segments::getEnds() const {
 
 	return get(_ends);
 }
 
 std::vector<boost::shared_ptr<ContinuationSegment> >
-Segments::getContinuations() {
+Segments::getContinuations() const {
 
 	return get(_continuations);
 }
 
 std::vector<boost::shared_ptr<BranchSegment> >
-Segments::getBranches() {
+Segments::getBranches() const {
 
 	return get(_branches);
+}
+
+std::vector<boost::shared_ptr<Segment> >
+Segments::getSegments() const {
+
+	std::vector<boost::shared_ptr<Segment> > allSegments;
+
+	std::vector<boost::shared_ptr<EndSegment> >          ends          = get(_ends);
+	std::vector<boost::shared_ptr<ContinuationSegment> > continuations = get(_continuations);
+	std::vector<boost::shared_ptr<BranchSegment> >       branches      = get(_branches);
+
+	std::copy(ends.begin(), ends.end(), std::back_inserter(allSegments));
+	std::copy(continuations.begin(), continuations.end(), std::back_inserter(allSegments));
+	std::copy(branches.begin(), branches.end(), std::back_inserter(allSegments));
+
+	return allSegments;
 }
 
 std::vector<boost::shared_ptr<EndSegment> >

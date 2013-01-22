@@ -13,3 +13,13 @@ EndSegment::getSlice() const {
 
 	return _slice;
 }
+
+std::vector<boost::shared_ptr<Slice> >
+EndSegment::getSlices() const {
+
+	std::vector<boost::shared_ptr<Slice> > slices;
+
+	slices.push_back(getSlice());
+
+	return slices;
+}
