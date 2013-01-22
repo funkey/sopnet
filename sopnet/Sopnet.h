@@ -36,7 +36,7 @@ public:
 	 *
 	 * @param projectDirectory The directory to read and write the data from and to.
 	 */
-	Sopnet(const std::string& projectDirectory);
+	Sopnet(const std::string& projectDirectory, boost::shared_ptr<ProcessNode> problemWriter = boost::shared_ptr<ProcessNode>());
 
 private:
 
@@ -157,6 +157,10 @@ private:
 
 	// the project directory
 	std::string _projectDirectory;
+
+	// a writer to dump a description of the problem
+	boost::shared_ptr<ProcessNode> _problemWriter;
+	
 };
 
 #endif // CELLTRACKER_CELLTRACKER_H__
