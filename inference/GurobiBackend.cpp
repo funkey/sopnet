@@ -22,6 +22,13 @@ util::ProgramOption optionGurobiMIPFocus(
 		util::_description_text = "The Gurobi MIP focus: 0 = balanced, 1 = feasible solutions, 2 = optimal solution, 3 = bound.",
 		util::_default_value    = 0);
 
+util::ProgramOption optionGurobiNumThreads(
+		util::_module           = "inference.gurobi",
+		util::_long_name        = "numThreads",
+		util::_description_text = "The number of threads to be used by Gurobi. The default (0) uses all available CPUs.",
+		util::_default_value    = 0);
+
+
 GurobiBackend::GurobiBackend() :
 	_variables(0),
 	_model(_env) {
@@ -49,6 +56,8 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		setMIPGap(optionGurobiMIPGap);
 	else
 		LOG_ERROR(gurobilog) << "Invalid value for MPI focus!" << std::endl;
+
+	setNumThreads(optionGurobiNumThreads);
 
 	_numVariables = numVariables;
 
@@ -247,6 +256,12 @@ void
 GurobiBackend::setMIPFocus(unsigned int focus) {
 
 	_model.getEnv().set(GRB_IntParam_MIPFocus, focus);
+}
+
+void
+GurobiBackend::setNumThreads(unsigned int numThreads) {
+
+	_model.getEnv().set(GRB_IntParam_Threads, numThreads);
 }
 
 void
