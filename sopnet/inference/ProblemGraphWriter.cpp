@@ -122,8 +122,6 @@ ProblemGraphWriter::writeConstraints() {
 void
 ProblemGraphWriter::writeSlice(const Slice& slice, std::ofstream& out) {
 
-	LOG_DEBUG(problemgraphwriterlog) << "writing slices" << std::endl;
-
 	out << slice.getId() << " ";
 	out << slice.getSection() << " ";
 	out << slice.getComponent()->getBoundingBox().minX << " ";
@@ -198,9 +196,6 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 	const unsigned int variable = _problemConfiguration->getVariable(segment.getId());
 	const double costs = _objective->getCoefficients()[variable];
 	out << " " << costs;
-
-	// out << " " << _objective->getCoefficients()[(*_segmentIdsToVariables)[segment.getId()]];
-	
     
     out << " " << segment.getDirection() << " ";
 
@@ -212,6 +207,5 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 	}
 
 	out << std::endl;
-
 
 }
