@@ -196,6 +196,9 @@ int main(int optionc, char** optionv) {
 
 		LOG_USER(out) << "[main] starting..." << std::endl;
 
+		int firstSection = optionFirstSection;
+		int lastSection  = optionLastSection;
+
 		/*********
 		 * SETUP *
 		 *********/
@@ -287,17 +290,14 @@ int main(int optionc, char** optionv) {
 			std::string projectFilename = optionProjectName;
 
 			// try to read from project hdf5 file
-			rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
-			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
-			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "slices");
-			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "groundtruth");
+			rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
+			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
+			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
+			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
 		}
 
 		// select a substack, if options are set
 		if (optionFirstSection || optionLastSection) {
-
-			int firstSection = optionFirstSection;
-			int lastSection  = optionLastSection;
 
 			// create section selectors
 			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);

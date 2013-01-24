@@ -49,10 +49,20 @@ using std::endl;
 using namespace gui;
 using namespace logger;
 
-util::ProgramOption optionProjectName(
-		_long_name        = "project",
-		_short_name       = "p",
-		_description_text = "The HDF5 project file.");
+util::ProgramOption optionDataRawName(
+		_long_name        = "projectRaw",
+		_short_name       = "pr",
+		_description_text = "The HDF5 raw data file.");
+
+util::ProgramOption optionDataMembraneName(
+		_long_name        = "projectMembrane",
+		_short_name       = "pm",
+		_description_text = "The HDF5 membranes data file.");
+
+util::ProgramOption optionDataSlicesName(
+		_long_name        = "projectSlices",
+		_short_name       = "ps",
+		_description_text = "The HDF5 slices data file.");
 
 util::ProgramOption optionSlicesFromStacks(
 		_module           = "sopnet",
@@ -84,6 +94,26 @@ util::ProgramOption optionTargetSection(
 		_description_text = "The number of the origin section.",
 		_default_value    = 1);
 
+util::ProgramOption optionMinXROI(
+		_long_name        = "minX",
+		_description_text = "The minX coordinate of the ROI.",
+		_default_value    = 0);
+
+util::ProgramOption optionMaxXROI(
+		_long_name        = "maxX",
+		_description_text = "The maxX coordinate of the ROI.",
+		_default_value    = 0);
+
+util::ProgramOption optionMinYROI(
+		_long_name        = "minY",
+		_description_text = "The minY coordinate of the ROI.",
+		_default_value    = 0);
+
+util::ProgramOption optionMaxYROI(
+		_long_name        = "maxY",
+		_description_text = "The maxY coordinate of the ROI.",
+		_default_value    = 0);
+
 
 int main(int optionc, char** optionv) {
 
@@ -110,19 +140,21 @@ int main(int optionc, char** optionv) {
 	boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
 	boost::shared_ptr<pipeline::ProcessNode> membranesReader;
 	boost::shared_ptr<pipeline::ProcessNode> slicesReader;
-	boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
 	boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > sliceStackDirectories = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
 
+	int firstSection = optionFirstSection;;
+	int lastSection = optionLastSection;
+
 	// create image stack readers
-	if (!optionProjectName) {
+	if (!optionDataRawName) {
 
 		// if no project filename was given, try to read from default
 		// directory
 		rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
 		membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
 		slicesReader      = boost::make_shared<ImageStackDirectoryReader>("./slices/");
-		groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
+		
 
 		// list all directories under ./slices for the image stack option
 		boost::filesystem::path dir("./slices/");
@@ -148,63 +180,68 @@ int main(int optionc, char** optionv) {
 			if (boost::filesystem::is_directory(directory))
 				sliceStackDirectories->get().push_back(directory.string());
 
+		// select a substack, if options are set
+		if (optionFirstSection || optionLastSection) {
+
+			// create section selectors
+			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			
+			// set their inputs to the outputs of the section readers
+			rawSelector->setInput(rawSectionsReader->getOutput());
+			membranesSelector->setInput(membranesReader->getOutput());
+			
+			// sneakily pretend the selectors are the readers
+			rawSectionsReader = rawSelector;
+			membranesReader   = membranesSelector;
+
+			// special case: select a subset of the slice hypotheses
+			if (optionSlicesFromStacks) {
+
+				if (firstSection >= (int)sliceStackDirectories->get().size())
+					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
+
+				if (lastSection >= (int)sliceStackDirectories->get().size())
+					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
+
+				boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+				std::copy(
+						sliceStackDirectories->get().begin() + firstSection,
+						sliceStackDirectories->get().begin() + lastSection + 1,
+						back_inserter(tmp->get()));
+				sliceStackDirectories = tmp;
+
+			} else {
+
+				// do the same as with the other image stacks
+				boost::shared_ptr<SubStackSelector> slicesSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+				slicesSelector->setInput(slicesReader->getOutput());
+				slicesReader = slicesSelector;
+			}
+		}
+
 	} else {
 
 		// get the project filename
-		std::string projectFilename = optionProjectName;
+		std::string dataRawFilename = optionDataRawName;
+		std::string dataMembraneFilename = optionDataMembraneName;
+		std::string dataSlicesFilename = optionDataSlicesName;
 
 		// try to read from project hdf5 file
-		rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "raw");
-		membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
-		slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "slices");
-		groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "groundtruth");
-	}
-
-	// select a substack, if options are set
-	if (optionFirstSection || optionLastSection) {
-
-		int firstSection = optionFirstSection;
-		int lastSection  = optionLastSection;
-
-		// create section selectors
-		boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-		boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-		boost::shared_ptr<SubStackSelector> groundTruthSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-
-		// set their inputs to the outputs of the section readers
-		rawSelector->setInput(rawSectionsReader->getOutput());
-		membranesSelector->setInput(membranesReader->getOutput());
-		groundTruthSelector->setInput(groundTruthReader->getOutput());
-
-		// sneakily pretend the selectors are the readers
-		rawSectionsReader = rawSelector;
-		membranesReader   = membranesSelector;
-		groundTruthReader = groundTruthSelector;
-
-		// special case: select a subset of the slice hypotheses
-		if (optionSlicesFromStacks) {
-
-			if (firstSection >= (int)sliceStackDirectories->get().size())
-				BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
-
-			if (lastSection >= (int)sliceStackDirectories->get().size())
-				BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
-
-			boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
-			std::copy(
-					sliceStackDirectories->get().begin() + firstSection,
-					sliceStackDirectories->get().begin() + lastSection + 1,
-					back_inserter(tmp->get()));
-			sliceStackDirectories = tmp;
-
+		rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(dataRawFilename, "0", "data", 
+			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+		membranesReader   = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data", 
+			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+		if (optionDataSlicesName) {
+			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataSlicesFilename, "0", "data", 
+			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		} else {
-
-			// do the same as with the other image stacks
-			boost::shared_ptr<SubStackSelector> slicesSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-			slicesSelector->setInput(slicesReader->getOutput());
-			slicesReader = slicesSelector;
+			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data",
+			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		}
+
 	}
+
 
 	// create problem writer
 	boost::shared_ptr<ProblemGraphWriter> problemWriter = boost::make_shared<ProblemGraphWriter>();
@@ -219,7 +256,7 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("slice stack directories", sliceStackDirectories);
 	else
 		sopnet->setInput("slices", slicesReader->getOutput());
-	sopnet->setInput("ground truth", groundTruthReader->getOutput());
+	
 
 	boost::shared_ptr<PriorCostFunctionParameters> priors = boost::make_shared<PriorCostFunctionParameters>();
 	priors->priorEnd = PriorCostFunctionParameters::optionPriorEnds.as<double>();
