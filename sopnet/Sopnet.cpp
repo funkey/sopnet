@@ -134,7 +134,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -143,8 +143,8 @@ Sopnet::createPipeline() {
 	createBasicPipeline();
 
 	createInferencePipeline();
-
-	createTrainingPipeline();
+	if (_groundTruth)
+		createTrainingPipeline();
 }
 
 void
