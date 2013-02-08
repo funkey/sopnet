@@ -146,6 +146,9 @@ int main(int optionc, char** optionv) {
 	int firstSection = optionFirstSection;;
 	int lastSection = optionLastSection;
 
+	int originSection = optionOriginSection;
+	int targetSection  = optionTargetSection;
+
 	// create image stack readers
 	if (!optionDataRawName) {
 
@@ -229,15 +232,15 @@ int main(int optionc, char** optionv) {
 
 		// try to read from project hdf5 file
 		rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(dataRawFilename, "0", "data", 
-			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		membranesReader   = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data", 
-			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		if (optionDataSlicesName) {
 			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataSlicesFilename, "0", "data", 
-			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		} else {
 			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data",
-			firstSection, lastSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
 		}
 
 	}
@@ -266,9 +269,6 @@ int main(int optionc, char** optionv) {
 	sopnet->setInput("segmentation cost parameters", boost::make_shared<SegmentationCostFunctionParameters>());
 	sopnet->setInput("prior cost parameters", priors);
 	sopnet->setInput("force explanation", boost::make_shared<pipeline::Wrap<bool> >(true));
-
-	int originSection = optionOriginSection;
-	int targetSection  = optionTargetSection;
 
 	problemWriter->write("./dump/slices.txt", "./dump/segments.txt", "./dump/constraints.txt", "./dump/slices/", originSection, targetSection);
 
