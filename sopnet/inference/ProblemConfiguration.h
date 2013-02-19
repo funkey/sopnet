@@ -13,6 +13,7 @@ public:
 	void setVariable(unsigned int segmentId, unsigned int variable) {
 
 		_variables[segmentId] = variable;
+		_segmentIds[variable] = segmentId;
 	}
 
 	unsigned int getVariable(unsigned int segmentId) {
@@ -28,15 +29,32 @@ public:
 		return _variables[segmentId];
 	}
 
+	unsigned int getSegmentId(unsigned int variable) {
+
+		if (!_segmentIds.count(variable))
+			BOOST_THROW_EXCEPTION(
+					NoSuchSegment()
+					<< error_message(
+							std::string("segment id map does not contain an entry for variable ") +
+							boost::lexical_cast<std::string>(variable))
+					<< STACK_TRACE);
+
+		return _segmentIds[variable];
+	}
+
 	void clear() {
 
 		_variables.clear();
+		_segmentIds.clear();
 	}
 
 private:
 
 	// mapping of segment ids to a continous range of variable numbers
 	std::map<unsigned int, unsigned int> _variables;
+
+	// reverse mapping
+	std::map<unsigned int, unsigned int> _segmentIds;
 };
 
 #endif // SOPNET_INFERENCE_PROBLEM_CONFIGURATION_H__
