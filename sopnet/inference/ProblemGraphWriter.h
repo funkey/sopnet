@@ -4,6 +4,7 @@
 #include <pipeline/all.h>
 
 #include <inference/LinearConstraints.h>
+#include <inference/LinearConstraint.h>
 #include <inference/LinearObjective.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Features.h>
@@ -40,7 +41,7 @@ private:
 
 	void writeSegments(const std::string& segmentsFile, int originSlice, int targetSlice);
 
-	void writeConstraints();
+	void writeConstraints(const std::string& constraintsFile);
 
 	void writeSlice(const Slice& slice, std::ofstream& out);
 

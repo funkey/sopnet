@@ -158,9 +158,6 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("segments");
 	_problemAssembler->clearInputs("linear constraints");
 
-	if (_problemWriter)
-		_problemWriter->clearInputs("linear constraints");
-
 	unsigned int numSections = 0;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
@@ -248,7 +245,7 @@ Sopnet::createBasicPipeline() {
 		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
 
 		if (_problemWriter)
-			_problemWriter->addInput("linear constraints", sliceExtractor->getOutput("linear constraints"));
+			_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 
 
 	}

@@ -16,9 +16,7 @@ util::ProgramOption optionProblemGraphFile(
 		util::_default_value    = "problem.graph");
 
 ProblemGraphWriter::ProblemGraphWriter() {
-
 	registerInput(_segments, "segments");
-	//registerInput(_segmentIdsToVariables, "segment ids map");
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInput(_objective, "objective");
 	registerInputs(_linearConstraints, "linear constraints");
@@ -48,7 +46,7 @@ ProblemGraphWriter::write(
 
 	writeSegments(segmentsFile, originSlice, targetSlice);
 
-	writeConstraints();
+	writeConstraints(constraintsFile);
 
 	LOG_DEBUG(problemgraphwriterlog) << "done" << std::endl;
 }
@@ -114,9 +112,53 @@ ProblemGraphWriter::writeSegments(const std::string& segmentsFile, int originSli
 }
 
 void
-ProblemGraphWriter::writeConstraints() {
+ProblemGraphWriter::writeConstraints(const std::string& constraintsFile) {
 
-	LOG_DEBUG(problemgraphwriterlog) << "writing constraints" << std::endl;
+	LOG_DEBUG(problemgraphwriterlog) << "writing constraints to " << constraintsFile << std::endl;
+
+	std::ofstream out(constraintsFile.c_str());
+
+	// because we assume to use only two sections, no constraints that ensure that
+	// the left segments minus right segments equals zero, exists. the set of constraints
+	// is limited to a variable number of coefficients as a constraint on a set of
+	// segments, where only one segment can be picked (corresponding to the paths on
+	// the component tree). later, these lists have to be defined pair-wise. redundant
+	// constraints are not inserted into the database by means of checking by a paired
+	// foreign key consisting of the segment ids
+
+	foreach (boost::shared_ptr<LinearConstraints> linearConstraints, _linearConstraints) {
+
+		foreach (const LinearConstraint& linearConstraint, *linearConstraints) {
+
+
+		//foreach (LinearConstraint& linearConstraint, *_linearConstraints) {
+	
+		// out << "relation,value,coefficients (variable length)";
+
+		if (linearConstraint.getRelation() == LessEqual ) {
+			out << "0" << ",";
+		} else if (linearConstraint.getRelation() == GreaterEqual ) {
+			out << "1" << ",";
+		} else { // it is equal
+			out << "2" << ",";
+		};
+
+		out << linearConstraint.getValue();
+
+		unsigned int variable;
+		double coef;
+		foreach (boost::tie(variable, coef), linearConstraint.getCoefficients()) {
+			unsigned int segmentId = _problemConfiguration->getSegmentId(variable);
+			out << "," << segmentId << "," << coef;
+		}
+
+		out << std::endl;
+
+	}
+	}
+
+	out.close();
+
 }
 
 void
