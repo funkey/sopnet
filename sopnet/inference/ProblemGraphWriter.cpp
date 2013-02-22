@@ -21,6 +21,9 @@ ProblemGraphWriter::ProblemGraphWriter() {
 	registerInput(_objective, "objective");
 	registerInputs(_linearConstraints, "linear constraints");
 	registerInput(_features, "features");
+	registerInput(_randomForestCostFunction, "random forest cost function");
+	registerInput(_segmentationCostFunction, "segmentation cost function");
+
 }
 
 void
@@ -99,6 +102,19 @@ ProblemGraphWriter::writeSegments(const std::string& segmentsFile, int originSli
 
 	out << std::endl;
 
+	std::vector<double> randomForestCosts(_segments->size(), 0);
+	std::vector<double> segmentationCosts(_segments->size(), 0);
+
+	(*_randomForestCostFunction)( _segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), randomForestCosts );
+	(*_segmentationCostFunction)( _segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), segmentationCosts );
+
+	unsigned int counter = 0;
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
+		_randomForestCostMap[ segment->getId() ] = randomForestCosts[counter];
+		_segmentationCostMap[ segment->getId() ] = segmentationCosts[counter];
+		counter++;
+	
+}
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
 		writeSegment(*end, out, originSlice, targetSlice);
 
@@ -238,7 +254,7 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 	const unsigned int variable = _problemConfiguration->getVariable(segment.getId());
 	const double costs = _objective->getCoefficients()[variable];
 	out << " " << costs;
-    
+
     out << " " << segment.getDirection() << " ";
 
 	const std::vector<double>&      features = _features->get(segment.getId());
@@ -247,6 +263,10 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 	for (unsigned int i = 0; i < features.size(); i++) {
 		out << features[i] << " ";
 	}
+
+	out << " " << _randomForestCostMap[ segment.getId() ];
+
+	out << " " << _segmentationCostMap[ segment.getId() ];
 
 	out << std::endl;
 

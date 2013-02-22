@@ -289,6 +289,10 @@ Sopnet::createInferencePipeline() {
 		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 		_problemWriter->setInput("objective", _objectiveGenerator->getOutput("objective"));
 		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		
+		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
+		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
+
 	}
 
 }
