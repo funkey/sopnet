@@ -18,7 +18,6 @@ util::ProgramOption optionProblemGraphFile(
 ProblemGraphWriter::ProblemGraphWriter() {
 	registerInput(_segments, "segments");
 	registerInput(_problemConfiguration, "problem configuration");
-	registerInput(_objective, "objective");
 	registerInputs(_linearConstraints, "linear constraints");
 	registerInput(_features, "features");
 	registerInput(_randomForestCostFunction, "random forest cost function");
@@ -35,7 +34,7 @@ ProblemGraphWriter::write(
 		int originSlice,
 		int targetSlice) {
 
-	if (!_segments || !_problemConfiguration || !_objective) {
+	if (!_segments || !_problemConfiguration ) {
 
 		LOG_DEBUG(problemgraphwriterlog) << "not all required inputs are present -- skip dumping" << std::endl;
 		return;
@@ -252,8 +251,8 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 	}
 
 	const unsigned int variable = _problemConfiguration->getVariable(segment.getId());
-	const double costs = _objective->getCoefficients()[variable];
-	out << " " << costs;
+	// const double costs = _objective->getCoefficients()[variable];
+	out << " " << _randomForestCostMap[ segment.getId() ];
 
     out << " " << segment.getDirection() << " ";
 

@@ -267,32 +267,32 @@ Sopnet::createInferencePipeline() {
 	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
 
-	// feed all segments to objective generator
-	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-	_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
-	_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
-
-	if (!optionDisableSegmentationCosts)
-		_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
-
-	// feed objective and linear constraints to ilp creator
-	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
-	_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
-	_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
-
-	// feed solution and segments to reconstructor
-	_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
-	_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
-
 	if (_problemWriter) {
 		_problemWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
-		_problemWriter->setInput("objective", _objectiveGenerator->getOutput("objective"));
 		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 		
 		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
 		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
 
+	} else {
+
+		// feed all segments to objective generator
+		_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
+		_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
+		_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
+
+		if (!optionDisableSegmentationCosts)
+			_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
+
+		// feed objective and linear constraints to ilp creator
+		_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
+		_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+		_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+
+		// feed solution and segments to reconstructor
+		_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
+		_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
 	}
 
 }

@@ -63,9 +63,6 @@ private:
 	// map from segment ids to variable numbers in the linear constraints
 	pipeline::Input<std::map<unsigned int, unsigned int> > _segmentIdsToVariables;
 
-	// the segment costs
-	pipeline::Input<LinearObjective> _objective;
-
 	// the segment features
 	pipeline::Input<Features> _features;
 
