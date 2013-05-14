@@ -25,8 +25,10 @@ installed using the default Ubuntu repositories:
   • libboost-all-dev
   • liblapack-dev
   • libx11-dev
+  • libxcb-dev
+  • libxrandr-dev
   • freeglut3-dev
-  • libglew1.5-dev
+  • libglew1.6-dev
   • libcairo2-dev
   • libpng12-dev
   • libtiff4-dev
