@@ -223,3 +223,5 @@ target_link_libraries(graphcut allsopnet)
 add_executable(problemdump problemdump.cpp)
 target_link_libraries(problemdump allsopnet)
 
+add_executable(solve_subproblems solve_subproblems.cpp)
+target_link_libraries(solve_subproblems allsopnet)
