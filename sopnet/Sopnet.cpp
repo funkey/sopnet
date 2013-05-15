@@ -235,7 +235,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == numSections - 1) // only for the last pair of slices
+		if (section == numSections - 1 && !_problemWriter) // only for the last pair of slices and only if we are not dumping the problem
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);
@@ -243,11 +243,6 @@ Sopnet::createBasicPipeline() {
 		// add segments and linear constraints to problem assembler
 		_problemAssembler->addInput("segments", segmentExtractor->getOutput("segments"));
 		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
-
-		if (_problemWriter)
-			_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
-
-
 	}
 }
 
@@ -268,12 +263,14 @@ Sopnet::createInferencePipeline() {
 	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
 
 	if (_problemWriter) {
+
 		_problemWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 		
 		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
 		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
+		_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 
 	} else {
 
