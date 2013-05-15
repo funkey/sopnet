@@ -30,7 +30,11 @@ private:
 
 	pipeline::Input<Segments> _segments;
 
-	pipeline::Inputs<costs_function_type> _costFunctions;
+	// the main cost function rating segments based on the extracted features
+	pipeline::Input<costs_function_type>  _segmentCostFunction;
+
+	// additional cost functions like priors or segmentation costs
+	pipeline::Inputs<costs_function_type> _additionalCostFunctions;
 
 	pipeline::Output<LinearObjective> _objective;
 };

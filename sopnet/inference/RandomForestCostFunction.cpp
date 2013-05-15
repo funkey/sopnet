@@ -53,19 +53,9 @@ RandomForestCostFunction::costs(
 
 	unsigned int i = 0;
 
-	unsigned int numSections = 0;
-	foreach (boost::shared_ptr<EndSegment> end, ends)
-		numSections = std::max(numSections, end->getInterSectionInterval());
-
 	foreach (boost::shared_ptr<EndSegment> end, ends) {
 
-		double c;
-
-		// end segments out of the block are for free
-		if (end->getInterSectionInterval() == 0 || end->getInterSectionInterval() == numSections)
-			c = 0.0;
-		else
-			c = costs(*end);
+		double c = costs(*end);
 
 		segmentCosts[i] += c;
 		_cache[i] = c;

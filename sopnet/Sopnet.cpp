@@ -260,11 +260,11 @@ Sopnet::createInferencePipeline() {
 
 	// feed all segments to objective generator
 	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-	_objectiveGenerator->addInput("cost functions", _randomForestCostFunction->getOutput("cost function"));
-	_objectiveGenerator->addInput("cost functions", _priorCostFunction->getOutput("cost function"));
+	_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
+	_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
 
 	if (!optionDisableSegmentationCosts)
-		_objectiveGenerator->addInput("cost functions", _segmentationCostFunction->getOutput("cost function"));
+		_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
 
 	// feed objective and linear constraints to ilp creator
 	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
