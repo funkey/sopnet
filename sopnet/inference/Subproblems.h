@@ -1,5 +1,5 @@
-#ifndef SOPNET_INFERENCE_PROBLEMS_H__
-#define SOPNET_INFERENCE_PROBLEMS_H__
+#ifndef SOPNET_INFERENCE_SUBPROBLEMS_H__
+#define SOPNET_INFERENCE_SUBPROBLEMS_H__
 
 #include <pipeline/all.h>
 
@@ -8,7 +8,7 @@
 /**
  * A collection of problems that should be solved jointly.
  */
-class Problems : public pipeline::Data {
+class Subproblems : public pipeline::Data {
 
 public:
 
@@ -37,5 +37,5 @@ private:
 	std::vector<boost::shared_ptr<Problem> > _problems;
 };
 
-#endif // SOPNET_INFERENCE_PROBLEMS_H__
+#endif // SOPNET_INFERENCE_SUBPROBLEMS_H__
 

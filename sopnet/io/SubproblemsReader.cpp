@@ -2,11 +2,11 @@
 
 #include <util/Logger.h>
 
-#include "StreamProblemReader.h"
+#include "SubproblemsReader.h"
 
-logger::LogChannel streamproblemreaderlog("streamproblemreaderlog", "[StreamProblemReader] ");
+logger::LogChannel streamproblemreaderlog("streamproblemreaderlog", "[SubproblemsReader] ");
 
-StreamProblemReader::StreamProblemReader(const std::string& stream) :
+SubproblemsReader::SubproblemsReader(const std::string& stream) :
 	_streamName(stream),
 	_fb(0),
 	_stream(0) {
@@ -23,17 +23,17 @@ StreamProblemReader::StreamProblemReader(const std::string& stream) :
 		_stream = new std::istream(_fb);
 	}
 
-	registerOutput(_problems, "problems");
+	registerOutput(_subproblems, "problems");
 }
 
-StreamProblemReader::StreamProblemReader(const StreamProblemReader& other) {
+SubproblemsReader::SubproblemsReader(const SubproblemsReader& other) {
 
 	free();
 	copy(other);
 }
 
-StreamProblemReader&
-StreamProblemReader::operator=(const StreamProblemReader& other) {
+SubproblemsReader&
+SubproblemsReader::operator=(const SubproblemsReader& other) {
 
 	free();
 	copy(other);
@@ -41,13 +41,13 @@ StreamProblemReader::operator=(const StreamProblemReader& other) {
 	return *this;
 }
 
-StreamProblemReader::~StreamProblemReader() {
+SubproblemsReader::~SubproblemsReader() {
 
 	free();
 }
 
 void
-StreamProblemReader::free() {
+SubproblemsReader::free() {
 
 	if (_stream) {
 
@@ -63,7 +63,7 @@ StreamProblemReader::free() {
 }
 
 void
-StreamProblemReader::copy(const StreamProblemReader& other) {
+SubproblemsReader::copy(const SubproblemsReader& other) {
 
 	if (other.readStdIn()) {
 
@@ -79,13 +79,13 @@ StreamProblemReader::copy(const StreamProblemReader& other) {
 }
 
 bool
-StreamProblemReader::readStdIn() const {
+SubproblemsReader::readStdIn() const {
 
 	return (_streamName == "-");
 }
 
 void
-StreamProblemReader::updateOutputs() {
+SubproblemsReader::updateOutputs() {
 
 	unsigned int numVariables;
 	*_stream >> numVariables;
@@ -93,8 +93,8 @@ StreamProblemReader::updateOutputs() {
 	// create a new problem
 
 	boost::shared_ptr<Problem> problem = boost::make_shared<Problem>(numVariables);
-	_problems->clear();
-	_problems->addProblem(problem);
+	_subproblems->clear();
+	_subproblems->addProblem(problem);
 
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numVariables << " variables" << std::endl;
 
@@ -119,7 +119,7 @@ StreamProblemReader::updateOutputs() {
 }
 
 void
-StreamProblemReader::readVariable(unsigned int i) {
+SubproblemsReader::readVariable(unsigned int i) {
 
 	unsigned int id;
 	float costs;
@@ -130,14 +130,14 @@ StreamProblemReader::readVariable(unsigned int i) {
 	LOG_ALL(streamproblemreaderlog) << "found variable " << i << " (id " << id << ") with costs " << costs << std::endl;
 
 	// set costs in objective
-	_problems->getProblem(0)->getObjective().setCoefficient(i, costs);
+	_subproblems->getProblem(0)->getObjective().setCoefficient(i, costs);
 
 	// remember mapping from id to variable num
-	_problems->getProblem(0)->getConfiguration().setVariable(id, i);
+	_subproblems->getProblem(0)->getConfiguration().setVariable(id, i);
 }
 
 void
-StreamProblemReader::readOneConstraint(unsigned int i) {
+SubproblemsReader::readOneConstraint(unsigned int i) {
 
 	LinearConstraint constraint;
 
@@ -150,7 +150,7 @@ StreamProblemReader::readOneConstraint(unsigned int i) {
 		unsigned int id;
 		*_stream >> id;
 
-		unsigned int varNum = _problems->getProblem(0)->getConfiguration().getVariable(id);
+		unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(id);
 
 		constraint.setCoefficient(varNum, 1.0);
 	}
@@ -162,7 +162,7 @@ StreamProblemReader::readOneConstraint(unsigned int i) {
 }
 
 void
-StreamProblemReader::readEqualConstraint(unsigned int i) {
+SubproblemsReader::readEqualConstraint(unsigned int i) {
 
 	LinearConstraint constraint;
 
@@ -177,12 +177,12 @@ StreamProblemReader::readEqualConstraint(unsigned int i) {
 
 		if (id >= 0) {
 
-			unsigned int varNum = _problems->getProblem(0)->getConfiguration().getVariable(id);
+			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(id);
 			constraint.setCoefficient(varNum, 1.0);
 
 		} else {
 
-			unsigned int varNum = _problems->getProblem(0)->getConfiguration().getVariable(-id);
+			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(-id);
 			constraint.setCoefficient(varNum, -1.0);
 		}
 	}

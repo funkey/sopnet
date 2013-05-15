@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 
-#include <sopnet/io/StreamProblemReader.h>
+#include <sopnet/io/SubproblemsReader.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 #include <pipeline/Process.h>
@@ -35,7 +35,7 @@ int main(int optionc, char** optionv) {
 		util::SignalHandler::init();
 
 		// create problem reader
-		pipeline::Process<StreamProblemReader> problemReader(optionProblemInput.as<std::string>());
+		pipeline::Process<SubproblemsReader> problemReader(optionProblemInput.as<std::string>());
 
 		/********
 		 * TEST *
@@ -43,8 +43,8 @@ int main(int optionc, char** optionv) {
 
 		LOG_USER(logger::out) << "starting test" << std::endl;
 
-		// ask for some values to trigger update in StreamProblemReader
-		pipeline::Value<Problems> problems = problemReader->getOutput("problems");
+		// ask for some values to trigger update in SubproblemsReader
+		pipeline::Value<Subproblems> problems = problemReader->getOutput("problems");
 		boost::shared_ptr<Problem> problem = problems->getProblem(0);
 
 	} catch (boost::exception& e) {
