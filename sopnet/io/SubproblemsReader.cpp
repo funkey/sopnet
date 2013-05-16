@@ -23,7 +23,7 @@ SubproblemsReader::SubproblemsReader(const std::string& stream) :
 		_stream = new std::istream(_fb);
 	}
 
-	registerOutput(_subproblems, "problems");
+	registerOutput(_subproblems, "subproblems");
 }
 
 SubproblemsReader::SubproblemsReader(const SubproblemsReader& other) {

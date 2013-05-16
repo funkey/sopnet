@@ -11,7 +11,9 @@ public:
 
 	void resize(unsigned int size);
 
-	unsigned int size() { return _solution.size(); }
+	unsigned int size() const { return _solution.size(); }
+
+	const double& operator[](unsigned int i) const { return _solution[i]; }
 
 	double& operator[](unsigned int i) { return _solution[i]; }
 

@@ -7,6 +7,7 @@
 #include <string>
 
 #include <sopnet/io/SubproblemsReader.h>
+#include <sopnet/io/SubsolutionsWriter.h>
 #include <sopnet/inference/SubproblemsSolver.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
@@ -16,7 +17,14 @@
 util::ProgramOption optionProblemInput(
 		util::_long_name        = "in",
 		util::_short_name       = "i",
-		util::_description_text = "The problem description file or - to read from std::cin.");
+		util::_description_text = "The problem description file or - to read from std::cin.",
+		util::_default_value    = "-");
+
+util::ProgramOption optionSolutionOutput(
+		util::_long_name        = "out",
+		util::_short_name       = "o",
+		util::_description_text = "The problem description file or - to read from std::cin.",
+		util::_default_value    = "-");
 
 int main(int optionc, char** optionv) {
 
@@ -38,21 +46,19 @@ int main(int optionc, char** optionv) {
 		// create subproblem reader
 		pipeline::Process<SubproblemsReader> subproblemsReader(optionProblemInput.as<std::string>());
 
-		// create subprolems solver
+		// create subproblems solver
 		pipeline::Process<SubproblemsSolver> subproblemsSolver;
+
+		// create subsolutions writer
+		pipeline::Process<SubsolutionsWriter> subsolutionsWriter(optionSolutionOutput.as<std::string>());
 
 		// create pipeline
 		subproblemsSolver->setInput("subproblems", subproblemsReader->getOutput());
+		subsolutionsWriter->setInput("subsolutions", subproblemsSolver->getOutput("subsolutions"));
+		subsolutionsWriter->setInput("subproblems", subproblemsReader->getOutput());
 
-		/********
-		 * TEST *
-		 ********/
-
-		LOG_USER(logger::out) << "starting test" << std::endl;
-
-		// ask for some values to trigger update in SubproblemsReader
-		pipeline::Value<Subsolutions> subsolutions = subproblemsSolver->getOutput("subsolutions");
-		std::cout << "solutions found for " << subsolutions->size() << " problems" << std::endl;
+		// write solution
+		subsolutionsWriter->write();
 
 	} catch (boost::exception& e) {
 
