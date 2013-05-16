@@ -11,43 +11,45 @@ class Problem : public pipeline::Data {
 public:
 
 	Problem(unsigned int numVariables) :
-		_objective(numVariables) {}
+		_objective(boost::make_shared<LinearObjective>(numVariables)),
+		_linearConstraints(boost::make_shared<LinearConstraints>()),
+		_configuration(boost::make_shared<ProblemConfiguration>()) {}
 
-	void setObjective(const LinearObjective& objective) {
+	void setObjective(boost::shared_ptr<LinearObjective> objective) {
 
 		_objective = objective;
 	}
 
-	void setLinearConstraints(const LinearConstraints& constraints) {
+	void setLinearConstraints(boost::shared_ptr<LinearConstraints> constraints) {
 
 		_linearConstraints = constraints;
 	}
 
-	void setConfiguration(const ProblemConfiguration& configuration) {
+	void setConfiguration(boost::shared_ptr<ProblemConfiguration> configuration) {
 
 		_configuration = configuration;
 	}
 
-	LinearObjective& getObjective() {
+	boost::shared_ptr<LinearObjective> getObjective() {
 
 		return _objective;
 	}
 
-	LinearConstraints& getLinearConstraints() {
+	boost::shared_ptr<LinearConstraints> getLinearConstraints() {
 
 		return _linearConstraints;
 	}
 
-	ProblemConfiguration& getConfiguration() {
+	boost::shared_ptr<ProblemConfiguration> getConfiguration() {
 
 		return _configuration;
 	}
 
 private:
 
-	LinearObjective      _objective;
-	LinearConstraints    _linearConstraints;
-	ProblemConfiguration _configuration;
+	boost::shared_ptr<LinearObjective>      _objective;
+	boost::shared_ptr<LinearConstraints>    _linearConstraints;
+	boost::shared_ptr<ProblemConfiguration> _configuration;
 };
 
 #endif // SOPNET_INFERENCE_PROBLEM_H__

@@ -7,6 +7,7 @@
 #include <string>
 
 #include <sopnet/io/SubproblemsReader.h>
+#include <sopnet/inference/SubproblemsSolver.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 #include <pipeline/Process.h>
@@ -34,8 +35,14 @@ int main(int optionc, char** optionv) {
 		// init signal handler
 		util::SignalHandler::init();
 
-		// create problem reader
-		pipeline::Process<SubproblemsReader> problemReader(optionProblemInput.as<std::string>());
+		// create subproblem reader
+		pipeline::Process<SubproblemsReader> subproblemsReader(optionProblemInput.as<std::string>());
+
+		// create subprolems solver
+		pipeline::Process<SubproblemsSolver> subproblemsSolver;
+
+		// create pipeline
+		subproblemsSolver->setInput("subproblems", subproblemsReader->getOutput());
 
 		/********
 		 * TEST *
@@ -44,8 +51,8 @@ int main(int optionc, char** optionv) {
 		LOG_USER(logger::out) << "starting test" << std::endl;
 
 		// ask for some values to trigger update in SubproblemsReader
-		pipeline::Value<Subproblems> problems = problemReader->getOutput("problems");
-		boost::shared_ptr<Problem> problem = problems->getProblem(0);
+		pipeline::Value<Subsolutions> subsolutions = subproblemsSolver->getOutput("subsolutions");
+		std::cout << "solutions found for " << subsolutions->size() << " problems" << std::endl;
 
 	} catch (boost::exception& e) {
 

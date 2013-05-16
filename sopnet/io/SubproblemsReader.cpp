@@ -87,13 +87,16 @@ SubproblemsReader::readStdIn() const {
 void
 SubproblemsReader::updateOutputs() {
 
+	// clear existing subproblems
+	_subproblems->clear();
+
 	unsigned int numVariables;
 	*_stream >> numVariables;
 
 	// create a new problem
-
 	boost::shared_ptr<Problem> problem = boost::make_shared<Problem>(numVariables);
-	_subproblems->clear();
+
+	// add it to the existing subproblems
 	_subproblems->addProblem(problem);
 
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numVariables << " variables" << std::endl;
@@ -130,10 +133,10 @@ SubproblemsReader::readVariable(unsigned int i) {
 	LOG_ALL(streamproblemreaderlog) << "found variable " << i << " (id " << id << ") with costs " << costs << std::endl;
 
 	// set costs in objective
-	_subproblems->getProblem(0)->getObjective().setCoefficient(i, costs);
+	_subproblems->getProblem(0)->getObjective()->setCoefficient(i, costs);
 
 	// remember mapping from id to variable num
-	_subproblems->getProblem(0)->getConfiguration().setVariable(id, i);
+	_subproblems->getProblem(0)->getConfiguration()->setVariable(id, i);
 }
 
 void
@@ -150,7 +153,7 @@ SubproblemsReader::readOneConstraint(unsigned int i) {
 		unsigned int id;
 		*_stream >> id;
 
-		unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(id);
+		unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(id);
 
 		constraint.setCoefficient(varNum, 1.0);
 	}
@@ -177,12 +180,12 @@ SubproblemsReader::readEqualConstraint(unsigned int i) {
 
 		if (id >= 0) {
 
-			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(id);
+			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(id);
 			constraint.setCoefficient(varNum, 1.0);
 
 		} else {
 
-			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration().getVariable(-id);
+			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(-id);
 			constraint.setCoefficient(varNum, -1.0);
 		}
 	}
