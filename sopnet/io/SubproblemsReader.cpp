@@ -90,6 +90,18 @@ SubproblemsReader::updateOutputs() {
 	// clear existing subproblems
 	_subproblems->clear();
 
+	unsigned int numSubproblems;
+	*_stream >> numSubproblems;
+
+	LOG_DEBUG(streamproblemreaderlog) << "reading " << numSubproblems << " subproblems" << std::endl;
+
+	for (unsigned int i = 0; i < numSubproblems; i++)
+		readSubproblem(i);
+}
+
+void
+SubproblemsReader::readSubproblem(unsigned int numSubproblem) {
+
 	unsigned int numVariables;
 	*_stream >> numVariables;
 
@@ -102,7 +114,7 @@ SubproblemsReader::updateOutputs() {
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numVariables << " variables" << std::endl;
 
 	for (unsigned int i = 0; i < numVariables; i++)
-		readVariable(i);
+		readVariable(*problem, i);
 
 	unsigned int numOneConstraints;
 	*_stream >> numOneConstraints;
@@ -110,7 +122,7 @@ SubproblemsReader::updateOutputs() {
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numOneConstraints << " one-constraints" << std::endl;
 
 	for (unsigned int i = 0; i < numOneConstraints; i++)
-		readOneConstraint(i);
+		readOneConstraint(*problem, i);
 
 	unsigned int numEqualConstraints;
 	*_stream >> numEqualConstraints;
@@ -118,11 +130,11 @@ SubproblemsReader::updateOutputs() {
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numEqualConstraints << " equal-constraints" << std::endl;
 
 	for (unsigned int i = 0; i < numEqualConstraints; i++)
-		readEqualConstraint(i);
+		readEqualConstraint(*problem, i);
 }
 
 void
-SubproblemsReader::readVariable(unsigned int i) {
+SubproblemsReader::readVariable(Problem& problem, unsigned int i) {
 
 	unsigned int id;
 	float costs;
@@ -133,14 +145,14 @@ SubproblemsReader::readVariable(unsigned int i) {
 	LOG_ALL(streamproblemreaderlog) << "found variable " << i << " (id " << id << ") with costs " << costs << std::endl;
 
 	// set costs in objective
-	_subproblems->getProblem(0)->getObjective()->setCoefficient(i, costs);
+	problem.getObjective()->setCoefficient(i, costs);
 
 	// remember mapping from id to variable num
-	_subproblems->getProblem(0)->getConfiguration()->setVariable(id, i);
+	problem.getConfiguration()->setVariable(id, i);
 }
 
 void
-SubproblemsReader::readOneConstraint(unsigned int i) {
+SubproblemsReader::readOneConstraint(Problem& problem, unsigned int i) {
 
 	LinearConstraint constraint;
 
@@ -153,7 +165,7 @@ SubproblemsReader::readOneConstraint(unsigned int i) {
 		unsigned int id;
 		*_stream >> id;
 
-		unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(id);
+		unsigned int varNum = problem.getConfiguration()->getVariable(id);
 
 		constraint.setCoefficient(varNum, 1.0);
 	}
@@ -165,7 +177,7 @@ SubproblemsReader::readOneConstraint(unsigned int i) {
 }
 
 void
-SubproblemsReader::readEqualConstraint(unsigned int i) {
+SubproblemsReader::readEqualConstraint(Problem& problem, unsigned int i) {
 
 	LinearConstraint constraint;
 
@@ -180,12 +192,12 @@ SubproblemsReader::readEqualConstraint(unsigned int i) {
 
 		if (id >= 0) {
 
-			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(id);
+			unsigned int varNum = problem.getConfiguration()->getVariable(id);
 			constraint.setCoefficient(varNum, 1.0);
 
 		} else {
 
-			unsigned int varNum = _subproblems->getProblem(0)->getConfiguration()->getVariable(-id);
+			unsigned int varNum = problem.getConfiguration()->getVariable(-id);
 			constraint.setCoefficient(varNum, -1.0);
 		}
 	}

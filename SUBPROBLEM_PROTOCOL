@@ -1,0 +1,41 @@
+PROTOCOL:
+=========
+
+  [number of subproblems]
+  [SUBPROBLEM 1]
+  .
+  .
+  .
+  [SUBPROBLEM n]
+
+SUBPROBLEM:
+===========
+
+  [number of segments]
+  [segment 1 id] [segment 1 cost]
+  .
+  .
+  .
+  [segment n id] [segment n cost]
+  [number of "1"-constraints]
+  [1-CONSTRAINT 1]
+  .
+  .
+  .
+  [1-CONSTRAINT m]
+  [number of "="-constraints]
+  [=-CONSTRAINT 1]
+  .
+  .
+  .
+  [=-CONSTRAINT k]
+
+1-CONSTRAINT:
+=============
+
+  [number of segments] [segment id 1] ... [segment id n]
+
+=-CONSTRAINT:
+=============
+
+  [number of segments] [left segment id 1] ... [left segment id n] -[right segment id 1] ... -[right segment id m]

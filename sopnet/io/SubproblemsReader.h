@@ -32,9 +32,10 @@ private:
 
 	void updateOutputs();
 
-	void readVariable(unsigned int i);
-	void readOneConstraint(unsigned int i);
-	void readEqualConstraint(unsigned int i);
+	void readSubproblem(unsigned int i);
+	void readVariable(Problem& problem, unsigned int i);
+	void readOneConstraint(Problem& problem, unsigned int i);
+	void readEqualConstraint(Problem& problem, unsigned int i);
 
 	pipeline::Output<Subproblems> _subproblems;
 
