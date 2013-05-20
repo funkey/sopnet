@@ -173,6 +173,8 @@ SubproblemsReader::readOneConstraint(Problem& problem, unsigned int i) {
 	constraint.setRelation(LessEqual);
 	constraint.setValue(1.0);
 
+	problem.getLinearConstraints()->add(constraint);
+
 	LOG_ALL(streamproblemreaderlog) << "found constraint " << constraint << std::endl;
 }
 
@@ -204,6 +206,8 @@ SubproblemsReader::readEqualConstraint(Problem& problem, unsigned int i) {
 
 	constraint.setRelation(Equal);
 	constraint.setValue(0.0);
+
+	problem.getLinearConstraints()->add(constraint);
 
 	LOG_ALL(streamproblemreaderlog) << "found constraint " << constraint << std::endl;
 }
