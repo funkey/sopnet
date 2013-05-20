@@ -17,7 +17,7 @@ SUBPROBLEM:
   .
   .
   [segment n id] [segment n cost]
-  [number of "1"-constraints]
+  [number of "1"-constraints] ["<=" or "=="]
   [1-CONSTRAINT 1]
   .
   .

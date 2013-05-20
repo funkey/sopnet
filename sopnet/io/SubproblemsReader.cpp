@@ -119,10 +119,19 @@ SubproblemsReader::readSubproblem(unsigned int numSubproblem) {
 	unsigned int numOneConstraints;
 	*_stream >> numOneConstraints;
 
-	LOG_DEBUG(streamproblemreaderlog) << "reading " << numOneConstraints << " one-constraints" << std::endl;
+	char rel[2];
+	*_stream >> rel;
+
+	Relation relation;
+	if (rel[0] == '<')
+		relation = LessEqual;
+	else
+		relation = Equal;
+
+	LOG_DEBUG(streamproblemreaderlog) << "reading " << numOneConstraints << " one-constraints with relation " << rel << std::endl;
 
 	for (unsigned int i = 0; i < numOneConstraints; i++)
-		readOneConstraint(*problem, i);
+		readOneConstraint(*problem, i, relation);
 
 	unsigned int numEqualConstraints;
 	*_stream >> numEqualConstraints;
@@ -152,7 +161,7 @@ SubproblemsReader::readVariable(Problem& problem, unsigned int i) {
 }
 
 void
-SubproblemsReader::readOneConstraint(Problem& problem, unsigned int i) {
+SubproblemsReader::readOneConstraint(Problem& problem, unsigned int i, Relation relation) {
 
 	LinearConstraint constraint;
 
@@ -170,7 +179,7 @@ SubproblemsReader::readOneConstraint(Problem& problem, unsigned int i) {
 		constraint.setCoefficient(varNum, 1.0);
 	}
 
-	constraint.setRelation(LessEqual);
+	constraint.setRelation(relation);
 	constraint.setValue(1.0);
 
 	problem.getLinearConstraints()->add(constraint);

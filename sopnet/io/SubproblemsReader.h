@@ -34,7 +34,7 @@ private:
 
 	void readSubproblem(unsigned int i);
 	void readVariable(Problem& problem, unsigned int i);
-	void readOneConstraint(Problem& problem, unsigned int i);
+	void readOneConstraint(Problem& problem, unsigned int i, Relation relation);
 	void readEqualConstraint(Problem& problem, unsigned int i);
 
 	pipeline::Output<Subproblems> _subproblems;
