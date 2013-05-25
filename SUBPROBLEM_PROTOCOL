@@ -17,25 +17,14 @@ SUBPROBLEM:
   .
   .
   [segment n id] [segment n cost]
-  [number of "1"-constraints] ["<=" or "=="]
-  [1-CONSTRAINT 1]
+  [number of linear constraints]
+  [LINEAR CONSTRAINT 1]
   .
   .
   .
-  [1-CONSTRAINT m]
-  [number of "="-constraints]
-  [=-CONSTRAINT 1]
-  .
-  .
-  .
-  [=-CONSTRAINT k]
+  [LINEAR CONSTRAINT m]
 
-1-CONSTRAINT:
-=============
+LINEAR CONSTRAINT:
+==================
 
-  [number of segments] [segment id 1] ... [segment id n]
-
-=-CONSTRAINT:
-=============
-
-  [number of segments] [left segment id 1] ... [left segment id n] -[right segment id 1] ... -[right segment id m]
+  [value as float] ["<=" or "=="] [number of segments] [segment id 1] ... [segment n] -[segment n+1] ... [segment id m]
