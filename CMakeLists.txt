@@ -38,6 +38,14 @@ else()
   message(STATUS "Xrandr *NOT* found")
 endif()
 
+find_package(XCB REQUIRED)
+if (XCB_FOUND)
+  include_directories(${XCB_INCLUDE_DIR})
+  message(STATUS "XCB found.")
+else()
+  message(STATUS "XCB *NOT* found.")
+endif()
+
 find_package(OpenGL)
 if(OPENGL_FOUND)
   message(STATUS "OpenGL found.")
@@ -165,6 +173,7 @@ set(CORELIBS
   ${LAPACK_LIBRARIES}
   ${X11_X11_LIB}
   ${X11_Xrandr_LIB}
+  ${XCB_LIBRARIES}
   ${OPENGL_LIBRARY}
   ${GLEW_LIBRARY}
   ${GLUT_LIBRARIES}
