@@ -4,7 +4,7 @@
 #include <pipeline/all.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
 #include <sopnet/evaluation/Errors.h>
 #include <sopnet/segments/SegmentTrees.h>
 
@@ -45,8 +45,8 @@ private:
 
 	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron);
 
-	pipeline::Input<SegmentTrees> _neurons;
-	pipeline::Input<Errors>  _errors;
+	pipeline::Input<SegmentTrees>  _neurons;
+	pipeline::Input<Errors>        _errors;
 	pipeline::Output<unsigned int> _currentNeuron;
 
 	boost::shared_ptr<gui::ContainerView<gui::HorizontalPlacing> > _container;

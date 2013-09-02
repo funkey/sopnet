@@ -4,7 +4,7 @@
 #include <toys/Time.h>
 #include <pipeline/all.h>
 #include <gui/TextPainter.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
 
 class TimeView : public pipeline::ProcessNode {
 

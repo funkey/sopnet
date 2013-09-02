@@ -322,7 +322,7 @@ SegmentsStackPainter::sizeAddSlice(const util::rect<double>& currentSize, const 
 	return size;
 }
 
-void
+bool
 SegmentsStackPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
@@ -454,6 +454,8 @@ SegmentsStackPainter::draw(
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 	}
+
+	return false;
 }
 
 void

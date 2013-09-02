@@ -2,7 +2,9 @@
 #include <sopnet/segments/Segments.h>
 #include <gui/Keys.h>
 #include <gui/Buttons.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
+#include <gui/KeySignals.h>
+#include <gui/MouseSignals.h>
 #include "SegmentsStackPainter.h"
 
 class SegmentsStackView : public pipeline::SimpleProcessNode<> {

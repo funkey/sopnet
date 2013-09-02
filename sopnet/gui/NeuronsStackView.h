@@ -2,7 +2,8 @@
 #include <sopnet/segments/SegmentTrees.h>
 #include <gui/Keys.h>
 #include <gui/Buttons.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
+#include <gui/KeySignals.h>
 #include "NeuronsStackPainter.h"
 
 class NeuronsStackView : public pipeline::SimpleProcessNode<> {

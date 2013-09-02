@@ -13,7 +13,6 @@
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
-#include <gui/ImageView.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Window.h>
@@ -21,6 +20,7 @@
 #include <inference/io/RandomForestHdf5Writer.h>
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
+#include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
@@ -159,13 +159,18 @@ void processEvents(boost::shared_ptr<gui::Window> window) {
 
 	LOG_USER(out) << " started as " << window->getCaption() << " at " << window.get() << std::endl;
 
-	try {
+	while (!window->closed()) {
 
-		window->processEvents();
+		try {
 
-	} catch (boost::exception& e) {
+			window->processEvents();
 
-		handleException(e);
+		} catch (boost::exception& e) {
+
+			handleException(e);
+		}
+
+		usleep(1000);
 	}
 
 	LOG_USER(out) << "[window thread] releasing shared pointer to window" << std::endl;
@@ -177,7 +182,7 @@ int main(int optionc, char** optionv) {
 
 	// let the windows be the last thing to be destructed
 	boost::shared_ptr<gui::Window> resultWindow;
-	boost::shared_ptr<gui::Window> controlWindow;
+	//boost::shared_ptr<gui::Window> controlWindow;
 
 	try {
 
@@ -205,13 +210,13 @@ int main(int optionc, char** optionv) {
 
 		// create a window
 		resultWindow  = boost::make_shared<gui::Window>("sopnet: results");
-		controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
+		//controlWindow = boost::make_shared<gui::Window>("sopnet: controls");
 
 		// create a zoom view for this window
 		boost::shared_ptr<gui::ZoomView> resultZoomView  = boost::make_shared<gui::ZoomView>(true);
 		boost::shared_ptr<gui::ZoomView> controlZoomView = boost::make_shared<gui::ZoomView>(true);
 		resultWindow->setInput(resultZoomView->getOutput());
-		controlWindow->setInput(controlZoomView->getOutput());
+		//controlWindow->setInput(controlZoomView->getOutput());
 
 		// create two rows of views
 		boost::shared_ptr<ContainerView<VerticalPlacing> >   resultContainer     = boost::make_shared<ContainerView<VerticalPlacing> >("results");
@@ -590,13 +595,16 @@ int main(int optionc, char** optionv) {
 			}
 		}
 
-		boost::thread controlThread(boost::bind(&processEvents, controlWindow));
-		boost::thread resultThread(boost::bind(&processEvents, resultWindow));
+		processEvents(resultWindow);
 
-		controlThread.join();
+		//boost::thread controlThread(boost::bind(&processEvents, controlWindow));
+		//boost::thread resultThread(boost::bind(&processEvents, resultWindow));
 
-		resultWindow->close();
-		resultThread.join();
+		//resultThread.join();
+		//controlThread.join();
+
+		//resultWindow->close();
+		//resultThread.join();
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
 

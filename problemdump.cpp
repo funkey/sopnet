@@ -13,7 +13,6 @@
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
-#include <gui/ImageView.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Window.h>
@@ -21,6 +20,7 @@
 #include <inference/io/RandomForestHdf5Writer.h>
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
+#include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>

@@ -179,7 +179,7 @@ NeuronsStackPainter::sizeAddSlice(const util::rect<double>& currentSize, const S
 	return size;
 }
 
-void
+bool
 NeuronsStackPainter::draw(
 		const util::rect<double>& roi,
 		const util::point<double>& resolution) {
@@ -189,7 +189,7 @@ NeuronsStackPainter::draw(
 	boost::shared_lock<boost::shared_mutex> lockNeurons(_neurons->getMutex());
 
 	if (_neurons->size() == 0)
-		return;
+		return false;
 
 	LOG_ALL(neuronsstackpainterlog) << "redrawing section " << _section << std::endl;
 
@@ -213,6 +213,8 @@ NeuronsStackPainter::draw(
 			neuronNum++;
 		}
 	}
+
+	return false;
 }
 
 void

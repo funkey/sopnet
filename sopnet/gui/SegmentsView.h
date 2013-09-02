@@ -2,8 +2,9 @@
 #define CELLTRACKER_GUI_TRACKLETS_VIEW_H__
 
 #include <pipeline/all.h>
-#include <gui/Signals.h>
+#include <gui/GuiSignals.h>
 #include <gui/Keys.h>
+#include <gui/KeySignals.h>
 #include <imageprocessing/ImageStack.h>
 #include <sopnet/evaluation/Errors.h>
 #include <sopnet/segments/Segments.h>
