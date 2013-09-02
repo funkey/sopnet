@@ -17,6 +17,8 @@ public:
 
 	boost::shared_ptr<Slice> getSlice() const;
 
+	std::vector<boost::shared_ptr<Slice> > getSlices() const;
+
 private:
 
 	boost::shared_ptr<Slice> _slice;

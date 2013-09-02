@@ -10,6 +10,7 @@
 #include <util/ProgramOptions.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/features/SegmentFeaturesExtractor.h>
+#include <sopnet/inference/ProblemGraphWriter.h>
 #include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
@@ -37,7 +38,9 @@ util::ProgramOption optionDisableSegmentationCosts(
 		util::_long_name        = "disableSegmentationCosts",
 		util::_description_text = "Disable the segmentation costs in the objective.");
 
-Sopnet::Sopnet(const std::string& projectDirectory) :
+Sopnet::Sopnet(
+		const std::string& projectDirectory,
+		boost::shared_ptr<ProcessNode> problemWriter) :
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
@@ -50,7 +53,8 @@ Sopnet::Sopnet(const std::string& projectDirectory) :
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
 	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
-	_projectDirectory(projectDirectory) {
+	_projectDirectory(projectDirectory),
+	_problemWriter(problemWriter) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
@@ -130,7 +134,7 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_groundTruth || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -139,8 +143,8 @@ Sopnet::createPipeline() {
 	createBasicPipeline();
 
 	createInferencePipeline();
-
-	createTrainingPipeline();
+	if (_groundTruth)
+		createTrainingPipeline();
 }
 
 void
@@ -231,7 +235,7 @@ Sopnet::createBasicPipeline() {
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == numSections - 1) // only for the last pair of slices
+		if (section == numSections - 1 && !_problemWriter) // only for the last pair of slices and only if we are not dumping the problem
 			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
 
 		_segmentExtractors.push_back(segmentExtractor);
@@ -258,22 +262,36 @@ Sopnet::createInferencePipeline() {
 	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
 
-	// feed all segments to objective generator
-	_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-	_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
-	_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
+	if (_problemWriter) {
 
-	if (!optionDisableSegmentationCosts)
-		_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
+		_problemWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		
+		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
+		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
+		_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 
-	// feed objective and linear constraints to ilp creator
-	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
-	_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
-	_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+	} else {
 
-	// feed solution and segments to reconstructor
-	_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
-	_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+		// feed all segments to objective generator
+		_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
+		_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
+		_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
+
+		if (!optionDisableSegmentationCosts)
+			_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
+
+		// feed objective and linear constraints to ilp creator
+		_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
+		_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+		_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+
+		// feed solution and segments to reconstructor
+		_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
+		_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+	}
+
 }
 
 void

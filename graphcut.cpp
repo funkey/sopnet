@@ -112,6 +112,9 @@ int main(int optionc, char** optionv) {
 
 		LOG_USER(out) << "[main] starting..." << std::endl;
 
+		int firstSection = optionFirstSection;
+		int lastSection  = optionLastSection;
+
 		/*********
 		 * SETUP *
 		 *********/
@@ -154,14 +157,11 @@ int main(int optionc, char** optionv) {
 			std::string projectFilename = optionProjectName;
 
 			// try to read from project hdf5 file
-			membranesReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "vncstack", "membranes");
+			membranesReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 0, 0);
 		}
 
 		// select a substack, if options are set
 		if (optionFirstSection || optionLastSection) {
-
-			int firstSection = optionFirstSection;
-			int lastSection  = optionLastSection;
 
 			// create section selector
 			boost::shared_ptr<SubStackSelector> membranesSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);

@@ -1,0 +1,30 @@
+PROTOCOL:
+=========
+
+  [number of subproblems]
+  [SUBPROBLEM 1]
+  .
+  .
+  .
+  [SUBPROBLEM n]
+
+SUBPROBLEM:
+===========
+
+  [number of segments]
+  [segment 1 id] [segment 1 cost]
+  .
+  .
+  .
+  [segment n id] [segment n cost]
+  [number of linear constraints]
+  [LINEAR CONSTRAINT 1]
+  .
+  .
+  .
+  [LINEAR CONSTRAINT m]
+
+LINEAR CONSTRAINT:
+==================
+
+  [value as float] ["<=" or "=="] [number of segments] [segment id 1] ... [segment n] -[segment n+1] ... [segment id m]
