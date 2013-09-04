@@ -38,7 +38,6 @@
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/inference/GridSearch.h>
 #include <sopnet/neurons/NeuronExtractor.h>
-#include <util/hdf5.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 

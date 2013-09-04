@@ -13,3 +13,6 @@
 [submodule "modules/imageprocessing"]
 	path = modules/imageprocessing
 	url = git://github.com/funkey/imageprocessing.git
+[submodule "cmake"]
+	path = cmake
+	url = http://github.com/funkey/cmake

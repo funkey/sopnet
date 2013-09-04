@@ -54,7 +54,7 @@ SliceTextures::load(
 
 	gui::Texture* texture = new gui::Texture(size.x, size.y, GL_RGBA);
 
-	texture->loadData(pixels.begin());
+	texture->loadData(&pixels[0]);
 
 	_textures[slice.getId()] = texture;
 }
