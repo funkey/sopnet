@@ -1,5 +1,7 @@
 #include "DefaultFactory.h"
 
+#include <config.h>
+
 #ifdef HAVE_GUROBI
 #include "GurobiBackend.h"
 #endif

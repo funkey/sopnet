@@ -1,3 +1,5 @@
+#include <config.h>
+
 #ifdef HAVE_GUROBI
 
 #include <sstream>
