@@ -5,56 +5,70 @@
 
 #include <pipeline/all.h>
 #include <sopnet/exceptions.h>
+#include <sopnet/segments/Segments.h>
 
 class ProblemConfiguration : public pipeline::Data {
 
 public:
 
-	void setVariable(unsigned int segmentId, unsigned int variable) {
+	ProblemConfiguration();
 
-		_variables[segmentId] = variable;
-		_segmentIds[variable] = segmentId;
-	}
+	/**
+	 * Assign a segment to a variable id. Remembers the inter-section interval 
+	 * and the extends of the problem.
+	 */
+	void setVariable(const Segment& segment, unsigned int variable);
 
-	unsigned int getVariable(unsigned int segmentId) {
+	/**
+	 * Assign a segment id to a variable id.
+	 */
+	void setVariable(unsigned int segmentId, unsigned int variable);
 
-		if (!_variables.count(segmentId))
-			BOOST_THROW_EXCEPTION(
-					NoSuchSegment()
-					<< error_message(
-							std::string("variable map does not contain an entry for segment id ") +
-							boost::lexical_cast<std::string>(segmentId))
-					<< STACK_TRACE);
+	/**
+	 * Get the variable id from a segment id.
+	 */
+	unsigned int getVariable(unsigned int segmentId);
 
-		return _variables[segmentId];
-	}
+	/**
+	 * Get the segment id from a variable id.
+	 */
+	unsigned int getSegmentId(unsigned int variable);
 
-	unsigned int getSegmentId(unsigned int variable) {
+	/**
+	 * Get the inter-section interval that corresponds to a variable.
+	 */
+	unsigned int getInterSectionInterval(unsigned int variable) { return _interSectionIntervals[variable]; }
 
-		if (!_segmentIds.count(variable))
-			BOOST_THROW_EXCEPTION(
-					NoSuchSegment()
-					<< error_message(
-							std::string("segment id map does not contain an entry for variable ") +
-							boost::lexical_cast<std::string>(variable))
-					<< STACK_TRACE);
+	unsigned int getMinInterSectionInterval() { return _minInterSectionInterval; }
+	unsigned int getMaxInterSectionInterval() { return _minInterSectionInterval; }
+	unsigned int getMinX() { return _minX; }
+	unsigned int getMaxX() { return _minX; }
+	unsigned int getMinY() { return _minY; }
+	unsigned int getMaxY() { return _minY; }
 
-		return _segmentIds[variable];
-	}
-
-	void clear() {
-
-		_variables.clear();
-		_segmentIds.clear();
-	}
+	/**
+	 * Clear the mapping.
+	 */
+	void clear();
 
 private:
+
+	void fit(const Segment& segment);
 
 	// mapping of segment ids to a continous range of variable numbers
 	std::map<unsigned int, unsigned int> _variables;
 
 	// reverse mapping
 	std::map<unsigned int, unsigned int> _segmentIds;
+
+	// mapping from variable ids to inter-section intervals
+	std::map<unsigned int, unsigned int> _interSectionIntervals;
+
+	// the boundary of the problem in volume space
+	int _minInterSectionInterval;
+	int _maxInterSectionInterval;
+	int _minX, _maxX;
+	int _minY, _maxY;
 };
 
 #endif // SOPNET_INFERENCE_PROBLEM_CONFIGURATION_H__

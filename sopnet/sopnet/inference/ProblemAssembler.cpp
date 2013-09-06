@@ -138,7 +138,7 @@ ProblemAssembler::setCoefficient(const EndSegment& end) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	_problemConfiguration->setVariable(end.getId(), _numSegments);
+	_problemConfiguration->setVariable(end, _numSegments);
 
 	_numSegments++;
 }
@@ -168,7 +168,7 @@ ProblemAssembler::setCoefficient(const ContinuationSegment& continuation) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	_problemConfiguration->setVariable(continuation.getId(), _numSegments);
+	_problemConfiguration->setVariable(continuation, _numSegments);
 
 	_numSegments++;
 }
@@ -201,7 +201,7 @@ ProblemAssembler::setCoefficient(const BranchSegment& branch) {
 	 * transform the linear constraints on the segments and to
 	 * reconstruct the result.
 	 */
-	_problemConfiguration->setVariable(branch.getId(), _numSegments);
+	_problemConfiguration->setVariable(branch, _numSegments);
 
 	_numSegments++;
 }

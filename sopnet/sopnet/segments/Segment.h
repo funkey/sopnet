@@ -43,12 +43,12 @@ public:
 	/**
 	 * Get the 2D center of gravity of this segment.
 	 */
-	const util::point<double>& getCenter() { return _center; }
+	const util::point<double>& getCenter() const { return _center; }
 
 	/**
 	 * Get the inter-section interval this segment is spanning over.
 	 */
-	unsigned int getInterSectionInterval();
+	unsigned int getInterSectionInterval() const;
 
 	/**
 	 * Get the next available segment id.

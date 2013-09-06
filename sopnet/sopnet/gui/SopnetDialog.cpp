@@ -48,7 +48,7 @@ SopnetDialog::SopnetDialog() :
 					-10000000.0,
 					10000000.0,
 					PriorCostFunctionParameters::optionPriorBranches.as<double>())),
-	_containerView(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >()),
+	_containerView(boost::make_shared<gui::ContainerView<gui::VerticalPlacing> >("sopnet dialog")),
 	_parameterAssembler(boost::make_shared<ParameterAssembler>()) {
 
 	registerOutput(_forceExplanationSwitch->getOutput("value"), "force explanation");

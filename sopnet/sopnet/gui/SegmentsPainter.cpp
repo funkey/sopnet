@@ -244,6 +244,8 @@ SegmentsPainter::updateRecording() {
 	glCheck(glDisable(GL_CULL_FACE));
 
 	stopRecording();
+
+	LOG_DEBUG(segmentspainterlog) << getName() << ": recording updated" << std::endl;
 }
 
 void

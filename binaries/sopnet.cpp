@@ -196,7 +196,7 @@ int main(int optionc, char** optionv) {
 		LogManager::init();
 
 		// init signal handler
-		util::SignalHandler::init();
+		//util::SignalHandler::init();
 
 		LOG_USER(out) << "[main] starting..." << std::endl;
 

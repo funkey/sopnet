@@ -39,7 +39,7 @@ Segment::getDirection() const {
 }
 
 unsigned int
-Segment::getInterSectionInterval() {
+Segment::getInterSectionInterval() const {
 
 	return _interSectionInterval;
 }
