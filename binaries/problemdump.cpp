@@ -11,28 +11,14 @@
 #include <boost/progress.hpp>
 
 #include <util/exceptions.h>
-#include <gui/ContainerView.h>
-#include <gui/HorizontalPlacing.h>
-#include <gui/NamedView.h>
-#include <gui/RotateView.h>
-#include <gui/Window.h>
-#include <gui/ZoomView.h>
 #include <inference/io/RandomForestHdf5Writer.h>
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
-#include <imageprocessing/gui/ImageView.h>
-#include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
-#include <sopnet/gui/ErrorsView.h>
-#include <sopnet/gui/FeaturesView.h>
-#include <sopnet/gui/NeuronsView.h>
-#include <sopnet/gui/NeuronsStackView.h>
-#include <sopnet/gui/SegmentsView.h>
-#include <sopnet/gui/SegmentsStackView.h>
 #include <sopnet/gui/SopnetDialog.h>
 #include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
@@ -230,20 +216,55 @@ int main(int optionc, char** optionv) {
 		std::string dataSlicesFilename = optionDataSlicesName;
 
 		// try to read from project hdf5 file
-		rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(dataRawFilename, "0", "data", 
-			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
-		membranesReader   = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data", 
-			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+		rawSectionsReader = boost::make_shared<ImageStackHdf5Reader>(
+				dataRawFilename,
+				"0",
+				"data", 
+				originSection,
+				targetSection,
+				optionMinXROI,
+				optionMaxXROI,
+				optionMinYROI,
+				optionMaxYROI);
+
+		membranesReader = boost::make_shared<ImageStackHdf5Reader>(
+				dataMembraneFilename,
+				"0",
+				"data",
+				originSection,
+				targetSection,
+				optionMinXROI,
+				optionMaxXROI,
+				optionMinYROI,
+				optionMaxYROI);
+
 		if (optionDataSlicesName) {
-			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataSlicesFilename, "0", "data", 
-			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+
+			slicesReader = boost::make_shared<ImageStackHdf5Reader>(
+					dataSlicesFilename,
+					"0",
+					"data",
+					originSection,
+					targetSection,
+					optionMinXROI,
+					optionMaxXROI,
+					optionMinYROI,
+					optionMaxYROI);
+
 		} else {
-			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(dataMembraneFilename, "0", "data",
-			originSection, targetSection, optionMinXROI, optionMaxXROI, optionMinYROI, optionMaxYROI);
+			slicesReader = boost::make_shared<ImageStackHdf5Reader>(
+					dataMembraneFilename,
+					"0",
+					"data",
+					originSection,
+					targetSection,
+					optionMinXROI,
+					optionMaxXROI,
+					optionMinYROI,
+					optionMaxYROI);
 		}
 
 	}
-
 
 	// create problem writer
 	boost::shared_ptr<ProblemGraphWriter> problemWriter = boost::make_shared<ProblemGraphWriter>();
