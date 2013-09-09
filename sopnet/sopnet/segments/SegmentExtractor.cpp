@@ -32,7 +32,7 @@ util::ProgramOption optionBranchOverlapThreshold(
 util::ProgramOption optionBranchSizeRatioThreshold(
 		util::_module           = "sopnet.segments",
 		util::_long_name        = "branchSizeRatioThreshold",
-		util::_description_text = "The maximal size ratio (between 0 and 1) of the two target slices of a branch.",
+		util::_description_text = "The minimal size ratio (between 0 and 1) of the two target slices of a branch. The ratio is the size of the smaller region divided by the bigger region, i.e., 1 if both regions are of the same size, converging towards 0 for differently sized regions.",
 		util::_default_value    = 0.5);
 
 util::ProgramOption optionSliceDistanceThreshold(
