@@ -16,13 +16,13 @@ util::ProgramOption optionProblemGraphFile(
 		util::_default_value    = "problem.graph");
 
 ProblemGraphWriter::ProblemGraphWriter() {
+
 	registerInput(_segments, "segments");
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInputs(_linearConstraints, "linear constraints");
 	registerInput(_features, "features");
 	registerInput(_randomForestCostFunction, "random forest cost function");
 	registerInput(_segmentationCostFunction, "segmentation cost function");
-
 }
 
 void
