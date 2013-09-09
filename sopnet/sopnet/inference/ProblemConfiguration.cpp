@@ -48,6 +48,22 @@ ProblemConfiguration::getSegmentId(unsigned int variable) {
 	return _segmentIds[variable];
 }
 
+std::vector<unsigned int>
+ProblemConfiguration::getVariables(unsigned int minInterSectionInterval, unsigned int maxInterSectionInterval) {
+
+	std::vector<unsigned int> variables;
+	unsigned int variableId;
+	unsigned int interSectionInterval;
+
+	foreach (boost::tie(variableId, interSectionInterval), _interSectionIntervals) {
+
+		if (interSectionInterval >= minInterSectionInterval && interSectionInterval < maxInterSectionInterval)
+			variables.push_back(variableId);
+	}
+
+	return variables;
+}
+
 void
 ProblemConfiguration::clear() {
 

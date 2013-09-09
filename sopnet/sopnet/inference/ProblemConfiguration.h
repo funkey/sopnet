@@ -47,6 +47,13 @@ public:
 	unsigned int getMaxY() { return _minY; }
 
 	/**
+	 * Get all the variables that are assigned to the intersection intervals 
+	 * between (including) minInterSectionInterval and (excluding) 
+	 * maxInterSectionInterval.
+	 */
+	std::vector<unsigned int> getVariables(unsigned int minInterSectionInterval, unsigned int maxInterSectionInterval);
+
+	/**
 	 * Clear the mapping.
 	 */
 	void clear();
