@@ -2,11 +2,11 @@
 
 #include <util/Logger.h>
 
-#include "SubproblemsReader.h"
+#include "ProblemsReader.h"
 
-logger::LogChannel streamproblemreaderlog("streamproblemreaderlog", "[SubproblemsReader] ");
+logger::LogChannel streamproblemreaderlog("problemsreaderlog", "[ProblemsReader] ");
 
-SubproblemsReader::SubproblemsReader(const std::string& stream) :
+ProblemsReader::ProblemsReader(const std::string& stream) :
 	_streamName(stream),
 	_fb(0),
 	_stream(0) {
@@ -23,17 +23,17 @@ SubproblemsReader::SubproblemsReader(const std::string& stream) :
 		_stream = new std::istream(_fb);
 	}
 
-	registerOutput(_subproblems, "subproblems");
+	registerOutput(_problems, "problems");
 }
 
-SubproblemsReader::SubproblemsReader(const SubproblemsReader& other) {
+ProblemsReader::ProblemsReader(const ProblemsReader& other) {
 
 	free();
 	copy(other);
 }
 
-SubproblemsReader&
-SubproblemsReader::operator=(const SubproblemsReader& other) {
+ProblemsReader&
+ProblemsReader::operator=(const ProblemsReader& other) {
 
 	free();
 	copy(other);
@@ -41,13 +41,13 @@ SubproblemsReader::operator=(const SubproblemsReader& other) {
 	return *this;
 }
 
-SubproblemsReader::~SubproblemsReader() {
+ProblemsReader::~ProblemsReader() {
 
 	free();
 }
 
 void
-SubproblemsReader::free() {
+ProblemsReader::free() {
 
 	if (_stream) {
 
@@ -63,7 +63,7 @@ SubproblemsReader::free() {
 }
 
 void
-SubproblemsReader::copy(const SubproblemsReader& other) {
+ProblemsReader::copy(const ProblemsReader& other) {
 
 	if (other.readStdIn()) {
 
@@ -79,28 +79,28 @@ SubproblemsReader::copy(const SubproblemsReader& other) {
 }
 
 bool
-SubproblemsReader::readStdIn() const {
+ProblemsReader::readStdIn() const {
 
 	return (_streamName == "-");
 }
 
 void
-SubproblemsReader::updateOutputs() {
+ProblemsReader::updateOutputs() {
 
-	// clear existing subproblems
-	_subproblems->clear();
+	// clear existing problems
+	_problems->clear();
 
-	unsigned int numSubproblems;
-	*_stream >> numSubproblems;
+	unsigned int numProblems;
+	*_stream >> numProblems;
 
-	LOG_DEBUG(streamproblemreaderlog) << "reading " << numSubproblems << " subproblems" << std::endl;
+	LOG_DEBUG(streamproblemreaderlog) << "reading " << numProblems << " problems" << std::endl;
 
-	for (unsigned int i = 0; i < numSubproblems; i++)
-		readSubproblem(i);
+	for (unsigned int i = 0; i < numProblems; i++)
+		readProblem(i);
 }
 
 void
-SubproblemsReader::readSubproblem(unsigned int numSubproblem) {
+ProblemsReader::readProblem(unsigned int numProblem) {
 
 	unsigned int numVariables;
 	*_stream >> numVariables;
@@ -108,8 +108,8 @@ SubproblemsReader::readSubproblem(unsigned int numSubproblem) {
 	// create a new problem
 	boost::shared_ptr<Problem> problem = boost::make_shared<Problem>(numVariables);
 
-	// add it to the existing subproblems
-	_subproblems->addProblem(problem);
+	// add it to the existing problems
+	_problems->addProblem(problem);
 
 	LOG_DEBUG(streamproblemreaderlog) << "reading " << numVariables << " variables" << std::endl;
 
@@ -124,7 +124,7 @@ SubproblemsReader::readSubproblem(unsigned int numSubproblem) {
 }
 
 void
-SubproblemsReader::readVariable(Problem& problem, unsigned int i) {
+ProblemsReader::readVariable(Problem& problem, unsigned int i) {
 
 	unsigned int id;
 	float costs;
@@ -142,7 +142,7 @@ SubproblemsReader::readVariable(Problem& problem, unsigned int i) {
 }
 
 void
-SubproblemsReader::readConstraint(Problem& problem, unsigned int i) {
+ProblemsReader::readConstraint(Problem& problem, unsigned int i) {
 
 	LinearConstraint constraint;
 

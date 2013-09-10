@@ -1,8 +1,8 @@
 #include <fstream>
 
-#include "SubsolutionsWriter.h"
+#include "SolutionsWriter.h"
 
-SubsolutionsWriter::SubsolutionsWriter(const std::string& stream) :
+SolutionsWriter::SolutionsWriter(const std::string& stream) :
 	_streamName(stream),
 	_fb(0),
 	_stream(0) {
@@ -19,18 +19,18 @@ SubsolutionsWriter::SubsolutionsWriter(const std::string& stream) :
 		_stream = new std::ostream(_fb);
 	}
 
-	registerInput(_subsolutions, "subsolutions");
-	registerInput(_subproblems,  "subproblems");
+	registerInput(_solutions, "solutions");
+	registerInput(_problems,  "problems");
 }
 
-SubsolutionsWriter::SubsolutionsWriter(const SubsolutionsWriter& other) {
+SolutionsWriter::SolutionsWriter(const SolutionsWriter& other) {
 
 	free();
 	copy(other);
 }
 
-SubsolutionsWriter&
-SubsolutionsWriter::operator=(const SubsolutionsWriter& other) {
+SolutionsWriter&
+SolutionsWriter::operator=(const SolutionsWriter& other) {
 
 	free();
 	copy(other);
@@ -38,13 +38,13 @@ SubsolutionsWriter::operator=(const SubsolutionsWriter& other) {
 	return *this;
 }
 
-SubsolutionsWriter::~SubsolutionsWriter() {
+SolutionsWriter::~SolutionsWriter() {
 
 	free();
 }
 
 void
-SubsolutionsWriter::free() {
+SolutionsWriter::free() {
 
 	if (_stream) {
 
@@ -60,7 +60,7 @@ SubsolutionsWriter::free() {
 }
 
 void
-SubsolutionsWriter::copy(const SubsolutionsWriter& other) {
+SolutionsWriter::copy(const SolutionsWriter& other) {
 
 	if (other.writeStdOut()) {
 
@@ -76,24 +76,24 @@ SubsolutionsWriter::copy(const SubsolutionsWriter& other) {
 }
 
 bool
-SubsolutionsWriter::writeStdOut() const {
+SolutionsWriter::writeStdOut() const {
 
 	return (_streamName == "-");
 }
 
 void
-SubsolutionsWriter::write() {
+SolutionsWriter::write() {
 
 	updateInputs();
 
-	*_stream << _subsolutions->size() << std::endl;
+	*_stream << _solutions->size() << std::endl;
 
-	for (int i = 0; i < _subsolutions->size(); i++)
-		writeSubsolution(*(_subsolutions->getSolution(i)), *(_subproblems->getProblem(i)->getConfiguration()));
+	for (int i = 0; i < _solutions->size(); i++)
+		writeSolution(*(_solutions->getSolution(i)), *(_problems->getProblem(i)->getConfiguration()));
 }
 
 void
-SubsolutionsWriter::writeSubsolution(const Solution& solution, ProblemConfiguration& configuration) {
+SolutionsWriter::writeSolution(const Solution& solution, ProblemConfiguration& configuration) {
 
 	unsigned int numSegments = 0;
 	for (int i = 0; i < solution.size(); i++)

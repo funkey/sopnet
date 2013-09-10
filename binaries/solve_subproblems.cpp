@@ -1,14 +1,14 @@
 /**
- * Reads subproblem descriptions from a file or std::cin and writes a solution 
+ * Reads problem descriptions from a file or std::cin and writes a solution 
  * to a file or std::cout.
  */
 
 #include <iostream>
 #include <string>
 
-#include <sopnet/io/SubproblemsReader.h>
-#include <sopnet/io/SubsolutionsWriter.h>
-#include <sopnet/inference/SubproblemsSolver.h>
+#include <sopnet/io/ProblemsReader.h>
+#include <sopnet/io/SolutionsWriter.h>
+#include <sopnet/inference/ProblemsSolver.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 #include <pipeline/Process.h>
@@ -43,22 +43,22 @@ int main(int optionc, char** optionv) {
 		// init signal handler
 		util::SignalHandler::init();
 
-		// create subproblem reader
-		pipeline::Process<SubproblemsReader> subproblemsReader(optionProblemInput.as<std::string>());
+		// create problem reader
+		pipeline::Process<ProblemsReader> problemsReader(optionProblemInput.as<std::string>());
 
-		// create subproblems solver
-		pipeline::Process<SubproblemsSolver> subproblemsSolver;
+		// create problems solver
+		pipeline::Process<ProblemsSolver> problemsSolver;
 
-		// create subsolutions writer
-		pipeline::Process<SubsolutionsWriter> subsolutionsWriter(optionSolutionOutput.as<std::string>());
+		// create solutions writer
+		pipeline::Process<SolutionsWriter> solutionsWriter(optionSolutionOutput.as<std::string>());
 
 		// create pipeline
-		subproblemsSolver->setInput("subproblems", subproblemsReader->getOutput());
-		subsolutionsWriter->setInput("subsolutions", subproblemsSolver->getOutput("subsolutions"));
-		subsolutionsWriter->setInput("subproblems", subproblemsReader->getOutput());
+		problemsSolver->setInput("problems", problemsReader->getOutput());
+		solutionsWriter->setInput("solutions", problemsSolver->getOutput("solutions"));
+		solutionsWriter->setInput("problems", problemsReader->getOutput());
 
 		// write solution
-		subsolutionsWriter->write();
+		solutionsWriter->write();
 
 	} catch (boost::exception& e) {
 

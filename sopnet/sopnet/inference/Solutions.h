@@ -1,13 +1,13 @@
-#ifndef SOPNET_INFERENCE_SUBSOLUTIONS_H__
-#define SOPNET_INFERENCE_SUBSOLUTIONS_H__
+#ifndef SOPNET_INFERENCE_SOLUTIONS_H__
+#define SOPNET_INFERENCE_SOLUTIONS_H__
 
 #include <pipeline/all.h>
 #include <inference/Solution.h>
 
 /**
- * Collection of solutions for a set of subproblems.
+ * Collection of solutions for a set of problems.
  */
-class Subsolutions : public pipeline::Data {
+class Solutions : public pipeline::Data {
 
 public:
 
@@ -36,5 +36,5 @@ private:
 	std::vector<boost::shared_ptr<Solution> > _solutions;
 };
 
-#endif // SOPNET_INFERENCE_SUBSOLUTIONS_H__
+#endif // SOPNET_INFERENCE_SOLUTIONS_H__
 
