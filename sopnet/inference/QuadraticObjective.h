@@ -85,6 +85,13 @@ public:
 	 */
 	void resize(unsigned int size);
 
+	/**
+	 * Get the number of variables in this objective.
+	 *
+	 * @return The number of variables in this objective.
+	 */
+	unsigned int size() { return _coefs.size(); }
+
 private:
 
 	Sense _sense;

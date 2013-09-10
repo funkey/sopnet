@@ -10,7 +10,7 @@ class Problem : public pipeline::Data {
 
 public:
 
-	Problem(unsigned int numVariables) :
+	Problem(unsigned int numVariables = 0) :
 		_objective(boost::make_shared<LinearObjective>(numVariables)),
 		_linearConstraints(boost::make_shared<LinearConstraints>()),
 		_configuration(boost::make_shared<ProblemConfiguration>()) {}
@@ -43,6 +43,11 @@ public:
 	boost::shared_ptr<ProblemConfiguration> getConfiguration() {
 
 		return _configuration;
+	}
+
+	void resize(unsigned int numVariables) {
+
+		_objective->resize(numVariables);
 	}
 
 private:

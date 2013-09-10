@@ -61,9 +61,10 @@ public:
 	LinearConstraint& operator[](size_t i) { return _linearConstraints[i]; }
 
 	/**
-	 * Get a linst of linear constraints that use the given variables.
+	 * Get a linst of indices of linear constraints that use the given 
+	 * variables.
 	 */
-	LinearConstraints getConstraints(const std::vector<unsigned int>& variableIds);
+	std::vector<unsigned int> getConstraints(const std::vector<unsigned int>& variableIds);
 
 private:
 
