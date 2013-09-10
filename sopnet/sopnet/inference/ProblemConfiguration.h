@@ -40,11 +40,11 @@ public:
 	unsigned int getInterSectionInterval(unsigned int variable) { return _interSectionIntervals[variable]; }
 
 	unsigned int getMinInterSectionInterval() { return _minInterSectionInterval; }
-	unsigned int getMaxInterSectionInterval() { return _minInterSectionInterval; }
+	unsigned int getMaxInterSectionInterval() { return _maxInterSectionInterval; }
 	unsigned int getMinX() { return _minX; }
-	unsigned int getMaxX() { return _minX; }
+	unsigned int getMaxX() { return _maxX; }
 	unsigned int getMinY() { return _minY; }
-	unsigned int getMaxY() { return _minY; }
+	unsigned int getMaxY() { return _maxY; }
 
 	/**
 	 * Get all the variables that are assigned to the intersection intervals 

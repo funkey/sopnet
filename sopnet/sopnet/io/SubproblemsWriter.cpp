@@ -3,7 +3,7 @@
 
 #include "SubproblemsWriter.h"
 
-SubproblemsWriter::SubproblemsWriter(std::string& filename) :
+SubproblemsWriter::SubproblemsWriter(const std::string& filename) :
 	_filename(filename) {
 
 	registerInput(_subproblems, "subproblems");

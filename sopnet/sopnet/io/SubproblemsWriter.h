@@ -8,7 +8,7 @@ class SubproblemsWriter : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SubproblemsWriter(std::string& filename);
+	SubproblemsWriter(const std::string& filename);
 
 	void write(std::string filename = "");
 

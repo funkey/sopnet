@@ -46,7 +46,7 @@ template <typename SegmentType>
 void
 Reconstructor::probe(boost::shared_ptr<SegmentType> segment) {
 
-	if ((*_solution)[_currentSegmentNum] == 1.0) {
+	if (_currentSegmentNum < _solution->size() && (*_solution)[_currentSegmentNum] == 1.0) {
 
 		_reconstruction->add(segment);
 

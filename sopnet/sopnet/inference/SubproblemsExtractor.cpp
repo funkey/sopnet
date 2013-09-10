@@ -1,19 +1,24 @@
 #include <util/ProgramOptions.h>
+#include <util/Logger.h>
 #include "SubproblemsExtractor.h"
 
 util::ProgramOption optionSubproblemsSize(
+		util::_module           = "sopnet.inference",
 		util::_long_name        = "subproblemsSize",
 		util::_description_text = "The size of the subproblems in sections.");
 
 util::ProgramOption optionSubproblemsOverlap(
+		util::_module           = "sopnet.inference",
 		util::_long_name        = "subproblemsOverlap",
 		util::_description_text = "The overlap between neighboring subproblems in sections.");
+
+logger::LogChannel subproblemsextractorlog("subproblemsextractorlog", "[SubproblemsExtractor] ");
 
 SubproblemsExtractor::SubproblemsExtractor() {
 
 	registerInput(_objective, "objective");
-	registerInput(_constraints, "constraints");
-	registerInput(_configuration, "configuration");
+	registerInput(_constraints, "linear constraints");
+	registerInput(_configuration, "problem configuration");
 
 	registerOutput(_subproblems, "subproblems");
 }
@@ -104,27 +109,41 @@ SubproblemsExtractor::updateOutputs() {
 	_subproblems->clear();
 	_subproblems->setProblem(problem);
 
+	LOG_DEBUG(subproblemsextractorlog)
+			<< "decomposing problem with extents " << minInterSectionInterval
+			<< "-" << maxInterSectionInterval << " into pieces of "
+			<< subproblemsSize << " with overlap of "
+			<< subproblemsOverlap << std::endl;
+
 	// 1D decomposition of the working problem
 	unsigned int subproblemId = 0;
 	for (unsigned int startSubproblem = minInterSectionInterval; startSubproblem < maxInterSectionInterval; startSubproblem += subproblemsSize - subproblemsOverlap) {
 
-		unsigned int endSubproblem = startSubproblem += subproblemsSize;
+		unsigned int endSubproblem = startSubproblem + subproblemsSize;
+
+		LOG_DEBUG(subproblemsextractorlog) << "creating subproblem " << subproblemId << " for inter-section intervals " << startSubproblem << "-" << endSubproblem << std::endl;
 
 		// get all working problem variable ids for this subproblem
 		std::vector<unsigned int> workingVarIds = _configuration->getVariables(startSubproblem, endSubproblem);
 
 		// remember mapping of subproblem variable ids to this subproblem 
 		// (needed for unary terms)
-		foreach (unsigned int workingVarId, workingVarIds)
+		foreach (unsigned int workingVarId, workingVarIds) {
+
+			LOG_ALL(subproblemsextractorlog) << "assigning variable " << workingVarId << " to subproblem " << subproblemId << std::endl;
 			_subproblems->assignVariable(workingVarId, subproblemId);
+		}
 
 		// find all working problem constraints that involve the subproblem 
 		// variable ids (these are all constraints in this subproblem)
 		std::vector<unsigned int> constraints = _constraints->getConstraints(workingVarIds);
 
 		// remember mapping of constraints to this subproblem
-		foreach (unsigned int constraint, constraints)
+		foreach (unsigned int constraint, constraints) {
+
+			LOG_ALL(subproblemsextractorlog) << "assigning constraint " << constraint << " to subproblem " << subproblemId << std::endl;
 			_subproblems->assignConstraint(constraint, subproblemId);
+		}
 
 		// add all variables that are used by these constraints to the 
 		// subproblem, additionally
@@ -132,8 +151,11 @@ SubproblemsExtractor::updateOutputs() {
 
 			unsigned int workingVarId;
 			double _;
-			foreach (boost::tie(workingVarId, _), (*_constraints)[constraint].getCoefficients())
+			foreach (boost::tie(workingVarId, _), (*_constraints)[constraint].getCoefficients()) {
+
+				LOG_ALL(subproblemsextractorlog) << "assigning additional variable " << workingVarId << " to subproblem " << subproblemId << std::endl;
 				_subproblems->assignVariable(workingVarId, subproblemId);
+			}
 		}
 
 		subproblemId++;

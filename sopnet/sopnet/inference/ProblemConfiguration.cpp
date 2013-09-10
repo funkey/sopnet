@@ -1,4 +1,7 @@
+#include <util/Logger.h>
 #include "ProblemConfiguration.h"
+
+logger::LogChannel problemconfigurationlog("problemconfigurationlog", "[ProblemConfiguration] ");
 
 ProblemConfiguration::ProblemConfiguration() {
 
@@ -80,6 +83,8 @@ ProblemConfiguration::clear() {
 void
 ProblemConfiguration::fit(const Segment& segment) {
 
+	LOG_ALL(problemconfigurationlog) << "fitting segment " << segment.getId() << " with inter-section interval " << segment.getInterSectionInterval() << std::endl;
+
 	if (_minInterSectionInterval < 0) {
 
 		_minInterSectionInterval = segment.getInterSectionInterval();
@@ -98,4 +103,6 @@ ProblemConfiguration::fit(const Segment& segment) {
 		_minY = std::min(_minY, (int)segment.getCenter().y);
 		_maxY = std::max(_maxY, (int)segment.getCenter().y);
 	}
+
+	LOG_ALL(problemconfigurationlog) << "extents are now " << _minInterSectionInterval << "-" << _maxInterSectionInterval << std::endl;
 }

@@ -6,6 +6,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearSolver.h>
+#include <pipeline/Process.h>
 #include <util/foreach.h>
 #include <util/ProgramOptions.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
@@ -13,6 +14,8 @@
 #include <sopnet/inference/ProblemGraphWriter.h>
 #include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/inference/ProblemAssembler.h>
+#include <sopnet/inference/SubproblemsExtractor.h>
+#include <sopnet/inference/SubproblemsSolver.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunction.h>
 #include <sopnet/inference/PriorCostFunction.h>
@@ -32,6 +35,12 @@ util::ProgramOption optionRandomForestFile(
 		util::_long_name        = "segmentRandomForest",
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
+
+util::ProgramOption optionDecomposeProblem(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "decomposeProblem",
+		util::_description_text = "Decompose the problem into overlapping subproblems and solve them using SCALAR.",
+		util::_default_value    = false);
 
 util::ProgramOption optionDisableSegmentationCosts(
 		util::_module           = "sopnet.inference",
@@ -282,14 +291,32 @@ Sopnet::createInferencePipeline() {
 		if (!optionDisableSegmentationCosts)
 			_objectiveGenerator->addInput("additional cost functions", _segmentationCostFunction->getOutput("cost function"));
 
-		// feed objective and linear constraints to ilp creator
-		_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
-		_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
-		_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+		if (optionDecomposeProblem) {
 
-		// feed solution and segments to reconstructor
-		_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
-		_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+			pipeline::Process<SubproblemsExtractor> subproblemsExtractor;
+			pipeline::Process<SubproblemsSolver>    subproblemsSolver;
+
+			subproblemsExtractor->setInput("objective", _objectiveGenerator->getOutput());
+			subproblemsExtractor->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+			subproblemsExtractor->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+
+			subproblemsSolver->setInput(subproblemsExtractor->getOutput());
+
+			// feed solution and segments to reconstructor
+			_reconstructor->setInput("solution", subproblemsSolver->getOutput("solution"));
+			_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+
+		} else {
+
+			// feed objective and linear constraints to ilp creator
+			_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
+			_linearSolver->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+			_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+
+			// feed solution and segments to reconstructor
+			_reconstructor->setInput("solution", _linearSolver->getOutput("solution"));
+			_reconstructor->setInput("segments", _problemAssembler->getOutput("segments"));
+		}
 	}
 
 }
