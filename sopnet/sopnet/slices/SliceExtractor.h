@@ -14,9 +14,10 @@
 // forward declaration
 class ComponentTreeDownSampler;
 class ComponentTreeConverter;
-class Mser;
+template <typename Precision> class Mser;
 class MserParameters;
 
+template <typename Precision>
 class SliceExtractor : public pipeline::ProcessNode {
 
 public:
@@ -48,7 +49,7 @@ private:
 
 	void extractSlices();
 
-	boost::shared_ptr<Mser>                     _mser;
+	boost::shared_ptr<Mser<Precision> >         _mser;
 	boost::shared_ptr<MserParameters>           _defaultMserParameters;
 	boost::shared_ptr<ComponentTreeDownSampler> _downSampler;
 	boost::shared_ptr<ComponentTreeConverter>   _converter;

@@ -64,7 +64,7 @@ GroundTruthExtractor::createPipeline() {
 		LOG_ALL(groundtruthextractorlog) << "creating pipeline for section " << section << std::endl;
 
 		// create a SliceExtractor
-		boost::shared_ptr<SliceExtractor> sliceExtractor = boost::make_shared<SliceExtractor>(section);
+		boost::shared_ptr<SliceExtractor<unsigned short> > sliceExtractor = boost::make_shared<SliceExtractor<unsigned short> >(section);
 
 		// give it the section it has to process and our mser parameters
 		sliceExtractor->setInput("membrane", _sectionExtractor->getOutput(section));
@@ -77,7 +77,7 @@ GroundTruthExtractor::createPipeline() {
 			continue;
 
 		// get the previous slice extractor
-		boost::shared_ptr<SliceExtractor> prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
+		boost::shared_ptr<SliceExtractor<unsigned short> > prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
 
 		// create a segment extractor
 		boost::shared_ptr<GroundTruthSegmentExtractor> segmentExtractor = boost::make_shared<GroundTruthSegmentExtractor>();

@@ -54,7 +54,7 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 	// for each image in the stack, set up the pipeline
 	for (unsigned int i = 0; i < _sliceImageStack->size(); i++) {
 
-		boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
+		boost::shared_ptr<Mser<unsigned char> > mser = boost::make_shared<Mser<unsigned char> >();
 
 		mser->setInput("image", _sliceImageExtractor->getOutput(i));
 		mser->setInput("parameters", _mserParameters);

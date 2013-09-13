@@ -11,7 +11,7 @@
 
 // forward declarations
 class ImageExtractor;
-class SliceExtractor;
+template <typename Precision> class SliceExtractor;
 class GroundTruthSegmentExtractor;
 
 class GroundTruthExtractor : public pipeline::ProcessNode {
@@ -51,7 +51,7 @@ private:
 	boost::shared_ptr<ImageExtractor> _sectionExtractor;
 
 	// slice extractors to get the slices per section
-	std::vector<boost::shared_ptr<SliceExtractor> > _sliceExtractors;
+	std::vector<boost::shared_ptr<SliceExtractor<unsigned short> > > _sliceExtractors;
 
 	// extract segments from the components found by the sliceExtractors
 	std::vector<boost::shared_ptr<GroundTruthSegmentExtractor> > _segmentExtractors;

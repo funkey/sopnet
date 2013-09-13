@@ -25,8 +25,9 @@ util::ProgramOption optionMaxSliceSize(
 		util::_description_text = "The maximal size of a neuron slice in pixels.",
 		util::_default_value    = 100*100);
 
-SliceExtractor::SliceExtractor(unsigned int section) :
-	_mser(boost::make_shared<Mser>()),
+template <typename Precision>
+SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
+	_mser(boost::make_shared<Mser<Precision> >()),
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_converter(boost::make_shared<ComponentTreeConverter>(section)),
@@ -38,7 +39,7 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_filter->getOutput("linear constraints"), "linear constraints");
 
-	_mserParameters.registerBackwardCallback(&SliceExtractor::onInputSet, this);
+	_mserParameters.registerBackwardCallback(&SliceExtractor<Precision>::onInputSet, this);
 
 	// set default mser parameters from program options
 	_defaultMserParameters->darkToBright =  optionInvertSliceMaps;
@@ -53,8 +54,9 @@ SliceExtractor::SliceExtractor(unsigned int section) :
 	_filter->setInput("linear constraints", _converter->getOutput("linear constraints"));
 }
 
+template <typename Precision>
 void
-SliceExtractor::onInputSet(const pipeline::InputSetBase&) {
+SliceExtractor<Precision>::onInputSet(const pipeline::InputSetBase&) {
 
 	LOG_ALL(sliceextractorlog) << "using non-default mser parameters" << std::endl;
 
@@ -62,15 +64,17 @@ SliceExtractor::onInputSet(const pipeline::InputSetBase&) {
 	_mser->setInput("parameters", _mserParameters);
 }
 
-SliceExtractor::LinearConstraintsFilter::LinearConstraintsFilter() {
+template <typename Precision>
+SliceExtractor<Precision>::LinearConstraintsFilter::LinearConstraintsFilter() {
 
 	registerInput(_linearConstraints, "linear constraints");
 	registerInput(_forceExplanation, "force explanation");
 	registerOutput(_filtered, "linear constraints");
 }
 
+template <typename Precision>
 void
-SliceExtractor::LinearConstraintsFilter::updateOutputs() {
+SliceExtractor<Precision>::LinearConstraintsFilter::updateOutputs() {
 
 	*_filtered = *_linearConstraints;
 
@@ -82,3 +86,7 @@ SliceExtractor::LinearConstraintsFilter::updateOutputs() {
 			linearConstraint.setRelation(LessEqual);
 	}
 }
+
+// explicit template instantiations
+template class SliceExtractor<unsigned char>;
+template class SliceExtractor<unsigned short>;

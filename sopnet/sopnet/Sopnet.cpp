@@ -220,7 +220,7 @@ Sopnet::createBasicPipeline() {
 		} else {
 
 			// create a single image slice extractor
-			sliceExtractor = boost::make_shared<SliceExtractor>(section);
+			sliceExtractor = boost::make_shared<SliceExtractor<unsigned char> >(section);
 
 			// set its input
 			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));

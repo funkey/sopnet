@@ -24,7 +24,7 @@ class SegmentExtractor;
 class SegmentFeaturesExtractor;
 class RandomForestCostFunction;
 class RandomForestTrainer;
-class SliceExtractor;
+template <typename Precision> class SliceExtractor;
 
 class Sopnet : public pipeline::ProcessNode {
 

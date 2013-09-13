@@ -17,7 +17,7 @@
 // forward declaration
 class ComponentTreeDownSampler;
 class ComponentTreeConverter;
-class Mser;
+template <typename Precision> class Mser;
 class MserParameters;
 
 /**
@@ -115,7 +115,7 @@ private:
 	boost::shared_ptr<ImageExtractor>           _sliceImageExtractor;
 
 	// one mser per slice image
-	std::vector<boost::shared_ptr<Mser> >       _msers;
+	std::vector<boost::shared_ptr<Mser<unsigned char> > > _msers;
 
 	// mser paramters to use to extract all white connected components
 	boost::shared_ptr<MserParameters>           _mserParameters;
