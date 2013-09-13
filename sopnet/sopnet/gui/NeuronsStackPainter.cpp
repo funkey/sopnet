@@ -89,10 +89,31 @@ NeuronsStackPainter::assignColors() {
 
 	for (unsigned int i = 0; i < _neurons->size(); i++) {
 
-		// draw a random color
-		double r = (double)rand()/RAND_MAX;
-		double g = (double)rand()/RAND_MAX;
-		double b = (double)rand()/RAND_MAX;
+		boost::shared_ptr<SegmentTree> neuron = (*_neurons)[i];
+
+		double r;
+		double g;
+		double b;
+
+		if (neuron->getContinuations().size() <= 1) {
+
+			r = 0.3;
+			g = 0.3;
+			b = 0.3;
+
+		} else {
+
+			// get a hash for the neuron
+			util::rect<int> bb = neuron->getContinuations()[0]->getSlices()[0]->getComponent()->getBoundingBox();
+
+			int sum = bb.minX + bb.minY;
+			srand(sum);
+
+			// draw a random color
+			r = (double)rand()/RAND_MAX;
+			g = (double)rand()/RAND_MAX;
+			b = (double)rand()/RAND_MAX;
+		}
 
 		_colors[i][0] = r;
 		_colors[i][1] = g;
@@ -272,6 +293,11 @@ NeuronsStackPainter::drawNeuron(
 			// is their slice in our section?
 			if (end->getDirection() == Right) {
 
+				// draw the slice, it it wasn't drawn by previous segment to the
+				// right
+				if (_section == 0)
+					drawSlice(*end->getSlice(), red, green, blue, 0.75, roi, resolution);
+
 				// draw the end-link
 				drawEnd(end->getSlice()->getComponent()->getCenter(), Right, roi, resolution);
 			}
@@ -317,12 +343,30 @@ NeuronsStackPainter::drawNeuron(
 
 			if (continuation->getDirection() == Left) {
 
+				// draw the slice, it it wasn't drawn by previous segment to the
+				// right
+				if (_section == 0)
+					drawSlice(
+							*continuation->getTargetSlice(),
+							red, green, blue,
+							0.75,
+							roi, resolution);
+
 				drawContinuation(
 						continuation->getTargetSlice()->getComponent()->getCenter(),
 						continuation->getSourceSlice()->getComponent()->getCenter(),
 						Right,
 						roi, resolution);
 			} else {
+
+				// draw the slice, it it wasn't drawn by previous segment to the
+				// right
+				if (_section == 0)
+					drawSlice(
+							*continuation->getSourceSlice(),
+							red, green, blue,
+							0.75,
+							roi, resolution);
 
 				drawContinuation(
 						continuation->getSourceSlice()->getComponent()->getCenter(),
@@ -381,6 +425,22 @@ NeuronsStackPainter::drawNeuron(
 
 			if (branch->getDirection() == Left) {
 
+				// draw the slices, it they weren't drawn by previous segment to 
+				// the right
+				if (_section == 0) {
+
+					drawSlice(
+							*branch->getTargetSlice1(),
+							red, green, blue,
+							0.75,
+							roi, resolution);
+					drawSlice(
+							*branch->getTargetSlice2(),
+							red, green, blue,
+							0.75,
+							roi, resolution);
+				}
+
 				drawMerge(
 						branch->getTargetSlice1()->getComponent()->getCenter(),
 						branch->getTargetSlice2()->getComponent()->getCenter(),
@@ -389,6 +449,15 @@ NeuronsStackPainter::drawNeuron(
 						roi, resolution);
 
 			} else {
+
+				// draw the slice, it it wasn't drawn by previous segment to the
+				// right
+				if (_section == 0)
+					drawSlice(
+							*branch->getSourceSlice(),
+							red, green, blue,
+							0.75,
+							roi, resolution);
 
 				drawBranch(
 						branch->getSourceSlice()->getComponent()->getCenter(),
