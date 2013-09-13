@@ -74,7 +74,7 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 
 	if (signal.key == gui::keys::A) {
 
-		_section = std::max(0, _section - 1);
+		_section = std::max((int)_neurons->getFirstSection(), _section - 1);
 
 		LOG_ALL(neuronsstackviewlog) << "setting current section to " << _section << std::endl;
 
@@ -85,7 +85,7 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 
 	if (signal.key == gui::keys::D) {
 
-		_section = std::min((int)_neurons->getNumSections() - 1, _section + 1);
+		_section = std::min((int)_neurons->getLastSection(), _section + 1);
 
 		LOG_ALL(neuronsstackviewlog) << "setting current section to " << _section << std::endl;
 
