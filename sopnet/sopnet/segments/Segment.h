@@ -57,6 +57,10 @@ public:
 
 	virtual std::vector<boost::shared_ptr<Slice> > getSlices() const = 0;
 
+	std::vector<boost::shared_ptr<Slice> > getSourceSlices() const;
+
+	std::vector<boost::shared_ptr<Slice> > getTargetSlices() const;
+
 private:
 
 	static unsigned int NextSegmentId;

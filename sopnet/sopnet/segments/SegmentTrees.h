@@ -25,12 +25,12 @@ public:
 	/**
 	 * Add a neuron.
 	 */
-	void add(boost::shared_ptr<SegmentTree> neuron) { _neurons.push_back(neuron); }
+	void add(boost::shared_ptr<SegmentTree> neuron) { _neurons.push_back(neuron); _lastSection = -1; }
 
 	/**
 	 * Add a set of neurons.
 	 */
-	void addAll(boost::shared_ptr<SegmentTrees> neurons) { foreach (boost::shared_ptr<SegmentTree> neuron, *neurons) _neurons.push_back(neuron); }
+	void addAll(boost::shared_ptr<SegmentTrees> neurons) { foreach (boost::shared_ptr<SegmentTree> neuron, *neurons) _neurons.push_back(neuron); _lastSection = -1; }
 
 	/**
 	 * Get the number of neurons.
@@ -45,14 +45,27 @@ public:
 
 	iterator end() { return _neurons.end(); }
 
+	boost::shared_ptr<SegmentTree> operator[](unsigned int i) { return _neurons[i]; }
+
 	/**
 	 * Get the number of sections these neurons cover.
 	 */
 	unsigned int getNumSections();
 
+	unsigned int getFirstSection();
+
+	unsigned int getLastSection();
+
 private:
 
+	void updateSectionNums();
+
+	void fit(int section);
+
 	neurons_type _neurons;
+
+	int _firstSection;
+	int _lastSection;
 };
 
 #endif // SOPNET_SEGMENT_TREES_SEGMENT_TREES_H__

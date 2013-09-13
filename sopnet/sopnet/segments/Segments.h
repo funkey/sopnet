@@ -152,19 +152,24 @@ public:
 	std::vector<boost::shared_ptr<Segment> > getSegments() const;
 
 	/**
+	 * Get all segments in the given inter-section interval.
+	 */
+	std::vector<boost::shared_ptr<Segment> > getSegments(unsigned int interval);
+
+	/**
 	 * Get all end segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<EndSegment> >& getEnds(unsigned int interval);
+	std::vector<boost::shared_ptr<EndSegment> >& getEnds(unsigned int interval);
 
 	/**
 	 * Get all continuation segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(unsigned int interval);
+	std::vector<boost::shared_ptr<ContinuationSegment> >& getContinuations(unsigned int interval);
 
 	/**
 	 * Get all branch segments in the given inter-section interval.
 	 */
-	const std::vector<boost::shared_ptr<BranchSegment> >& getBranches(unsigned int interval);
+	std::vector<boost::shared_ptr<BranchSegment> >& getBranches(unsigned int interval);
 
 	/**
 	 * Find all end segments in the given inter-section interval that are close
@@ -243,6 +248,25 @@ public:
 			const util::point<double>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
+
+	/**
+	 * Check whether the given segment is part of this set.
+	 */
+	bool contains(boost::shared_ptr<EndSegment>          end)          { return contains(getEnds(end->getInterSectionInterval()), end); }
+	bool contains(boost::shared_ptr<ContinuationSegment> continuation) { return contains(getContinuations(continuation->getInterSectionInterval()), continuation); }
+	bool contains(boost::shared_ptr<BranchSegment>       branch)       { return contains(getBranches(branch->getInterSectionInterval()), branch); }
+
+	/**
+	 * Remove the given segment from this set.
+	 */
+	void remove(boost::shared_ptr<EndSegment>          end)          { remove(getEnds(end->getInterSectionInterval()), end); }
+	void remove(boost::shared_ptr<ContinuationSegment> continuation) { remove(getContinuations(continuation->getInterSectionInterval()), continuation); }
+	void remove(boost::shared_ptr<BranchSegment>       branch)       { remove(getBranches(branch->getInterSectionInterval()), branch); }
+	void remove(boost::shared_ptr<Segment> segment) {
+		remove(getEnds(         segment->getInterSectionInterval()), segment);
+		remove(getContinuations(segment->getInterSectionInterval()), segment);
+		remove(getBranches(     segment->getInterSectionInterval()), segment);
+	}
 
 	/**
 	 * Get the number of inter-section intervals that are covered by these
@@ -337,6 +361,33 @@ private:
 			found.push_back(allSegments[interSectionInterval][index]);
 
 		return found;
+	}
+
+	template <typename SegmentType>
+	bool contains(std::vector<boost::shared_ptr<SegmentType> >& segments, boost::shared_ptr<SegmentType> segment) {
+
+		foreach (boost::shared_ptr<SegmentType> s, segments)
+			if (s->getId() == segment->getId())
+				return true;
+
+		return false;
+	}
+
+	template <typename SegmentType>
+	bool remove(std::vector<boost::shared_ptr<SegmentType> >& segments, boost::shared_ptr<Segment> segment) {
+
+		typename std::vector<boost::shared_ptr<SegmentType> >::iterator i;
+		for (i = segments.begin(); i != segments.end(); i++)
+			if ((*i)->getId() == segment->getId())
+				break;
+
+		if (i != segments.end()) {
+
+			segments.erase(i);
+			return true;
+		}
+
+		return false;
 	}
 
 	// one vector of segments for each inter-section interval and segment type

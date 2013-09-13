@@ -3,29 +3,61 @@
 unsigned int
 SegmentTrees::getNumSections() {
 
-	int start = 0;
-	int end   = -1;
+	updateSectionNums();
 
-	// for every neuron...
-	foreach (boost::shared_ptr<SegmentTree> neuron, _neurons) {
+	return (unsigned int)(_lastSection - _firstSection) + 1;
+}
 
-		// ...it is enough to consider the end segments
-		foreach (boost::shared_ptr<EndSegment> endSegment, neuron->getEnds()) {
+unsigned int
+SegmentTrees::getFirstSection() {
 
-			int section = endSegment->getSlice()->getSection();
+	updateSectionNums();
 
-			if (end == -1) {
+	return (unsigned int)_firstSection;
+}
 
-				start = section;
-				end   = section;
+unsigned int
+SegmentTrees::getLastSection() {
 
-			} else {
+	updateSectionNums();
 
-				start = std::min(start, section);
-				end   = std::max(end, section);
+	return (unsigned int)_lastSection;
+}
+
+void
+SegmentTrees::updateSectionNums() {
+
+	if (_lastSection = -1) {
+
+		// for every neuron...
+		foreach (boost::shared_ptr<SegmentTree> neuron, _neurons) {
+
+			foreach (boost::shared_ptr<EndSegment> endSegment, neuron->getEnds())
+				fit(endSegment->getSlice()->getSection());
+			foreach (boost::shared_ptr<ContinuationSegment> continuationSegment, neuron->getContinuations()) {
+				fit(continuationSegment->getSourceSlice()->getSection());
+				fit(continuationSegment->getSourceSlice()->getSection());
+			}
+			foreach (boost::shared_ptr<BranchSegment> branchSegment, neuron->getBranches()) {
+				fit(branchSegment->getSourceSlice()->getSection());
+				fit(branchSegment->getTargetSlice1()->getSection());
+				fit(branchSegment->getTargetSlice2()->getSection());
 			}
 		}
 	}
+}
 
-	return (end - start) + 1;
+void
+SegmentTrees::fit(int section) {
+
+	if (_lastSection == -1) {
+
+		_firstSection = section;
+		_lastSection  = section;
+
+	} else {
+
+		_firstSection = std::min(_firstSection, section);
+		_lastSection  = std::max(_lastSection, section);
+	}
 }

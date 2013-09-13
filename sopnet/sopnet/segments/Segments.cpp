@@ -130,7 +130,7 @@ Segments::addAll(boost::shared_ptr<Segments> segments) {
 	addAll(segments->getBranches());
 }
 
-const std::vector<boost::shared_ptr<EndSegment> >&
+std::vector<boost::shared_ptr<EndSegment> >&
 Segments::getEnds(unsigned int interval) {
 
 	if (interval >= _ends.size())
@@ -139,7 +139,7 @@ Segments::getEnds(unsigned int interval) {
 	return _ends[interval];
 }
 
-const std::vector<boost::shared_ptr<ContinuationSegment> >&
+std::vector<boost::shared_ptr<ContinuationSegment> >&
 Segments::getContinuations(unsigned int interval) {
 
 	if (interval >= _continuations.size())
@@ -148,7 +148,7 @@ Segments::getContinuations(unsigned int interval) {
 	return _continuations[interval];
 }
 
-const std::vector<boost::shared_ptr<BranchSegment> >&
+std::vector<boost::shared_ptr<BranchSegment> >&
 Segments::getBranches(unsigned int interval) {
 
 	if (interval >= _branches.size())
@@ -183,6 +183,22 @@ Segments::getSegments() const {
 	std::vector<boost::shared_ptr<EndSegment> >          ends          = get(_ends);
 	std::vector<boost::shared_ptr<ContinuationSegment> > continuations = get(_continuations);
 	std::vector<boost::shared_ptr<BranchSegment> >       branches      = get(_branches);
+
+	std::copy(ends.begin(), ends.end(), std::back_inserter(allSegments));
+	std::copy(continuations.begin(), continuations.end(), std::back_inserter(allSegments));
+	std::copy(branches.begin(), branches.end(), std::back_inserter(allSegments));
+
+	return allSegments;
+}
+
+std::vector<boost::shared_ptr<Segment> >
+Segments::getSegments(unsigned int interval) {
+
+	std::vector<boost::shared_ptr<Segment> > allSegments;
+
+	std::vector<boost::shared_ptr<EndSegment> >          ends          = getEnds(interval);
+	std::vector<boost::shared_ptr<ContinuationSegment> > continuations = getContinuations(interval);
+	std::vector<boost::shared_ptr<BranchSegment> >       branches      = getBranches(interval);
 
 	std::copy(ends.begin(), ends.end(), std::back_inserter(allSegments));
 	std::copy(continuations.begin(), continuations.end(), std::back_inserter(allSegments));
