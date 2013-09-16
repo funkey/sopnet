@@ -31,16 +31,23 @@ SplitMerge::updateOutputs() {
 
 		// create end segments for the first section (so that we can select slices 
 		// in there)
+		std::set<boost::shared_ptr<Slice> > firstSlices;
 		unsigned int numNewEnds = 0;
-		foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds(1)) {
+		foreach (boost::shared_ptr<Segment> segment, _segments->getSegments(1)) {
 
-			if (end->getDirection() == Right) {
+			if (segment->getDirection() == Right)
+				foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+					firstSlices.insert(slice);
+			else
+				foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+					firstSlices.insert(slice);
+		}
+		foreach (boost::shared_ptr<Slice> slice, firstSlices) {
 
-				boost::shared_ptr<EndSegment> newEnd = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, end->getSlice());
-				_segments->add(newEnd);
+			boost::shared_ptr<EndSegment> newEnd = boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, slice);
+			_segments->add(newEnd);
 
-				numNewEnds++;
-			}
+			numNewEnds++;
 		}
 
 		LOG_DEBUG(splitmergelog) << "added " << numNewEnds << " new ends" << std::endl;

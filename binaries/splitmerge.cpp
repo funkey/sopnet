@@ -4,8 +4,6 @@
 
 #include <iostream>
 #include <string>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
 
 #include <pipeline/Process.h>
 #include <util/exceptions.h>
@@ -35,6 +33,26 @@ using std::endl;
 using namespace gui;
 using namespace logger;
 
+util::ProgramOption optionRaw(
+		_long_name        = "raw",
+		_description_text = "The name of the directory containing the raw sections.",
+		_default_value    = "raw");
+
+util::ProgramOption optionInitialNeurons(
+		_long_name        = "initialNeurons",
+		_description_text = "The name of the directory containing the initial neuron ids.",
+		_default_value    = "groundtruth");
+
+util::ProgramOption optionSaveResultDirectory(
+		_long_name        = "saveResultDirectory",
+		_description_text = "The name of the directory to save the resulting id map to.",
+		_default_value    = "result");
+
+util::ProgramOption optionSaveResultBasename(
+		_long_name        = "saveResultBasename",
+		_description_text = "The basenames of the images files created in the result directory. The default is \"result_\".",
+		_default_value    = "result_");
+
 int main(int optionc, char** optionv) {
 
 
@@ -60,11 +78,11 @@ int main(int optionc, char** optionv) {
 		 *********/
 
 		// create section readers
-		pipeline::Process<ImageStackDirectoryReader> groundTruthReader("./groundtruth/");
-		pipeline::Process<ImageStackDirectoryReader> rawReader("./raw/");
+		pipeline::Process<ImageStackDirectoryReader> groundTruthReader(optionInitialNeurons.as<std::string>());
+		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// create ground-truth extractor
-		pipeline::Process<GroundTruthExtractor> groundTruthExtractor;
+		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(-1, -1, false);
 		groundTruthExtractor->setInput(groundTruthReader->getOutput());
 
 		// create split-merge tool
@@ -74,6 +92,15 @@ int main(int optionc, char** optionv) {
 		// create neurons extractor
 		pipeline::Process<NeuronExtractor> neuronsExtractor;
 		neuronsExtractor->setInput(splitMerge->getOutput("segments"));
+
+		// create a neuron id creator
+		pipeline::Process<IdMapCreator> resultIdMapCreator;
+		resultIdMapCreator->setInput("neurons", neuronsExtractor->getOutput());
+		resultIdMapCreator->setInput("reference", rawReader->getOutput());
+
+		// create a neuron id writer
+		pipeline::Process<NeuronsImageWriter> resultWriter(optionSaveResultDirectory.as<std::string>(), optionSaveResultBasename.as<std::string>());
+		resultWriter->setInput(resultIdMapCreator->getOutput("id map"));
 
 		// create basic views
 		pipeline::Process<NeuronsStackView>  groundTruthView;
@@ -97,6 +124,10 @@ int main(int optionc, char** optionv) {
 		window->setInput(zoomView->getOutput());
 
 		window->processEvents();
+
+		LOG_USER(out) << "[main] saving reconstruction" << std::endl;
+
+		resultWriter->write();
 
 		LOG_USER(out) << "[main] exiting..." << std::endl;
 

@@ -5,11 +5,12 @@
 
 logger::LogChannel groundtruthextractorlog("groundtruthextractorlog", "[GroundTruthExtractor] ");
 
-GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection) :
+GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bool addIntensityBoundaries) :
 	_sectionExtractor(boost::make_shared<ImageExtractor>()),
 	_segmentsAssembler(boost::make_shared<SegmentsAssembler>()),
 	_firstSection(firstSection),
-	_lastSection(lastSection) {
+	_lastSection(lastSection),
+	_addIntensityBoundaries(addIntensityBoundaries) {
 
 	registerInput(_groundTruthSections, "ground truth sections");
 	registerOutput(_segmentsAssembler->getOutput("ground truth segments"), "ground truth segments");
@@ -57,7 +58,7 @@ GroundTruthExtractor::createPipeline() {
 	mserParameters->minDiversity = 0;
 	mserParameters->darkToBright = false;
 	mserParameters->brightToDark = true;
-	mserParameters->sameIntensityComponents = true; // only extract connected components of same intensity
+	mserParameters->sameIntensityComponents = _addIntensityBoundaries; // only extract connected components of same intensity
 
 	for (unsigned int section = firstSection; section <= lastSection; section++) {
 

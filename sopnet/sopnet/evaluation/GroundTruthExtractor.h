@@ -18,7 +18,18 @@ class GroundTruthExtractor : public pipeline::ProcessNode {
 
 public:
 
-	GroundTruthExtractor(int firstSection = -1, int lastSection = -1);
+	/**
+	 * Create a ground truth extractor.
+	 *
+	 * @param firstSection
+	 *              The first section to use.
+	 * @param lastSection
+	 *              The last section to use.
+	 * @param addIntensityBoundaries
+	 *              Seperate regions of different intensities such that they end 
+	 *              up in different slices.
+	 */
+	GroundTruthExtractor(int firstSection = -1, int lastSection = -1, bool addIntensityBoundaries = true);
 
 private:
 
@@ -62,6 +73,8 @@ private:
 	int _firstSection;
 
 	int _lastSection;
+
+	bool _addIntensityBoundaries;
 };
 
 #endif // SOPNET_GROUND_TRUTH_EXTRACTOR_H__

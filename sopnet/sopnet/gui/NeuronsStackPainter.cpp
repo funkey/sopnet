@@ -90,6 +90,8 @@ NeuronsStackPainter::assignColors() {
 
 	for (unsigned int i = 0; i < _neurons->size(); i++) {
 
+		LOG_ALL(neuronsstackpainterlog) << "assigning color to neuron " << i << std::endl;
+
 		boost::shared_ptr<SegmentTree> neuron = (*_neurons)[i];
 
 		double r;
@@ -108,8 +110,12 @@ NeuronsStackPainter::assignColors() {
 			int sum = bb.minX + bb.minY;
 			srand(sum);
 
+			LOG_ALL(neuronsstackpainterlog) << "random seed for this neuron is " << sum << std::endl;
+
 			// draw a random color
 			double h = (double)rand()/RAND_MAX*360.0;
+
+			LOG_ALL(neuronsstackpainterlog) << "hue is " << h << std::endl;
 
 			hsvToRgb(h, 1.0, 1.0, r, g, b);
 		}
