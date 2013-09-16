@@ -13,9 +13,11 @@ public:
 
 	SplitMergePainter();
 
-	void setSelection(boost::shared_ptr<Segments> selection) { _selection = selection; }
+	void setSelection(boost::shared_ptr<std::set<boost::shared_ptr<Slice> > > selection) { _selection = selection; }
 
 	void setSection(int section) { _section = section; }
+
+	void updateSize();
 
 	bool draw(
 			const util::rect<double>& roi,
@@ -23,7 +25,9 @@ public:
 
 private:
 
-	boost::shared_ptr<Segments> _selection;
+	bool drawSlice(const Slice& slice);
+
+	boost::shared_ptr<std::set<boost::shared_ptr<Slice> > > _selection;
 
 	int _section;
 };

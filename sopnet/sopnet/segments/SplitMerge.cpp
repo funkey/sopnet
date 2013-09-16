@@ -6,7 +6,7 @@ logger::LogChannel splitmergelog("splitmergelog", "[SplitMerge] ");
 SplitMerge::SplitMerge() :
 	_segments(boost::make_shared<Segments>()),
 	_painter(boost::make_shared<SplitMergePainter>()),
-	_selection(boost::make_shared<Segments>()),
+	_selection(boost::make_shared<std::set<boost::shared_ptr<Slice> > >()),
 	_initialSegmentsProcessed(false) {
 
 	registerInput(_initialSegments, "initial segments");
@@ -49,6 +49,7 @@ SplitMerge::updateOutputs() {
 	}
 
 	_painter->setSection(*_section);
+	_painter->updateSize();
 }
 
 void
@@ -72,14 +73,10 @@ SplitMerge::onKeyDown(const gui::KeyDown& signal) {
 		// compare each section with the previous section
 		for (int section = 0; section < _segments->getNumInterSectionIntervals(); section++) {
 
-			foreach (boost::shared_ptr<Segment> segment, _selection->getSegments(section)) {
+			foreach (boost::shared_ptr<Slice> slice, *_selection) {
 
-				if (segment->getDirection() == Left)
-					foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
-						currSlices.push_back(slice);
-				else
-					foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
-						currSlices.push_back(slice);
+				if (slice->getSection() == section)
+					currSlices.push_back(slice);
 			}
 
 			LOG_ALL(splitmergelog) << "merging in inter-section interval " << section << std::endl;
@@ -90,7 +87,7 @@ SplitMerge::onKeyDown(const gui::KeyDown& signal) {
 
 				removeSegments(prevSlices, Right, section);
 				removeSegments(currSlices, Left, section);
-				mergeSlices(prevSlices, currSlices);
+				mergeSlices(prevSlices, currSlices, section);
 			}
 
 			std::swap(prevSlices, currSlices);
@@ -126,7 +123,7 @@ SplitMerge::removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direc
 }
 
 void
-SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices) {
+SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices, unsigned int interval) {
 
 	unsigned int numSlices = prevSlices.size() + currSlices.size();
 
@@ -226,6 +223,12 @@ SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std:
 		} else {
 
 			LOG_ERROR(splitmergelog) << "something wants to merge " << ps.size() << " slices -- don't know what to do." << std::endl;
+
+			foreach (boost::shared_ptr<Slice> slice, ps)
+				if (slice->getSection() == interval)
+					_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, slice));
+				else
+					_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, slice));
 		}
 	}
 }
@@ -233,19 +236,74 @@ SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std:
 void
 SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 
+	if (signal.modifiers & gui::keys::ControlDown)
+		return;
+
 	LOG_ALL(splitmergelog) << "mouse down" << std::endl;
 
 	if (signal.button == gui::buttons::Left) {
 
-		// find closest segments in intersection interval to the left
-		std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(signal.position, *_section, 1000000);
-		std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(signal.position, *_section, 1000000);
-		std::vector<boost::shared_ptr<BranchSegment> >       branches      = _segments->findBranches(signal.position, *_section, 1000000);
+		// find closest segments in intersection interval to the left and right
+		std::vector<boost::shared_ptr<Segment> > closestSegments;
+		for (int section = *_section; section <= *_section + 1; section++) {
 
-		probe(ends, signal.position);
-		probe(continuations, signal.position);
-		probe(branches, signal.position);
+			std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(signal.position, *_section, 1000000);
+			std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(signal.position, *_section, 1000000);
+			std::vector<boost::shared_ptr<BranchSegment> >       branches      = _segments->findBranches(signal.position, *_section, 1000000);
 
+			std::copy(ends.begin(),          ends.end(),          std::back_inserter(closestSegments));
+			std::copy(continuations.begin(), continuations.end(), std::back_inserter(closestSegments));
+			std::copy(branches.begin(),      branches.end(),      std::back_inserter(closestSegments));
+		}
+
+		// get all the slices that are in the current section
+		std::vector<boost::shared_ptr<Slice> > closestSlices;
+
+		foreach (boost::shared_ptr<Segment> segment, closestSegments) {
+
+			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+				if (slice->getSection() == *_section)
+					closestSlices.push_back(slice);
+			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+				if (slice->getSection() == *_section)
+					closestSlices.push_back(slice);
+		}
+
+		if (closestSlices.size() == 0) {
+
+			LOG_ALL(splitmergelog) << "found no slices in this section" << std::endl;
+			return;
+		}
+
+		// find the closest of all slices
+		boost::shared_ptr<Slice> closestSlice;
+		double distance = 0;
+		for (unsigned int i = 0; i < closestSlices.size(); i++) {
+
+			util::point<double> center = closestSlices[i]->getComponent()->getCenter();
+			double d = pow(center.x - signal.position.x, 2) + pow(center.y - signal.position.y,2);
+
+			if (!closestSlice || distance > d) {
+
+				closestSlice = closestSlices[i];
+				distance = d;
+			}
+		}
+
+		LOG_ALL(splitmergelog) << "slice " << closestSlice->getId() << " is closest to click" << std::endl;
+
+		if (_selection->count(closestSlice)) {
+
+			LOG_ALL(splitmergelog) << "remove it from selection" << std::endl;
+			_selection->erase(_selection->find(closestSlice));
+
+		} else {
+
+			LOG_ALL(splitmergelog) << "add it to selection" << std::endl;
+			_selection->insert(closestSlice);
+		}
+
+		setDirty(_painter);
 	}
 
 	if (signal.button == gui::buttons::Right) {
@@ -255,77 +313,3 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 	}
 }
 
-void
-SplitMerge::probe(std::vector<boost::shared_ptr<EndSegment> >& ends, const util::point<double>& position) {
-
-	foreach (boost::shared_ptr<EndSegment> end, ends) {
-
-		// we are only interested in ends having the slice on the right
-		if (end->getDirection() == Right)
-			continue;
-
-		LOG_ALL(splitmergelog) << "found an end segment" << std::endl;
-
-		if (end->getSlice()->getComponent()->getBoundingBox().contains(position)) {
-
-			if (_selection->contains(end)) {
-
-				LOG_ALL(splitmergelog) << "remove it from selection" << std::endl;
-				_selection->remove(end);
-
-			} else {
-
-				LOG_ALL(splitmergelog) << "add it to the selection" << std::endl;
-				_selection->add(end);
-			}
-
-			setDirty(_painter);
-
-		} else {
-
-			LOG_ALL(splitmergelog) << "...but it doesn't contain the click position" << std::endl;
-		}
-
-		return;
-	}
-
-	LOG_ALL(splitmergelog) << "couldn't find an end segment" << std::endl;
-}
-
-void
-SplitMerge::probe(std::vector<boost::shared_ptr<ContinuationSegment> >& continuations, const util::point<double>& position) {
-
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
-
-		LOG_ALL(splitmergelog) << "found a continuation segment" << std::endl;
-
-		boost::shared_ptr<Slice> slice = (continuation->getDirection() == Left ? continuation->getSourceSlice() : continuation->getTargetSlice());
-
-		if (slice->getComponent()->getBoundingBox().contains(position)) {
-
-			if (_selection->contains(continuation)) {
-
-				LOG_ALL(splitmergelog) << "remove it from selection" << std::endl;
-				_selection->remove(continuation);
-
-			} else {
-
-				LOG_ALL(splitmergelog) << "add it to the selection" << std::endl;
-				_selection->add(continuation);
-			}
-
-			setDirty(_painter);
-
-		} else {
-
-			LOG_ALL(splitmergelog) << "...but it doesn't contain the click position" << std::endl;
-		}
-
-		return;
-	}
-
-	LOG_ALL(splitmergelog) << "couldn't find a continuation segment" << std::endl;
-}
-
-void
-SplitMerge::probe(std::vector<boost::shared_ptr<BranchSegment> >& branches, const util::point<double>& position) {}

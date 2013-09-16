@@ -43,7 +43,7 @@ private:
 	void onMouseDown(const gui::MouseDown& signal);
 
 	void removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval);
-	void mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices);
+	void mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices, unsigned int interval);
 
 	void probe(std::vector<boost::shared_ptr<EndSegment> >& ends, const util::point<double>& position);
 	void probe(std::vector<boost::shared_ptr<ContinuationSegment> >& continuation, const util::point<double>& position);
@@ -54,7 +54,7 @@ private:
 	pipeline::Output<Segments>          _segments;
 	pipeline::Output<SplitMergePainter> _painter;
 
-	boost::shared_ptr<Segments> _selection;
+	boost::shared_ptr<std::set<boost::shared_ptr<Slice> > > _selection;
 
 	bool _initialSegmentsProcessed;
 };
