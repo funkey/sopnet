@@ -42,12 +42,9 @@ private:
 	void onKeyDown(const gui::KeyDown& signal);
 	void onMouseDown(const gui::MouseDown& signal);
 
-	void removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval);
-	void mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices, unsigned int interval);
-
-	void probe(std::vector<boost::shared_ptr<EndSegment> >& ends, const util::point<double>& position);
-	void probe(std::vector<boost::shared_ptr<ContinuationSegment> >& continuation, const util::point<double>& position);
-	void probe(std::vector<boost::shared_ptr<BranchSegment> >& branch, const util::point<double>& position);
+	void removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval, std::vector<Link>& oldLinks);
+	void mergeSlices(unsigned int interval, std::vector<Link>& oldLinks);
+	void endSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices);
 
 	pipeline::Input<Segments>           _initialSegments;
 	pipeline::Input<int>                _section;

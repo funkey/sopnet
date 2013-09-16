@@ -63,31 +63,83 @@ SplitMerge::onInputSet(const pipeline::InputSetBase& signal) {
 void
 SplitMerge::onKeyDown(const gui::KeyDown& signal) {
 
-	if (signal.key == gui::keys::M) {
+	if (signal.key == gui::keys::M || signal.key == gui::keys::S) {
 
-		// merge!
+		// merge! or split!
+		bool doMerge = (signal.key == gui::keys::M);
 
 		std::vector<boost::shared_ptr<Slice> > prevSlices;
 		std::vector<boost::shared_ptr<Slice> > currSlices;
 
 		// compare each section with the previous section
-		for (int section = 0; section < _segments->getNumInterSectionIntervals(); section++) {
+		for (int interval = 0; interval < _segments->getNumInterSectionIntervals(); interval++) {
 
 			foreach (boost::shared_ptr<Slice> slice, *_selection) {
 
-				if (slice->getSection() == section)
+				// slices to the right
+				if (slice->getSection() == interval)
 					currSlices.push_back(slice);
 			}
 
-			LOG_ALL(splitmergelog) << "merging in inter-section interval " << section << std::endl;
+			LOG_ALL(splitmergelog) << "merging in inter-section interval " << interval << std::endl;
 			LOG_ALL(splitmergelog) << "previous slices: " << prevSlices.size() << ", current slices " << currSlices.size() << std::endl;
 
 			// is there something to merge?
 			if (prevSlices.size()*currSlices.size() > 0) {
 
-				removeSegments(prevSlices, Right, section);
-				removeSegments(currSlices, Left, section);
-				mergeSlices(prevSlices, currSlices, section);
+				std::vector<Link> oldLinks;
+
+				removeSegments(prevSlices, Right, interval, oldLinks);
+				removeSegments(currSlices, Left, interval, oldLinks);
+
+				if (doMerge) {
+
+					// enumerate all possible links between the slices
+					std::vector<Link> links(oldLinks);
+					foreach(boost::shared_ptr<Slice> p, prevSlices)
+						foreach (boost::shared_ptr<Slice> c, currSlices)
+							links.push_back(Link(p, c));
+
+					mergeSlices(interval, links);
+
+				} else { // do a split
+
+					std::set<boost::shared_ptr<Slice> > keptPrevSlices;
+					std::set<boost::shared_ptr<Slice> > keptCurrSlices;
+
+					// get all links that should be kept, i.e., not both of 
+					// their slices are selected
+					std::vector<Link> keptLinks;
+					foreach (Link& link, oldLinks) {
+
+						if (std::count(prevSlices.begin(), prevSlices.end(), link.left) == 0) {
+							keptPrevSlices.insert(link.left);
+							keptLinks.push_back(link);
+						}
+						
+						if (std::count(currSlices.begin(), currSlices.end(), link.right) == 0) {
+
+							keptCurrSlices.insert(link.right);
+							keptLinks.push_back(link);
+						}
+					}
+
+					// re-merge the slices of the links that should be kept
+					mergeSlices(interval, keptLinks);
+
+					// end all slices that are not in the kept links
+					std::vector<boost::shared_ptr<Slice> > delPrevSlices;
+					std::vector<boost::shared_ptr<Slice> > delCurrSlices;
+
+					foreach (boost::shared_ptr<Slice> slice, prevSlices)
+						if (keptPrevSlices.count(slice) == 0)
+							delPrevSlices.push_back(slice);
+					foreach (boost::shared_ptr<Slice> slice, currSlices)
+						if (keptCurrSlices.count(slice) == 0)
+							delCurrSlices.push_back(slice);
+
+					endSlices(delPrevSlices, delCurrSlices);
+				}
 			}
 
 			std::swap(prevSlices, currSlices);
@@ -99,10 +151,13 @@ SplitMerge::onKeyDown(const gui::KeyDown& signal) {
 }
 
 void
-SplitMerge::removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval) {
+SplitMerge::removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval, std::vector<Link>& oldLinks) {
 
 	// remove all segments in the given interval that are starting from any of 
 	// the given slices in the given direction
+
+	// remember the links that have been represented by these segments -- they 
+	// should be maintained
 
 	std::vector<boost::shared_ptr<Segment> > segments = _segments->getSegments(interval);
 
@@ -115,6 +170,13 @@ SplitMerge::removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direc
 						_segments->remove(segment);
 
 						LOG_DEBUG(splitmergelog) << "removed a segment using slice " << slice->getId() << " in interval " << interval << std::endl;
+
+						foreach (boost::shared_ptr<Slice> p, (direction == Right ? segment->getSourceSlices() : segment->getTargetSlices()))
+							foreach (boost::shared_ptr<Slice> c, (direction == Right ? segment->getTargetSlices() : segment->getSourceSlices())) {
+
+								LOG_ALL(splitmergelog) << "remembering link between " << p->getId() << " and " << c->getId() << std::endl;
+								oldLinks.push_back(Link(p, c));
+							}
 					}
 				}
 			}
@@ -123,15 +185,17 @@ SplitMerge::removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direc
 }
 
 void
-SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices, unsigned int interval) {
+SplitMerge::mergeSlices(unsigned int interval, std::vector<Link>& links) {
 
-	unsigned int numSlices = prevSlices.size() + currSlices.size();
+	// get all slices that are involved
+	std::set<boost::shared_ptr<Slice> > slices;
+	foreach (Link& link, links) {
+		slices.insert(link.left);
+		slices.insert(link.right);
+	}
+	unsigned int numSlices = slices.size();
 
-	std::vector<Link> links;
-
-	foreach(boost::shared_ptr<Slice> p, prevSlices)
-		foreach (boost::shared_ptr<Slice> c, currSlices)
-			links.push_back(Link(p, c));
+	LOG_ALL(splitmergelog) << "merging " << numSlices << " slices" << std::endl;
 
 	std::sort(links.begin(), links.end());
 
@@ -231,6 +295,16 @@ SplitMerge::mergeSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std:
 					_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, slice));
 		}
 	}
+}
+
+void
+SplitMerge::endSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices) {
+
+	foreach (boost::shared_ptr<Slice> slice, prevSlices)
+		_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, slice));
+
+	foreach (boost::shared_ptr<Slice> slice, currSlices)
+		_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, slice));
 }
 
 void
