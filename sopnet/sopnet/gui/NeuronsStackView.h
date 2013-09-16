@@ -48,5 +48,8 @@ private:
 
 	// indicates that the current neuron modified
 	bool _currentNeuronModified;
+
+	// the alpha value for the painter
+	double _alpha;
 };
 

@@ -57,6 +57,11 @@ public:
 	void showSliceIds(bool show);
 
 	/**
+	 * Set the transparency of the neurons to draw.
+	 */
+	void setAlpha(double alpha) { _alpha = alpha; }
+
+	/**
 	 * Overwritten from painter.
 	 */
 	virtual bool draw(
@@ -122,6 +127,8 @@ private:
 	// set the color to draw links to prev section
 	void setPrevColor();
 
+	void hsvToRgb(double h, double s, double v, double& r, double& g, double& b);
+
 	// the neurons
 	boost::shared_ptr<SegmentTrees> _neurons;
 
@@ -145,11 +152,16 @@ private:
 	// show slice ids
 	bool _showSliceIds;
 
+	// alpha value of the slices
+	double _alpha;
+
 	// distance between sections
 	double _zScale;
 
 	// a lookup table for neuron colors
 	std::map<unsigned int, boost::array<double, 3> > _colors;
+
+	std::set<unsigned int> _drawnSlices;
 };
 
 #endif // SOPNET_GUI_NEURONS_STACK_PAINTER_H__

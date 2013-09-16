@@ -13,6 +13,7 @@ NeuronsStackPainter::NeuronsStackPainter() :
 	_showContinuations(true),
 	_showBranches(true),
 	_showSliceIds(false),
+	_alpha(0.8),
 	_zScale(15) {}
 
 void
@@ -97,9 +98,7 @@ NeuronsStackPainter::assignColors() {
 
 		if (neuron->getContinuations().size() <= 1) {
 
-			r = 0.3;
-			g = 0.3;
-			b = 0.3;
+			hsvToRgb(100, 0.5, 0.5, r, g, b);
 
 		} else {
 
@@ -110,9 +109,9 @@ NeuronsStackPainter::assignColors() {
 			srand(sum);
 
 			// draw a random color
-			r = (double)rand()/RAND_MAX;
-			g = (double)rand()/RAND_MAX;
-			b = (double)rand()/RAND_MAX;
+			double h = (double)rand()/RAND_MAX*360.0;
+
+			hsvToRgb(h, 1.0, 1.0, r, g, b);
 		}
 
 		_colors[i][0] = r;
@@ -121,6 +120,31 @@ NeuronsStackPainter::assignColors() {
 	 }
 
 	LOG_DEBUG(neuronsstackpainterlog) << "done" << std::endl;
+}
+
+void
+NeuronsStackPainter::hsvToRgb(double h, double s, double v, double& r, double& g, double& b) {
+
+	double c = v*s;
+	double H = h/60.0;
+	double x = c*(1 - std::abs(fmod(H,2) - 1));
+	double m = v-c;
+
+	if (H < 1) {
+		r = c; g = x; b = 0;
+	} else if (H < 2) {
+		r = x; g = c; b = 0;
+	} else if (H < 2) {
+		r = 0; g = c; b = x;
+	} else if (H < 2) {
+		r = 0; g = x; b = c;
+	} else if (H < 2) {
+		r = x; g = 0; b = c;
+	} else {
+		r = c; g = 0; b = x;
+	}
+
+	r += m; b += m; g += m;
 }
 
 void
@@ -271,6 +295,9 @@ NeuronsStackPainter::drawNeuron(
 	// we want to show the slices of the current section and the links to slices 
 	// in the previous and next section
 
+	// clear memory of drawn slices
+	_drawnSlices = std::set<unsigned int>();
+
 	if (_showEnds) {
 
 		// for all ends in the previous inter-section interval
@@ -280,7 +307,7 @@ NeuronsStackPainter::drawNeuron(
 			if (end->getDirection() == Left) {
 
 				// draw the slice
-				drawSlice(*end->getSlice(), red, green, blue, 0.75, roi, resolution);
+				drawSlice(*end->getSlice(), red, green, blue, _alpha, roi, resolution);
 
 				// draw the end-link
 				drawEnd(end->getSlice()->getComponent()->getCenter(), Left, roi, resolution);
@@ -296,7 +323,7 @@ NeuronsStackPainter::drawNeuron(
 				// draw the slice, it it wasn't drawn by previous segment to the
 				// right
 				if (_section == 0)
-					drawSlice(*end->getSlice(), red, green, blue, 0.75, roi, resolution);
+					drawSlice(*end->getSlice(), red, green, blue, _alpha, roi, resolution);
 
 				// draw the end-link
 				drawEnd(end->getSlice()->getComponent()->getCenter(), Right, roi, resolution);
@@ -314,7 +341,7 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*continuation->getSourceSlice(),
 						red, green, blue,
-						0.75,
+						_alpha,
 						roi, resolution);
 
 				drawContinuation(
@@ -327,7 +354,7 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*continuation->getTargetSlice(),
 						red, green, blue,
-						0.75,
+						_alpha,
 						roi, resolution);
 
 				drawContinuation(
@@ -349,7 +376,7 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*continuation->getTargetSlice(),
 							red, green, blue,
-							0.75,
+							_alpha,
 							roi, resolution);
 
 				drawContinuation(
@@ -365,7 +392,7 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*continuation->getSourceSlice(),
 							red, green, blue,
-							0.75,
+							_alpha,
 							roi, resolution);
 
 				drawContinuation(
@@ -387,7 +414,7 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*branch->getSourceSlice(),
 						red, green, blue,
-						0.75,
+						_alpha,
 						roi, resolution);
 
 				drawBranch(
@@ -402,13 +429,13 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*branch->getTargetSlice1(),
 						red, green, blue,
-						0.75,
+						_alpha,
 						roi, resolution);
 
 				drawSlice(
 						*branch->getTargetSlice2(),
 						red, green, blue,
-						0.75,
+						_alpha,
 						roi, resolution);
 
 				drawMerge(
@@ -432,12 +459,12 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*branch->getTargetSlice1(),
 							red, green, blue,
-							0.75,
+							_alpha,
 							roi, resolution);
 					drawSlice(
 							*branch->getTargetSlice2(),
 							red, green, blue,
-							0.75,
+							_alpha,
 							roi, resolution);
 				}
 
@@ -456,7 +483,7 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*branch->getSourceSlice(),
 							red, green, blue,
-							0.75,
+							_alpha,
 							roi, resolution);
 
 				drawBranch(
@@ -481,6 +508,11 @@ NeuronsStackPainter::drawSlice(
 		double alpha,
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
+
+	if (_drawnSlices.count(slice.getId()))
+		return;
+
+	_drawnSlices.insert(slice.getId());
 
 	glCheck(glColor4f(red, green, blue, alpha));
 

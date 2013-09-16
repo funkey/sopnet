@@ -49,7 +49,7 @@ SliceTextures::load(
 		pixels[index][0] = value;
 		pixels[index][1] = value;
 		pixels[index][2] = value;
-		pixels[index][3] = 0.5;
+		pixels[index][3] = 1.0;
 	}
 
 	gui::Texture* texture = new gui::Texture(size.x, size.y, GL_RGBA);

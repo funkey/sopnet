@@ -6,7 +6,8 @@ static logger::LogChannel neuronsstackviewlog("neuronsstackviewlog", "[NeuronsSt
 NeuronsStackView::NeuronsStackView() :
 	_painter(boost::make_shared<NeuronsStackPainter>()),
 	_section(0),
-	_neuronsModified(true) {
+	_neuronsModified(true),
+	_alpha(0.8) {
 
 	registerInput(_neurons, "neurons");
 	registerInput(_currentNeuron, "current neuron", pipeline::Optional);
@@ -18,6 +19,7 @@ NeuronsStackView::NeuronsStackView() :
 	_painter.registerForwardSlot(_sizeChanged);
 	_painter.registerForwardSlot(_contentChanged);
 	_painter.registerForwardCallback(&NeuronsStackView::onKeyDown, this);
+	_painter->setAlpha(_alpha);
 }
 
 void
@@ -140,6 +142,19 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 	if (signal.key == gui::keys::N) {
 
 		_painter->showSliceIds(signal.modifiers & gui::keys::ShiftDown);
+	}
+
+	if (signal.key == gui::keys::Tab) {
+
+		_painter->setAlpha(_alpha);
+		if (_alpha == 1)
+			_alpha = 0;
+		else if (_alpha == 0)
+			_alpha = 0.8;
+		else
+			_alpha = 1;
+
+		setDirty(_painter);
 	}
 }
 
