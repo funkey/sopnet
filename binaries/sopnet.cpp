@@ -402,8 +402,8 @@ int main(int optionc, char** optionv) {
 
 			stackView->setInput(sopnet->getOutput("segments"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
-			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(stackView->getOutput("painter"));
+			overlay->addInput(sectionsView->getOutput());
 
 			segmentsView->setInput(stackView->getOutput("visible segments"));
 			rotateView->setInput(segmentsView->getOutput());
@@ -438,8 +438,8 @@ int main(int optionc, char** optionv) {
 
 			resultView->setInput(neuronExtractor->getOutput("neurons"));
 			sectionsView->setInput(rawSectionsReader->getOutput());
-			overlay->addInput(sectionsView->getOutput());
 			overlay->addInput(resultView->getOutput());
+			overlay->addInput(sectionsView->getOutput());
 			namedView->setInput(overlay->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
