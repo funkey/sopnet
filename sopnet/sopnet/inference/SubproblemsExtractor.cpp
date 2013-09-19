@@ -119,9 +119,10 @@ SubproblemsExtractor::updateOutputs() {
 	unsigned int subproblemId = 0;
 	for (unsigned int startSubproblem = minInterSectionInterval; startSubproblem < maxInterSectionInterval; startSubproblem += subproblemsSize - subproblemsOverlap) {
 
+		// the first inter-section interval that is not part of the subproblem
 		unsigned int endSubproblem = startSubproblem + subproblemsSize;
 
-		LOG_DEBUG(subproblemsextractorlog) << "creating subproblem " << subproblemId << " for inter-section intervals " << startSubproblem << "-" << endSubproblem << std::endl;
+		LOG_DEBUG(subproblemsextractorlog) << "creating subproblem " << subproblemId << " for inter-section intervals " << startSubproblem << "-" << (endSubproblem-1) << std::endl;
 
 		// get all working problem variable ids for this subproblem
 		std::vector<unsigned int> workingVarIds = _configuration->getVariables(startSubproblem, endSubproblem);
