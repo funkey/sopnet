@@ -127,6 +127,8 @@ SubproblemsExtractor::updateOutputs() {
 		// get all working problem variable ids for this subproblem
 		std::vector<unsigned int> workingVarIds = _configuration->getVariables(startSubproblem, endSubproblem);
 
+		LOG_DEBUG(subproblemsextractorlog) << "this subproblem contains " << workingVarIds.size() << " variables" << std::endl;
+
 		// remember mapping of subproblem variable ids to this subproblem 
 		// (needed for unary terms)
 		foreach (unsigned int workingVarId, workingVarIds) {
@@ -136,26 +138,47 @@ SubproblemsExtractor::updateOutputs() {
 		}
 
 		// find all working problem constraints that involve the subproblem 
-		// variable ids (these are all constraints in this subproblem)
+		// variable ids
 		std::vector<unsigned int> constraints = _constraints->getConstraints(workingVarIds);
 
 		// remember mapping of constraints to this subproblem
-		foreach (unsigned int constraint, constraints) {
+		foreach (unsigned int i, constraints) {
 
-			LOG_ALL(subproblemsextractorlog) << "assigning constraint " << constraint << " to subproblem " << subproblemId << std::endl;
-			_subproblems->assignConstraint(constraint, subproblemId);
-		}
+			LinearConstraint& constraint = (*_constraints)[i];
 
-		// add all variables that are used by these constraints to the 
-		// subproblem, additionally
-		foreach (unsigned int constraint, constraints) {
+			// There are two types of constraints: [expr]≤1 and [expr]=0.  The 
+			// first is defined within one inter-section interval and ensures 
+			// that at most one of conflicting segments is picked.  The second 
+			// is defined between two inter-section intervals and
+			// ensures continuation.
+			//
+			// Always accept the first type. Accept the second type only if 
+			// it is fully contained in our problems variables. To simplify 
+			// things (and be more general), accept constraints only if they
+			// are fully contained in our variables.
 
+			// Working variable ids have already been assigned to subproblem 
+			// ids. We can thus just ask for that.
 			unsigned int workingVarId;
 			double _;
-			foreach (boost::tie(workingVarId, _), (*_constraints)[constraint].getCoefficients()) {
+			bool addConstraint = true;
+			foreach (boost::tie(workingVarId, _), constraint.getCoefficients()) {
 
-				LOG_ALL(subproblemsextractorlog) << "assigning additional variable " << workingVarId << " to subproblem " << subproblemId << std::endl;
-				_subproblems->assignVariable(workingVarId, subproblemId);
+				// get all subproblems that are assigned to the working variable
+				std::set<unsigned int>& assignedSubproblems = _subproblems->getVariableSubproblems(workingVarId);
+
+				// does it containt the current subproblem?
+				if (!assignedSubproblems.count(subproblemId)) {
+
+					addConstraint = false;
+					break;
+				}
+			}
+
+			if (addConstraint) {
+
+				LOG_ALL(subproblemsextractorlog) << "assigning constraint " << i << " to subproblem " << subproblemId << std::endl;
+				_subproblems->assignConstraint(i, subproblemId);
 			}
 		}
 

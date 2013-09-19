@@ -11,27 +11,50 @@ class Subproblems : public pipeline::Data {
 
 public:
 
+	/**
+	 * Set the working problem that is decomposed by this set of subproblems.
+	 */
 	void setProblem(boost::shared_ptr<Problem> problem) {
 
 		_problem = problem;
 	}
 
+	/**
+	 * Get the problem that is decomposed by this set of subproblems.
+	 */
+	boost::shared_ptr<Problem> getProblem() { return _problem; }
+
+	/**
+	 * Assign a working problem variable to a subproblem. Since subproblems are 
+	 * defined as sets of factors, this corresponds rather to assigning the 
+	 * unary factor of this variable to a subproblem.
+	 */
 	void assignVariable(unsigned int variable, unsigned int subproblem) {
 
 		_variablesToSubproblems[variable].insert(subproblem);
 	}
 
+	/**
+	 * Assign a working problem constraint to a subproblem.
+	 */
 	void assignConstraint(unsigned int constraint, unsigned int subproblem) {
 
 		_constraintsToSubproblems[constraint].insert(subproblem);
 	}
 
-	boost::shared_ptr<Problem> getProblem() { return _problem; }
-
+	/**
+	 * Get all subproblems that a variable is assigned to.
+	 */
 	std::set<unsigned int>& getVariableSubproblems(unsigned int variable) { return _variablesToSubproblems[variable]; }
 
+	/**
+	 * Get all subproblems that a constraint is assigned to.
+	 */
 	std::set<unsigned int>& getConstraintSubproblems(unsigned int constraint) { return _constraintsToSubproblems[constraint]; }
 
+	/**
+	 * Reset the decomposition.
+	 */
 	void clear() {
 
 		_problem.reset();
