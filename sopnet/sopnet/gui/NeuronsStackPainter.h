@@ -37,6 +37,11 @@ public:
 	void showAllNeurons();
 
 	/**
+	 * Show neurons that contain at leas one continuation segment.
+	 */
+	void showCompleteNeurons(bool show);
+
+	/**
 	 * Show end segments.
 	 */
 	void showEnds(bool show);
@@ -140,6 +145,9 @@ private:
 
 	// whether to show a single neuron only
 	bool _showSingleNeuron;
+
+	// whether to show neurons that have at least one continuation
+	bool _showCompleteNeurons;
 
 	// the currently selected neuron
 	unsigned int _currentNeuron;

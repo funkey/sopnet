@@ -144,6 +144,13 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 		_painter->showSliceIds(signal.modifiers & gui::keys::ShiftDown);
 	}
 
+	if (signal.key == gui::keys::Q) {
+
+		_painter->showCompleteNeurons(signal.modifiers & gui::keys::ShiftDown);
+
+		setDirty(_painter);
+	}
+
 	if (signal.key == gui::keys::Tab) {
 
 		_painter->setAlpha(_alpha);

@@ -8,6 +8,7 @@ static logger::LogChannel neuronsstackpainterlog("neuronsstackpainterlog", "[Neu
 NeuronsStackPainter::NeuronsStackPainter() :
 	_section(0),
 	_showSingleNeuron(false),
+	_showCompleteNeurons(true),
 	_currentNeuron(0),
 	_showEnds(true),
 	_showContinuations(true),
@@ -47,6 +48,13 @@ void
 NeuronsStackPainter::showAllNeurons() {
 
 	_showSingleNeuron = false;
+	_showCompleteNeurons = true;
+}
+
+void
+NeuronsStackPainter::showCompleteNeurons(bool show) {
+
+	_showCompleteNeurons = show;
 }
 
 void
@@ -98,7 +106,7 @@ NeuronsStackPainter::assignColors() {
 		double g;
 		double b;
 
-		if (neuron->getContinuations().size() <= 1) {
+		if (neuron->getContinuations().size() < 1) {
 
 			hsvToRgb(100, 0.5, 0.5, r, g, b);
 
@@ -274,6 +282,9 @@ NeuronsStackPainter::drawNeuron(
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
+
+	if (neuron.getContinuations().size() >= 1 && !_showCompleteNeurons)
+		return;
 
 	// set up lighting
 	GLfloat ambient[4] = { 0, 0, 0, 1 };
@@ -669,11 +680,11 @@ NeuronsStackPainter::drawMerge(
 void
 NeuronsStackPainter::setNextColor() {
 
-	glColor4f(0.9, 0.9, 1.0, 0.9);
+	glColor4f(0.9, 0.9, 1.0, _alpha);
 }
 
 void
 NeuronsStackPainter::setPrevColor() {
 
-	glColor4f(0.1, 0.1, 0.0, 0.9);
+	glColor4f(0.1, 0.1, 0.0, _alpha);
 }
