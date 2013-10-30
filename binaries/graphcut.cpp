@@ -121,7 +121,6 @@ int main(int optionc, char** optionv) {
 
 		// create a window
 		boost::shared_ptr<gui::Window> window = boost::make_shared<gui::Window>("sopnet");
-		window->processEvents();
 
 		// create a zoom view for this window
 		boost::shared_ptr<gui::ZoomView> zoomView = boost::make_shared<gui::ZoomView>();
