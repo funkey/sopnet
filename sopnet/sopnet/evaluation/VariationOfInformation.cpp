@@ -1,5 +1,8 @@
+#include <util/Logger.h>
 #include <util/exceptions.h>
 #include "VariationOfInformation.h"
+
+logger::LogChannel variationofinformationlog("variationofinformationlog", "[ResultEvaluator] ");
 
 VariationOfInformation::VariationOfInformation() {
 
@@ -79,4 +82,8 @@ VariationOfInformation::updateOutputs() {
 	// set output
 
 	*_variationOfInformation = H0 + H1 - 2.0 * I;
+
+	// dump to output (useful for redirection into file)
+	LOG_USER(variationofinformationlog) << "# VOI" << std::endl;
+	LOG_USER(variationofinformationlog) << (*_variationOfInformation) << std::endl;
 }

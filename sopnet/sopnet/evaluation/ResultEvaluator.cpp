@@ -164,6 +164,14 @@ ResultEvaluator::updateOutputs() {
 	LOG_ALL(resultevaluatorlog) << "false splits:" << std::endl;
 	foreach (boost::tie(a, b), minErrors.falseSplits())
 		LOG_ALL(resultevaluatorlog) << "[" << a << ", " << b << "]" << std::endl;
+
+	// dump to output (useful for redirection into file)
+	LOG_USER(resultevaluatorlog) << "# FP FN FS FM" << std::endl;
+	LOG_USER(resultevaluatorlog)
+			<< minErrors.numFalsePositives() << " "
+			<< minErrors.numFalseNegatives() << " "
+			<< minErrors.numFalseSplits() << " "
+			<< minErrors.numFalseMerges() << std::endl;
 }
 
 ResultEvaluator::Mappings
