@@ -42,6 +42,10 @@ private:
 
 	// segments above this value will have infinite costs
 	double _maxSegmentCosts;
+
+	bool _useOverlapOnly;
+
+	int _overlapFeature;
 };
 
 #endif // SOPNET_SEGMENT_RANDOM_FOREST_EVALUATOR_H__

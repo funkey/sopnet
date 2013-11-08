@@ -16,9 +16,16 @@ util::ProgramOption optionMinSegmentProbability(
 		util::_description_text = "The minimal probability a segments needs to have (according to the RF-classifier) to accept it.",
 		util::_default_value    = "0.05");
 
+util::ProgramOption optionUseOverlapOnly(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "useOverlapOnly",
+		util::_description_text = "Instead of using the random forest prediction in the objective, use the number of overlapping pixels for each segment.");
+
 RandomForestCostFunction::RandomForestCostFunction() :
 	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4)),
-	_maxSegmentCosts(-std::log(optionMinSegmentProbability.as<double>())) {
+	_maxSegmentCosts(-std::log(optionMinSegmentProbability.as<double>())),
+	_useOverlapOnly(optionUseOverlapOnly),
+	_overlapFeature(-1) {
 
 	registerInput(_features, "features");
 	registerInput(_randomForest, "random forest");
@@ -38,6 +45,20 @@ RandomForestCostFunction::costs(
 		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
 		const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
 		std::vector<double>& segmentCosts) {
+
+	if (_useOverlapOnly && _overlapFeature == -1) {
+
+		for (int i = 0; i < _features->getNames().size(); i++)
+			if (_features->getNames()[i].compare("overlap") == 0) {
+				_overlapFeature = i;
+				break;
+			}
+
+		if (_overlapFeature == -1) {
+
+			LOG_ERROR(randomforestcostfunctionlog) << "couldn't find feature 'overlap'" << std::endl;
+		}
+	}
 
 	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
 
@@ -93,9 +114,12 @@ RandomForestCostFunction::costs(
 double
 RandomForestCostFunction::costs(const Segment& segment) {
 
+	if (_useOverlapOnly)
+		return -_features->get(segment.getId())[_overlapFeature];
+
 	double prob = _randomForest->getProbabilities(_features->get(segment.getId()))[1];
 
-	// [23.02, 0.0]
+	//[23.02, 0.0]
 	return -log(std::max(1e-10, prob));
 }
 
