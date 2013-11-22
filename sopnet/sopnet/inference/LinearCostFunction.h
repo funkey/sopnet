@@ -2,6 +2,7 @@
 #define CELLTRACKER_TRACKLET_EVALUATOR_H__
 
 #include <pipeline/all.h>
+#include <sopnet/features/Features.h>
 #include <sopnet/segments/Segment.h>
 #include "LinearCostFunctionParameters.h"
 
@@ -12,6 +13,14 @@ class BranchSegment;
 
 class LinearCostFunction : public pipeline::SimpleProcessNode<> {
 
+	typedef boost::function<
+			void
+			(const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+			 const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+			 const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
+			 std::vector<double>& costs)>
+			costs_function_type;
+
 public:
 
 	LinearCostFunction();
@@ -21,17 +30,21 @@ private:
 
 	void updateOutputs();
 
-	double getCosts(const EndSegment& end);
+	void costs(
+			const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+			const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+			const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
+			std::vector<double>& costs);
 
-	double getCosts(const ContinuationSegment& continuation);
+	double costs(const Segment& segment, const std::vector<double>& weights);
 
-	double getCosts(const BranchSegment& branch);
-
-	double costs(const Segment& segment, boost::shared_ptr<LinearCostFunctionParameters> parameters);
+	pipeline::Input<Features> _features;
 
 	pipeline::Input<LinearCostFunctionParameters> _parameters;
 
-	pipeline::Output<boost::function<double(const Segment&)> > _costFunction;
+	pipeline::Output<costs_function_type> _costFunction;
+
+	std::vector<double> _cache;
 };
 
 #endif // CELLTRACKER_TRACKLET_EVALUATOR_H__

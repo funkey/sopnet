@@ -1,6 +1,7 @@
 #include <util/Logger.h>
 #include <util/point.hpp>
 #include <imageprocessing/ConnectedComponent.h>
+#include <sopnet/exceptions.h>
 #include <sopnet/segments/EndSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
 #include <sopnet/segments/BranchSegment.h>
@@ -9,8 +10,9 @@
 static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[LinearCostFunction] ");
 
 LinearCostFunction::LinearCostFunction() :
-	_costFunction(boost::bind(&LinearCostFunction::costs, this, _1, boost::make_shared<LinearCostFunctionParameters>())) {
+	_costFunction(boost::bind(&LinearCostFunction::costs, this, _1, _2, _3, _4)) {
 
+	registerInput(_features, "features");
 	registerInput(_parameters, "parameters");
 	registerOutput(_costFunction, "cost function");
 }
@@ -18,80 +20,84 @@ LinearCostFunction::LinearCostFunction() :
 void
 LinearCostFunction::updateOutputs() {
 
-	*_costFunction = boost::bind(&LinearCostFunction::costs, this, _1, boost::make_shared<LinearCostFunctionParameters>(*_parameters));
+	// invalidate cache
+	_cache.clear();
+
+	if (_features->numFeatures() != _parameters->getWeights().size()) {
+
+		std::stringstream message;
+		message
+				<< "number of features (" << _features->numFeatures()
+				<< ") does not match number of weights (" << _parameters->getWeights().size()
+				<< ")";
+		BOOST_THROW_EXCEPTION(InvalidParameters()
+				<< error_message(message.str())
+				<< STACK_TRACE);
+	}
+}
+
+void
+LinearCostFunction::costs(
+		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
+		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
+		const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
+		std::vector<double>& segmentCosts) {
+
+	segmentCosts.resize(ends.size() + continuations.size() + branches.size(), 0);
+
+	if (segmentCosts.size() == _cache.size()) {
+
+		for (unsigned int i = 0; i < segmentCosts.size(); i++)
+			segmentCosts[i] += _cache[i];
+
+		return;
+	}
+
+	_cache.resize(ends.size() + continuations.size() + branches.size());
+
+	const std::vector<double> weights = _parameters->getWeights();
+
+	unsigned int i = 0;
+
+	foreach (boost::shared_ptr<EndSegment> end, ends) {
+
+		double c = costs(*end, weights);
+
+		segmentCosts[i] += c;
+		_cache[i] = c;
+
+		i++;
+	}
+
+	foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations) {
+
+		double c = costs(*continuation, weights);
+
+		segmentCosts[i] += c;
+		_cache[i] = c;
+
+		i++;
+	}
+
+	foreach (boost::shared_ptr<BranchSegment> branch, branches) {
+
+		double c = costs(*branch, weights);
+
+		segmentCosts[i] += c;
+		_cache[i] = c;
+
+		i++;
+	}
 }
 
 double
-LinearCostFunction::costs(const Segment& segment, boost::shared_ptr<LinearCostFunctionParameters>) {
+LinearCostFunction::costs(const Segment& segment, const std::vector<double>& weights) {
 
-	LOG_ALL(linearcostfunctionlog) << "evaluating segment " << segment.getId() << std::endl;
+	const std::vector<double>& features = _features->get(segment.getId());
 
-	/**
-	 * Yes, dynamic casts are evil. This is not a good solution in terms of
-	 * performance. It would be better to have a cost function for each segment
-	 * type. But since noone really uses this cost function here anyway, we can
-	 * postpone the good implementation and live with this.
-	 */
+	double costs = 0;
+	for (int i = 0; i < features.size(); i++)
+		costs += features[i]*weights[i];
 
-	if (const EndSegment* end = dynamic_cast<const EndSegment*>(&segment))
-		return getCosts(*end);
-
-	if (const ContinuationSegment* continuation = dynamic_cast<const ContinuationSegment*>(&segment))
-		return getCosts(*continuation);
-
-	if (const BranchSegment* branch = dynamic_cast<const BranchSegment*>(&segment))
-		return getCosts(*branch);
-
-	return 0;
+	return costs;
 }
-
-double
-LinearCostFunction::getCosts(const EndSegment& end) {
-
-	return sqrt(end.getSlice()->getComponent()->getSize())*0.01;
-}
-
-double
-LinearCostFunction::getCosts(const ContinuationSegment& continuation) {
-
-	boost::shared_ptr<ConnectedComponent> source = continuation.getSourceSlice()->getComponent();
-	boost::shared_ptr<ConnectedComponent> target = continuation.getTargetSlice()->getComponent();
-
-	const util::point<double>& sourceCenter = source->getCenter();
-	const util::point<double>& targetCenter = target->getCenter();
-
-	LOG_ALL(linearcostfunctionlog) << "connects from " << sourceCenter << " to " << targetCenter << std::endl;
-
-	double diffX = sourceCenter.x - targetCenter.x;
-	double diffY = sourceCenter.y - targetCenter.y;
-
-	double distance = diffX*diffX + diffY*diffY;
-
-	LOG_ALL(linearcostfunctionlog) << "distance is " << distance << std::endl;
-
-	return distance;
-}
-
-double
-LinearCostFunction::getCosts(const BranchSegment& branch) {
-
-	boost::shared_ptr<ConnectedComponent> source  = branch.getSourceSlice()->getComponent();
-	boost::shared_ptr<ConnectedComponent> target1 = branch.getTargetSlice1()->getComponent();
-	boost::shared_ptr<ConnectedComponent> target2 = branch.getTargetSlice2()->getComponent();
-
-	const util::point<double>& sourceCenter  = source->getCenter();
-	const util::point<double>& targetCenter1 = target1->getCenter();
-	const util::point<double>& targetCenter2 = target2->getCenter();
-
-	LOG_ALL(linearcostfunctionlog) << "connects from " << sourceCenter << " to " << targetCenter1 << " and " << targetCenter2 << std::endl;
-
-	double diffX = sourceCenter.x - 0.5*(targetCenter1.x + targetCenter2.x);
-	double diffY = sourceCenter.y - 0.5*(targetCenter1.y + targetCenter2.y);
-
-	double distance = diffX*diffX + diffY*diffY;
-
-	LOG_ALL(linearcostfunctionlog) << "distance is " << distance << std::endl;
-
-	return distance;
-}
-

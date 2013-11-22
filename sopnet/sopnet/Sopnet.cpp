@@ -16,6 +16,8 @@
 #include <sopnet/inference/ProblemAssembler.h>
 #include <sopnet/inference/SubproblemsExtractor.h>
 #include <sopnet/inference/SubproblemsSolver.h>
+#include <sopnet/inference/LinearCostFunction.h>
+#include <sopnet/inference/io/LinearCostFunctionParametersReader.h>
 #include <sopnet/inference/RandomForestCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunction.h>
 #include <sopnet/inference/PriorCostFunction.h>
@@ -30,11 +32,23 @@
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
 
+util::ProgramOption optionLinearCostFunction(
+		util::_module           = "sopnet",
+		util::_long_name        = "linearCostFunction",
+		util::_description_text = "Use the random forest cost function for segments. If false, a linear cost function will be used.",
+		util::_default_value    = true);
+
 util::ProgramOption optionRandomForestFile(
 		util::_module           = "sopnet",
 		util::_long_name        = "segmentRandomForest",
 		util::_description_text = "Path to an HDF5 file containing the segment random forest.",
 		util::_default_value    = "segment_rf.hdf");
+
+util::ProgramOption optionLinearCostFunctionParametersFile(
+		util::_module           = "sopnet",
+		util::_long_name        = "linearCostFunctionParameters",
+		util::_description_text = "Path to a file containing the weights for the linear cost function.",
+		util::_default_value    = "feature_weights.dat");
 
 util::ProgramOption optionDecomposeProblem(
 		util::_module           = "sopnet.inference",
@@ -54,7 +68,6 @@ Sopnet::Sopnet(
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
-	_randomForestCostFunction(boost::make_shared<RandomForestCostFunction>()),
 	_segmentationCostFunction(boost::make_shared<SegmentationCostFunction>()),
 	_priorCostFunction(boost::make_shared<PriorCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
@@ -265,8 +278,24 @@ Sopnet::createInferencePipeline() {
 	_segmentFeaturesExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
 
 	// setup the segment evaluation functions
-	_randomForestCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
-	_randomForestCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
+	if (optionLinearCostFunction) {
+
+		LOG_DEBUG(sopnetlog) << "creating linear segment cost function" << std::endl;
+
+		_segmentCostFunction = boost::make_shared<LinearCostFunction>();
+		boost::shared_ptr<LinearCostFunctionParametersReader> reader
+				= boost::make_shared<LinearCostFunctionParametersReader>(optionLinearCostFunctionParametersFile.as<std::string>());
+		_segmentCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		_segmentCostFunction->setInput("parameters", reader->getOutput());
+
+	} else {
+
+		LOG_DEBUG(sopnetlog) << "creating random forest segment cost function" << std::endl;
+
+		_segmentCostFunction = boost::make_shared<RandomForestCostFunction>();
+		_segmentCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+		_segmentCostFunction->setInput("random forest", _randomForestReader->getOutput("random forest"));
+	}
 	_segmentationCostFunction->setInput("membranes", _membranes);
 	_segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
@@ -277,7 +306,7 @@ Sopnet::createInferencePipeline() {
 		_problemWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 		_problemWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 		
-		_problemWriter->setInput("random forest cost function", _randomForestCostFunction->getOutput("cost function"));
+		_problemWriter->setInput("segment cost function", _segmentCostFunction->getOutput("cost function"));
 		_problemWriter->setInput("segmentation cost function", _segmentationCostFunction->getOutput("cost function"));
 		_problemWriter->addInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 
@@ -285,7 +314,7 @@ Sopnet::createInferencePipeline() {
 
 		// feed all segments to objective generator
 		_objectiveGenerator->setInput("segments", _problemAssembler->getOutput("segments"));
-		_objectiveGenerator->setInput("segment cost function", _randomForestCostFunction->getOutput("cost function"));
+		_objectiveGenerator->setInput("segment cost function", _segmentCostFunction->getOutput("cost function"));
 		_objectiveGenerator->addInput("additional cost functions", _priorCostFunction->getOutput("cost function"));
 
 		if (!optionDisableSegmentationCosts)

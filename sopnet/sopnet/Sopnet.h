@@ -123,7 +123,7 @@ private:
 	boost::shared_ptr<RandomForestHdf5Reader>         _randomForestReader;
 
 	// a segment evaluator that provides a cost function for segments
-	boost::shared_ptr<RandomForestCostFunction>       _randomForestCostFunction;
+	boost::shared_ptr<pipeline::ProcessNode>          _segmentCostFunction;
 
 	// a segment evaluator that provides a cost function for slices
 	boost::shared_ptr<SegmentationCostFunction>       _segmentationCostFunction;
