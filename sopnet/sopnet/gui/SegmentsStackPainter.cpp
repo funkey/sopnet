@@ -5,7 +5,7 @@
 
 static logger::LogChannel segmentsstackpainterlog("segmentsstackpainterlog", "[SegmentsStackPainter] ");
 
-SegmentsStackPainter::SegmentsStackPainter() :
+SegmentsStackPainter::SegmentsStackPainter(double gap) :
 	_prevSegments(boost::make_shared<Segments>()),
 	_nextSegments(boost::make_shared<Segments>()),
 	_closestPrevSegment(0),
@@ -18,7 +18,8 @@ SegmentsStackPainter::SegmentsStackPainter() :
 	_showBranches(false),
 	_showSliceIds(true),
 	_focus(0, 0),
-	_zScale(15) {}
+	_zScale(15),
+	_gap(gap) {}
 
 void
 SegmentsStackPainter::setSegments(boost::shared_ptr<Segments> segments) {
@@ -268,8 +269,8 @@ SegmentsStackPainter::setCurrentSection(unsigned int section) {
 
 	unsigned int height = size.height();
 
-	size.minY -= height;
-	size.maxY += height;
+	size.minY -= height + _gap;
+	size.maxY += height + _gap;
 
 	setSize(size);
 
@@ -500,12 +501,12 @@ SegmentsStackPainter::drawSlice(
 	// current section
 	if (z < 0) {
 
-		offset = _sectionHeight;
+		offset = _sectionHeight + _gap;
 		z = 0;
 
 	} else if (z > 0) {
 
-		offset = -_sectionHeight;
+		offset = -_sectionHeight - _gap;
 		z = 0;
 	}
 

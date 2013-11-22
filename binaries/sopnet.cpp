@@ -394,8 +394,8 @@ int main(int optionc, char** optionv) {
 
 			boost::shared_ptr<ContainerView<HorizontalPlacing> > container    = boost::make_shared<ContainerView<HorizontalPlacing> >("all segments");
 			boost::shared_ptr<ContainerView<OverlayPlacing> >    overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("stack view");
-			boost::shared_ptr<ImageStackView>                    sectionsView = boost::make_shared<ImageStackView>(3);
-			boost::shared_ptr<SegmentsStackView>                 stackView    = boost::make_shared<SegmentsStackView>();
+			boost::shared_ptr<ImageStackView>                    sectionsView = boost::make_shared<ImageStackView>(3, 5.0);
+			boost::shared_ptr<SegmentsStackView>                 stackView    = boost::make_shared<SegmentsStackView>(5.0);
 			boost::shared_ptr<SegmentsView>                      segmentsView = boost::make_shared<SegmentsView>("single segment");
 			boost::shared_ptr<RotateView>                        rotateView   = boost::make_shared<RotateView>();
 			boost::shared_ptr<NamedView>                         namedView    = boost::make_shared<NamedView>("All Segments:");
@@ -409,8 +409,6 @@ int main(int optionc, char** optionv) {
 			rotateView->setInput(segmentsView->getOutput());
 
 			container->addInput(overlay->getOutput());
-			container->addInput(rotateView->getOutput());
-
 			if (optionShowSegmentFeatures) {
 
 				boost::shared_ptr<FeaturesView> featuresView = boost::make_shared<FeaturesView>();
@@ -420,6 +418,7 @@ int main(int optionc, char** optionv) {
 				featuresView->setInput("objective", sopnet->getOutput("objective"));
 				container->addInput(featuresView->getOutput());
 			}
+			container->addInput(rotateView->getOutput());
 
 			namedView->setInput(container->getOutput());
 

@@ -3,8 +3,8 @@
 
 static logger::LogChannel segmentsstackviewlog("segmentsstackviewlog", "[SegmentsStackView] ");
 
-SegmentsStackView::SegmentsStackView() :
-	_painter(boost::make_shared<SegmentsStackPainter>()),
+SegmentsStackView::SegmentsStackView(double gap) :
+	_painter(boost::make_shared<SegmentsStackPainter>(gap)),
 	_section(0),
 	_segmentsModified(true) {
 
@@ -138,6 +138,9 @@ SegmentsStackView::onKeyDown(gui::KeyDown& signal) {
 
 void
 SegmentsStackView::onMouseDown(gui::MouseDown& signal) {
+
+	if (!_painter->getSize().contains(signal.position))
+		return;
 
 	if (signal.button == gui::buttons::Left)
 		_painter->setFocus(signal.position);

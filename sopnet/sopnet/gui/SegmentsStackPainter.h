@@ -15,7 +15,12 @@ class SegmentsStackPainter : public gui::Painter {
 
 public:
 
-	SegmentsStackPainter();
+	/**
+	 * @param gap
+	 *             The gap between the current and next/previous section when 
+	 *             vertically aligned.
+	 */
+	SegmentsStackPainter(double gap = 0.0);
 
 	/**
 	 * Set a new set of segments.
@@ -151,6 +156,9 @@ private:
 
 	// the height of the section
 	double _sectionHeight;
+
+	// the gap between two sections
+	double _gap;
 };
 
 #endif // SOPNET_GUI_SEGMENTS_STACK_PAINTER_H__

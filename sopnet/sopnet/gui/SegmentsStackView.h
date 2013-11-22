@@ -12,9 +12,11 @@ class SegmentsStackView : public pipeline::SimpleProcessNode<> {
 public:
 
 	/**
-	 * @param onlyOneSegment Start with only-one-segment mode enabled.
+	 * @param gap
+	 *             The gap between the current and next/previous section when 
+	 *             vertically aligned.
 	 */
-	SegmentsStackView();
+	SegmentsStackView(double gap = 0.0);
 
 private:
 
