@@ -16,6 +16,7 @@
 #include <imageprocessing/SubStackSelector.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
+#include <pipeline/Value.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
@@ -288,7 +289,7 @@ int main(int optionc, char** optionv) {
 
 	sopnet->setInput("segmentation cost parameters", boost::make_shared<SegmentationCostFunctionParameters>());
 	sopnet->setInput("prior cost parameters", priors);
-	sopnet->setInput("force explanation", boost::make_shared<pipeline::Wrap<bool> >(true));
+	sopnet->setInput("force explanation", pipeline::Value<bool>(true));
 
 	problemWriter->write("./dump/slices.txt", "./dump/segments.txt", "./dump/constraints.txt", "./dump/slices/", originSection, targetSection);
 
