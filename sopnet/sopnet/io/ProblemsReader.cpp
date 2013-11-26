@@ -8,8 +8,8 @@ logger::LogChannel streamproblemreaderlog("problemsreaderlog", "[ProblemsReader]
 
 ProblemsReader::ProblemsReader(const std::string& stream) :
 	_streamName(stream),
-	_fb(0),
-	_stream(0) {
+	_stream(0),
+	_fb(0) {
 
 	if (readStdIn()) {
 
@@ -26,7 +26,8 @@ ProblemsReader::ProblemsReader(const std::string& stream) :
 	registerOutput(_problems, "problems");
 }
 
-ProblemsReader::ProblemsReader(const ProblemsReader& other) {
+ProblemsReader::ProblemsReader(const ProblemsReader& other) :
+	SimpleProcessNode<>() {
 
 	free();
 	copy(other);
@@ -100,7 +101,7 @@ ProblemsReader::updateOutputs() {
 }
 
 void
-ProblemsReader::readProblem(unsigned int numProblem) {
+ProblemsReader::readProblem(unsigned int /*numProblem*/) {
 
 	unsigned int numVariables;
 	*_stream >> numVariables;
@@ -142,7 +143,7 @@ ProblemsReader::readVariable(Problem& problem, unsigned int i) {
 }
 
 void
-ProblemsReader::readConstraint(Problem& problem, unsigned int i) {
+ProblemsReader::readConstraint(Problem& problem, unsigned int /*i*/) {
 
 	LinearConstraint constraint;
 
@@ -163,7 +164,7 @@ ProblemsReader::readConstraint(Problem& problem, unsigned int i) {
 	constraint.setRelation(relation);
 	constraint.setValue(value);
 
-	for (int j = 0; j < numVariables; j++) {
+	for (unsigned int j = 0; j < numVariables; j++) {
 
 		int id;
 		*_stream >> id;

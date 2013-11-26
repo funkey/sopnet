@@ -8,7 +8,7 @@ class SolutionReader : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SolutionReader(const std::string& filename) {
+	SolutionReader(const std::string& /*filename*/) {
 
 		registerOutput(_solution, "solution");
 	}

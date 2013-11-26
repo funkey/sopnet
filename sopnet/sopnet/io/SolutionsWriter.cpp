@@ -4,8 +4,8 @@
 
 SolutionsWriter::SolutionsWriter(const std::string& stream) :
 	_streamName(stream),
-	_fb(0),
-	_stream(0) {
+	_stream(0),
+	_fb(0) {
 
 	if (writeStdOut()) {
 
@@ -23,7 +23,8 @@ SolutionsWriter::SolutionsWriter(const std::string& stream) :
 	registerInput(_problems,  "problems");
 }
 
-SolutionsWriter::SolutionsWriter(const SolutionsWriter& other) {
+SolutionsWriter::SolutionsWriter(const SolutionsWriter& other) :
+	SimpleProcessNode<>() {
 
 	free();
 	copy(other);
@@ -88,7 +89,7 @@ SolutionsWriter::write() {
 
 	*_stream << _solutions->size() << std::endl;
 
-	for (int i = 0; i < _solutions->size(); i++)
+	for (unsigned int i = 0; i < _solutions->size(); i++)
 		writeSolution(*(_solutions->getSolution(i)), *(_problems->getProblem(i)->getConfiguration()));
 }
 
@@ -96,13 +97,13 @@ void
 SolutionsWriter::writeSolution(const Solution& solution, ProblemConfiguration& configuration) {
 
 	unsigned int numSegments = 0;
-	for (int i = 0; i < solution.size(); i++)
+	for (unsigned int i = 0; i < solution.size(); i++)
 		if (solution[i] == 1)
 			numSegments++;
 
 	*_stream << numSegments;
 
-	for (int i = 0; i < solution.size(); i++) {
+	for (unsigned int i = 0; i < solution.size(); i++) {
 
 		if (solution[i] == 1)
 			*_stream << " " << configuration.getSegmentId(i);

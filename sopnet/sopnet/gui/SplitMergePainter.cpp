@@ -8,13 +8,13 @@ SplitMergePainter::SplitMergePainter() :
 
 bool
 SplitMergePainter::draw(
-		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::rect<double>&  /*roi*/,
+		const util::point<double>& /*resolution*/) {
 
 	LOG_ALL(splitmergepainterlog) << "drawing selection for section " << _section << std::endl;
 
 	foreach (boost::shared_ptr<Slice> slice, *_selection)
-		if (slice->getSection() == _section)
+		if (slice->getSection() == (unsigned int)_section)
 			drawSlice(*slice);
 
 	return false;
@@ -36,7 +36,7 @@ SplitMergePainter::updateSize() {
 	setSize(bb);
 }
 
-bool
+void
 SplitMergePainter::drawSlice(const Slice& slice) {
 
 	util::point<double> center = slice.getComponent()->getCenter();

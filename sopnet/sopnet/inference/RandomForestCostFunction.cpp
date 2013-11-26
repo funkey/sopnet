@@ -48,7 +48,7 @@ RandomForestCostFunction::costs(
 
 	if (_useOverlapOnly && _overlapFeature == -1) {
 
-		for (int i = 0; i < _features->getNames().size(); i++)
+		for (unsigned int i = 0; i < _features->getNames().size(); i++)
 			if (_features->getNames()[i].compare("overlap") == 0) {
 				_overlapFeature = i;
 				break;

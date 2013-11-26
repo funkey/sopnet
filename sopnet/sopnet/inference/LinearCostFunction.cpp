@@ -96,7 +96,7 @@ LinearCostFunction::costs(const Segment& segment, const std::vector<double>& wei
 	const std::vector<double>& features = _features->get(segment.getId());
 
 	double costs = 0;
-	for (int i = 0; i < features.size(); i++)
+	for (unsigned int i = 0; i < features.size(); i++)
 		costs += features[i]*weights[i];
 
 	return costs;

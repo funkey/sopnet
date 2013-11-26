@@ -147,6 +147,8 @@ ProblemAssembler::addMitochondriaConstraints() {
 
 	LOG_DEBUG(problemassemblerlog) << "adding mitochondria constraints..." << std::endl;
 
+	LOG_ALL(problemassemblerlog) << "got " << _numMitochondriaSegments << " mitochondria segments" << std::endl;
+
 	// build a map of mitochondria segments to enclosing neuron segments
 	extractMitochondriaEnclosingNeuronSegments();
 

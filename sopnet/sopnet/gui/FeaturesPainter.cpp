@@ -89,19 +89,19 @@ FeaturesPainter::updateTextPainters() {
 			));
 
 	// names
-	for (int i = 0; i < _featureNames.size(); i++)
+	for (unsigned int i = 0; i < _featureNames.size(); i++)
 		_textPainters.push_back(
 				std::make_pair(
 						createTextPainter(_featureNames[i]),
-						util::point<int>(0, i+2)
+						util::point<int>(0, (int)i+2)
 				));
 
 	// values
-	for (int i = 0; i < _features.size(); i++)
+	for (unsigned int i = 0; i < _features.size(); i++)
 		_textPainters.push_back(
 				std::make_pair(
 						createTextPainter(_features[i]),
-						util::point<int>(1, i+2)
+						util::point<int>(1, (int)i+2)
 				));
 
 	// ground truth score

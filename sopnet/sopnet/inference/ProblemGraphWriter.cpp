@@ -250,10 +250,7 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 			break;
 	}
 
-	const unsigned int variable = _problemConfiguration->getVariable(segment.getId());
-	// const double costs = _objective->getCoefficients()[variable];
 	out << " " << _randomForestCostMap[ segment.getId() ];
-
     out << " " << segment.getDirection() << " ";
 
 	const std::vector<double>&      features = _features->get(segment.getId());
