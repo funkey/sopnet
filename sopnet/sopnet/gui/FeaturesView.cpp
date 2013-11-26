@@ -7,6 +7,7 @@ FeaturesView::FeaturesView() {
 	registerInput(_features, "features");
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInput(_objective, "objective");
+	registerInput(_groundTruthScore, "ground truth score", pipeline::Optional);
 	registerOutput(_painter, "painter");
 }
 
@@ -30,5 +31,8 @@ FeaturesView::updateOutputs() {
 	_painter->setCosts(_objective->getCoefficients()[variable]);
 	_painter->setFeatures(_features->get(segmentId));
 	_painter->setFeatureNames(_features->getNames());
+	_painter->setSegmentId(segmentId);
+	if (_groundTruthScore)
+		_painter->setGroundTruthScore(_groundTruthScore);
 }
 

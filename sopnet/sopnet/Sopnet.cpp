@@ -108,6 +108,7 @@ Sopnet::Sopnet(
 	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
 	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
+	registerOutput(_segmentRfTrainer->getOutput("ground truth score"), "ground truth score");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 }
 

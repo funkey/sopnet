@@ -21,6 +21,10 @@ public:
 
 	void setFeatureNames(const std::vector<std::string>& names);
 
+	void setSegmentId(unsigned int segmentId);
+
+	void setGroundTruthScore(boost::shared_ptr<std::map<unsigned int, double> > groundTruthScore);
+
 	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
 private:
@@ -43,6 +47,7 @@ private:
 	double                   _costs;
 	std::vector<double>      _features;
 	std::vector<std::string> _featureNames;
+	boost::shared_ptr<std::map<unsigned int, double> > _groundTruthScore;
 
 	// the size of one _cell
 	float _cellX, _cellY;
@@ -52,6 +57,8 @@ private:
 
 	// do the text painters need to be updated?
 	bool _textPaintersDirty;
+
+	unsigned int _segmentId;
 };
 
 #endif // SOPNET_GUI_FEATURES_PAINTER_H__

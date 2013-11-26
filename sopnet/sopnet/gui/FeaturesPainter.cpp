@@ -4,9 +4,10 @@
 FeaturesPainter::FeaturesPainter(unsigned int numFeatures) :
 	_cellX(200.0),
 	_cellY(20.0),
-	_textPaintersDirty(true) {
+	_textPaintersDirty(true),
+	_segmentId(0) {
 
-	setSize(0, 0, 4*_cellX, numFeatures*_cellY);
+	setSize(0, 0, 4*_cellX, (numFeatures+1)*_cellY);
 }
 
 void
@@ -29,6 +30,19 @@ void
 FeaturesPainter::setFeatureNames(const std::vector<std::string>& names) {
 
 	_featureNames = names;
+	_textPaintersDirty = true;
+}
+
+void
+FeaturesPainter::setSegmentId(unsigned int segmentId) {
+
+	_segmentId = segmentId;
+}
+
+void
+FeaturesPainter::setGroundTruthScore(boost::shared_ptr<std::map<unsigned int, double> > groundTruthScore) {
+
+	_groundTruthScore = groundTruthScore;
 	_textPaintersDirty = true;
 }
 
@@ -89,6 +103,21 @@ FeaturesPainter::updateTextPainters() {
 						createTextPainter(_features[i]),
 						util::point<int>(1, i+2)
 				));
+
+	// ground truth score
+	if (_groundTruthScore) {
+
+		_textPainters.push_back(
+				std::make_pair(
+						createTextPainter("GT score:"),
+						util::point<int>(0, (int)_features.size() + 2)
+				));
+		_textPainters.push_back(
+				std::make_pair(
+						createTextPainter((*_groundTruthScore)[_segmentId]),
+						util::point<int>(1, (int)_features.size() + 2)
+				));
+	}
 
 	_textPaintersDirty = false;
 }

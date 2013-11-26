@@ -288,21 +288,21 @@ SegmentsStackPainter::updateVisibleSegments() {
 
 	if (_showPrev) {
 
-		if (_showEnds && _closestPrevEndSegments.size() > 0)
+		if (_showEnds && _closestPrevEndSegments.size() > _closestPrevSegment)
 			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
-		else if (_showContinuations && _closestPrevContinuationSegments.size() > 0)
+		else if (_showContinuations && _closestPrevContinuationSegments.size() > _closestPrevSegment)
 			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
-		else if (_showBranches && _closestPrevBranchSegments.size() > 0)
+		else if (_showBranches && _closestPrevBranchSegments.size() > _closestPrevSegment)
 			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
 	}
 
 	if (_showNext) {
 
-		if (_showEnds && _closestNextEndSegments.size() > 0)
+		if (_showEnds && _closestNextEndSegments.size() > _closestNextSegment)
 			_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
-		else if (_showContinuations && _closestNextContinuationSegments.size() > 0)
+		else if (_showContinuations && _closestNextContinuationSegments.size() > _closestNextSegment)
 			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
-		else if (_showBranches && _closestNextBranchSegments.size() > 0)
+		else if (_showBranches && _closestNextBranchSegments.size() > _closestNextSegment)
 			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
 	}
 }
@@ -338,7 +338,7 @@ SegmentsStackPainter::draw(
 
 			LOG_ALL(segmentsstackpainterlog) << "drawing an end..." << std::endl;
 
-			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75, roi, resolution);
+			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.85, roi, resolution);
 
 			LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 		}
@@ -351,15 +351,13 @@ SegmentsStackPainter::draw(
 		drawSlice(
 				*continuation->getSourceSlice(),
 				(continuation->getDirection() == Right ? -_zScale : 0.0),
-				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Right ? 0.25 : 0.75),
+				0.0, 1.0, 0.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*continuation->getTargetSlice(),
 				(continuation->getDirection() == Left  ? -_zScale : 0.0),
-				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Left  ? 0.25 : 0.75),
+				0.0, 1.0, 0.0, 0.85,
 				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
@@ -372,22 +370,19 @@ SegmentsStackPainter::draw(
 		drawSlice(
 				*branch->getSourceSlice(),
 				(branch->getDirection() == Right ? -_zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice1(),
 				(branch->getDirection() == Left  ? -_zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice2(),
 				(branch->getDirection() == Left  ? -_zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
@@ -401,7 +396,7 @@ SegmentsStackPainter::draw(
 
 			LOG_ALL(segmentsstackpainterlog) << "drawing an end..." << std::endl;
 
-			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.75, roi, resolution);
+			drawSlice(*end->getSlice(), 0.0, 1.0, 0.0, 0.0, 0.85, roi, resolution);
 
 			LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
 		}
@@ -414,15 +409,13 @@ SegmentsStackPainter::draw(
 		drawSlice(
 				*continuation->getSourceSlice(),
 				(continuation->getDirection() == Left ? _zScale : 0.0),
-				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Left ? 0.25 : 0.75),
+				0.0, 1.0, 0.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*continuation->getTargetSlice(),
 				(continuation->getDirection() == Right ? _zScale : 0.0),
-				0.0, 1.0, 0.0,
-				(continuation->getDirection() == Right ? 0.25 : 0.75),
+				0.0, 1.0, 0.0, 0.85,
 				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;
@@ -435,22 +428,19 @@ SegmentsStackPainter::draw(
 		drawSlice(
 				*branch->getSourceSlice(),
 				(branch->getDirection() == Left  ? _zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Left ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice1(),
 				(branch->getDirection() == Right ? _zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		drawSlice(
 				*branch->getTargetSlice2(),
 				(branch->getDirection() == Right ? _zScale : 0.0),
-				0.0, 0.0, 1.0,
-				(branch->getDirection() == Right ? 0.25 : 0.75),
+				0.0, 0.0, 1.0, 0.85,
 				roi, resolution);
 
 		LOG_ALL(segmentsstackpainterlog) << "done" << std::endl;

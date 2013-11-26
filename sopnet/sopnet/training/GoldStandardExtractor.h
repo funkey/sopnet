@@ -76,6 +76,8 @@ private:
 
 	pipeline::Output<Segments> _negativeSamples;
 
+	pipeline::Output<std::map<unsigned int, double> > _groundTruthScore;
+
 	// functor to compute the set difference between slices
 	SetDifference _setDifference;
 
