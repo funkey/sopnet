@@ -3,6 +3,7 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
+#include <sopnet/features/Overlap.h>
 #include <sopnet/segments/Segments.h>
 #include "ProblemConfiguration.h"
 
@@ -18,9 +19,13 @@ private:
 
 	void collectSegments();
 
-	void collectLinearConstraints();
+	void addExplanationConstraints();
 
 	void addConsistencyConstraints();
+
+	void addMitochondriaConstraints();
+
+	void mapConstraints(boost::shared_ptr<LinearConstraints> linearConstraints);
 
 	void setCoefficient(const EndSegment& end);
 
@@ -38,16 +43,38 @@ private:
 
 	void addId(unsigned int id);
 
+	void extractMitochondriaEnclosingNeuronSegments();
+
+	bool encloses(boost::shared_ptr<Segment> neuronSegment, boost::shared_ptr<Segment> mitochondriaSegment);
+
+	unsigned int getOverlap(
+			const std::vector<boost::shared_ptr<Slice> >& slices1,
+			const std::vector<boost::shared_ptr<Slice> >& slices2);
+
+	std::vector<unsigned int>& getEnclosingNeuronSegments(unsigned int mitochondriaSegmentId);
+
 	unsigned int getSliceNum(unsigned int sliceId);
 
-	// a list of segments for each pair of frames
-	pipeline::Inputs<Segments>         _segments;
+	// a list of neuron segments for each pair of frames
+	pipeline::Inputs<Segments>         _neuronSegments;
 
-	// linear constraints on the segments for each pair of frames
-	pipeline::Inputs<LinearConstraints> _linearConstraints;
+	// neuron linear constraints on the segments for each pair of frames
+	pipeline::Inputs<LinearConstraints> _neuronLinearConstraints;
+
+	// a list of mitochondria segments for each pair of frames
+	pipeline::Inputs<Segments>         _mitochondriaSegments;
+
+	// mitochondria linear constraints on the segments for each pair of frames
+	pipeline::Inputs<LinearConstraints> _mitochondriaLinearConstraints;
 
 	// all segments in the problem
-	pipeline::Output<Segments>         _allSegments;
+	pipeline::Output<Segments>          _allSegments;
+
+	// all neuron segments in the problem
+	pipeline::Output<Segments>          _allNeuronSegments;
+
+	// all mitochondria segments in the problem
+	pipeline::Output<Segments>          _allMitochondriaSegments;
 
 	// all linear constraints on all segments
 	pipeline::Output<LinearConstraints> _allLinearConstraints;
@@ -58,15 +85,31 @@ private:
 	// the consistency constraints extracted for the segments
 	LinearConstraints _consistencyConstraints;
 
+	// the mitochondria constraints
+	LinearConstraints _mitochondriaConstraints;
+
 	// a mapping from slice ids to the number of the consistency constraint it
 	// is used in
 	std::map<unsigned int, unsigned int> _sliceIdsMap;
 
+	// map from mitochondria semgment ids to enclosing neuron segment ids
+	std::map<unsigned int, std::vector<unsigned int> > _enclosingNeuronSegments;
+
 	// a counter for the number of segments that came in
 	unsigned int _numSegments;
 
+	// number of mitochondria segments
+	unsigned int _numMitochondriaSegments;
+
 	// the total number of slices
 	unsigned int _numSlices;
+
+	// functor to compute the overlap between slices
+	Overlap _overlap;
+
+	// min ration of overlap to size to consider a mitochondria segment to be 
+	// enclosed by a neuron segment
+	double _enclosingThreshold;
 };
 
 #endif // CELLTRACKER_PROBLEM_ASSEMBLER_H__

@@ -178,8 +178,8 @@ Sopnet::createBasicPipeline() {
 	// clear previous pipeline
 	_sliceExtractors.clear();
 	_segmentExtractors.clear();
-	_problemAssembler->clearInputs("segments");
-	_problemAssembler->clearInputs("linear constraints");
+	_problemAssembler->clearInputs("neuron segments");
+	_problemAssembler->clearInputs("neuron linear constraints");
 
 	unsigned int numSections = 0;
 
@@ -264,8 +264,8 @@ Sopnet::createBasicPipeline() {
 		_segmentExtractors.push_back(segmentExtractor);
 
 		// add segments and linear constraints to problem assembler
-		_problemAssembler->addInput("segments", segmentExtractor->getOutput("segments"));
-		_problemAssembler->addInput("linear constraints", segmentExtractor->getOutput("linear constraints"));
+		_problemAssembler->addInput("neuron segments", segmentExtractor->getOutput("segments"));
+		_problemAssembler->addInput("neuron linear constraints", segmentExtractor->getOutput("linear constraints"));
 	}
 }
 
