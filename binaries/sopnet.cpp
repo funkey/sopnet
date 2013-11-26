@@ -250,6 +250,7 @@ int main(int optionc, char** optionv) {
 		boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
 		boost::shared_ptr<pipeline::ProcessNode> slicesReader;
+		boost::shared_ptr<pipeline::ProcessNode> mitochondriaReader;
 		boost::shared_ptr<pipeline::ProcessNode> groundTruthReader;
 
 		boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > sliceStackDirectories = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
@@ -262,6 +263,11 @@ int main(int optionc, char** optionv) {
 			rawSectionsReader = boost::make_shared<ImageStackDirectoryReader>("./raw/");
 			membranesReader   = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
 			slicesReader      = boost::make_shared<ImageStackDirectoryReader>("./slices/");
+			boost::filesystem::path mitoDir("./mitochondria/");
+			if (boost::filesystem::is_directory(mitoDir)) {
+				LOG_USER(out) << "found a mitochondria directory" << std::endl;
+				mitochondriaReader = boost::make_shared<ImageStackDirectoryReader>(mitoDir.string());
+			}
 			groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
 
 			// list all directories under ./slices for the image stack option
@@ -304,18 +310,23 @@ int main(int optionc, char** optionv) {
 		if (optionFirstSection || optionLastSection) {
 
 			// create section selectors
-			boost::shared_ptr<SubStackSelector> rawSelector         = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-			boost::shared_ptr<SubStackSelector> membranesSelector   = boost::make_shared<SubStackSelector>(firstSection, lastSection);
-			boost::shared_ptr<SubStackSelector> groundTruthSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> rawSelector          = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> membranesSelector    = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> mitochondriaSelector = boost::make_shared<SubStackSelector>(firstSection, lastSection);
+			boost::shared_ptr<SubStackSelector> groundTruthSelector  = boost::make_shared<SubStackSelector>(firstSection, lastSection);
 
 			// set their inputs to the outputs of the section readers
 			rawSelector->setInput(rawSectionsReader->getOutput());
 			membranesSelector->setInput(membranesReader->getOutput());
+			if (mitochondriaReader)
+				mitochondriaSelector->setInput(mitochondriaReader->getOutput());
 			groundTruthSelector->setInput(groundTruthReader->getOutput());
 
 			// sneakily pretend the selectors are the readers
 			rawSectionsReader = rawSelector;
 			membranesReader   = membranesSelector;
+			if (mitochondriaReader)
+				mitochondriaReader = mitochondriaSelector;
 			groundTruthReader = groundTruthSelector;
 
 			// special case: select a subset of the slice hypotheses
@@ -356,9 +367,11 @@ int main(int optionc, char** optionv) {
 		sopnet->setInput("raw sections", rawSectionsReader->getOutput());
 		sopnet->setInput("membranes", membranesReader->getOutput());
 		if (optionSlicesFromStacks)
-			sopnet->setInput("slice stack directories", sliceStackDirectories);
+			sopnet->setInput("neuron slice stack directories", sliceStackDirectories);
 		else
-			sopnet->setInput("slices", slicesReader->getOutput());
+			sopnet->setInput("neuron slices", slicesReader->getOutput());
+		if (mitochondriaReader)
+			sopnet->setInput("mitochondria slices", mitochondriaReader->getOutput());
 		sopnet->setInput("ground truth", groundTruthReader->getOutput());
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));

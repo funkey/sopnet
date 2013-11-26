@@ -2,8 +2,6 @@
 #include <boost/filesystem.hpp>
 
 #include <imageprocessing/ImageStack.h>
-#include <imageprocessing/ImageExtractor.h>
-#include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <inference/io/RandomForestHdf5Reader.h>
 #include <inference/LinearSolver.h>
 #include <pipeline/Process.h>
@@ -23,9 +21,6 @@
 #include <sopnet/inference/PriorCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 #include <sopnet/inference/Reconstructor.h>
-#include <sopnet/segments/SegmentExtractor.h>
-#include <sopnet/slices/SliceExtractor.h>
-#include <sopnet/slices/StackSliceExtractor.h>
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/RandomForestTrainer.h>
 #include "Sopnet.h"
@@ -64,7 +59,6 @@ util::ProgramOption optionDisableSegmentationCosts(
 Sopnet::Sopnet(
 		const std::string& projectDirectory,
 		boost::shared_ptr<ProcessNode> problemWriter) :
-	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
@@ -81,18 +75,24 @@ Sopnet::Sopnet(
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes, "membranes");
-	registerInput(_slices, "slices");
-	registerInput(_sliceStackDirectories, "slice stack directories");
+	registerInput(_neuronSlices, "neuron slices");
+	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories");
+	registerInput(_mitochondriaSlices, "mitochondria slices");
+	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
 	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
-	_slices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_slices.registerBackwardSlot(_update);
-	_sliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_sliceStackDirectories.registerBackwardSlot(_update);
+	_neuronSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_neuronSlices.registerBackwardSlot(_update);
+	_neuronSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_neuronSliceStackDirectories.registerBackwardSlot(_update);
+	_mitochondriaSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_mitochondriaSlices.registerBackwardSlot(_update);
+	_mitochondriaSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_mitochondriaSliceStackDirectories.registerBackwardSlot(_update);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -157,7 +157,13 @@ Sopnet::createPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
 
-	if (!_membranes || !(_slices || _sliceStackDirectories) || !_rawSections || !_segmentationCostFunctionParameters || !_priorCostFunctionParameters || !_forceExplanation) {
+	if (
+			!_membranes ||
+			!(_neuronSlices || _neuronSliceStackDirectories) ||
+			!_rawSections ||
+			!_segmentationCostFunctionParameters ||
+			!_priorCostFunctionParameters ||
+			!_forceExplanation) {
 
 		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
 		return;
@@ -176,96 +182,36 @@ Sopnet::createBasicPipeline() {
 	LOG_DEBUG(sopnetlog) << "re-creating basic part..." << std::endl;
 
 	// clear previous pipeline
-	_sliceExtractors.clear();
-	_segmentExtractors.clear();
 	_problemAssembler->clearInputs("neuron segments");
 	_problemAssembler->clearInputs("neuron linear constraints");
-
-	unsigned int numSections = 0;
-
-	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
+	_problemAssembler->clearInputs("mitochondria segments");
+	_problemAssembler->clearInputs("mitochondria linear constraints");
 
 	// make sure relevant input information is available
 	_update();
 
-	if (_sliceStackDirectories) {
+	if (_neuronSliceStackDirectories)
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories, !_problemWriter);
+	else
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices, _forceExplanation, !_problemWriter);
 
-		// for every stack directory
-		foreach (std::string directory, *_sliceStackDirectories) {
+	_mitochondriaSegmentExtractorPipeline.reset();
+	if (_mitochondriaSliceStackDirectories)
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories, !_problemWriter);
+	else if (_mitochondriaSlices)
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, _forceExplanation, !_problemWriter);
 
-			if (boost::filesystem::is_directory(directory)) {
-
-				numSections++;
-
-				LOG_DEBUG(sopnetlog) << "creating stack reader for " << directory << std::endl;
-
-				// create a new image stack reader
-				boost::shared_ptr<ImageStackDirectoryReader> reader = boost::make_shared<ImageStackDirectoryReader>(directory);
-
-				stackSliceReaders.push_back(reader);
-			}
-		}
-
-	} else {
-
-		numSections = _slices->size();
-
-		// let the internal image extractor know where to look for the image stack
-		_sliceImageExtractor->setInput(_slices.getAssignedOutput());
-	}
-
-	LOG_DEBUG(sopnetlog) << "creating pipeline for " << numSections << " sections" << std::endl;
-
-	// for every section
-	for (unsigned int section = 0; section < numSections; section++) {
-
-		boost::shared_ptr<ProcessNode> sliceExtractor;
-
-		LOG_DEBUG(sopnetlog) << "creating pipeline for section " << section << std::endl;
-
-		if (_sliceStackDirectories) {
-
-			// create image stack slice extractor
-			sliceExtractor = boost::make_shared<StackSliceExtractor>(section);
-
-			// set its input
-			sliceExtractor->setInput("slices", stackSliceReaders[section]->getOutput());
-
-		} else {
-
-			// create a single image slice extractor
-			sliceExtractor = boost::make_shared<SliceExtractor<unsigned char> >(section);
-
-			// set its input
-			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));
-		}
-
-		sliceExtractor->setInput("force explanation", _forceExplanation);
-
-		// store it in the list of all slice extractors
-		_sliceExtractors.push_back(sliceExtractor);
-
-		if (_sliceExtractors.size() <= 1)
-			continue;
-
-		// get the previous slice file reader
-		boost::shared_ptr<ProcessNode> prevSliceExtractor = _sliceExtractors[_sliceExtractors.size() - 2];
-
-		// create a segment extractor
-		boost::shared_ptr<SegmentExtractor> segmentExtractor = boost::make_shared<SegmentExtractor>();
-
-		// connect current and previous slices to that
-		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
-		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
-		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
-		if (section == numSections - 1 && !_problemWriter) // only for the last pair of slices and only if we are not dumping the problem
-			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
-
-		_segmentExtractors.push_back(segmentExtractor);
+	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 
 		// add segments and linear constraints to problem assembler
-		_problemAssembler->addInput("neuron segments", segmentExtractor->getOutput("segments"));
-		_problemAssembler->addInput("neuron linear constraints", segmentExtractor->getOutput("linear constraints"));
+		_problemAssembler->addInput("neuron segments", _neuronSegmentExtractorPipeline->getSegments(i));
+		_problemAssembler->addInput("neuron linear constraints", _neuronSegmentExtractorPipeline->getConstraints(i));
+
+		if (_mitochondriaSegmentExtractorPipeline) {
+
+			_problemAssembler->addInput("mitochondria segments", _mitochondriaSegmentExtractorPipeline->getSegments(i));
+			_problemAssembler->addInput("mitochondria linear constraints", _mitochondriaSegmentExtractorPipeline->getConstraints(i));
+		}
 	}
 }
 

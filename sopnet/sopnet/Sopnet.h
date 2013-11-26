@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <sopnet/inference/PriorCostFunctionParameters.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
+#include <sopnet/segments/SegmentExtractionPipeline.h>
 
 // forward declarations
 class GroundTruthExtractor;
@@ -68,11 +69,17 @@ private:
 	// the membrane classification output for the slices
 	pipeline::Input<ImageStack> _membranes;
 
-	// the segmentation hypotheses for the slices
-	pipeline::Input<ImageStack> _slices;
+	// the segmentation hypotheses for the neuron slices
+	pipeline::Input<ImageStack> _neuronSlices;
 
-	// the names of the slice stacks directories
-	pipeline::Input<std::vector<std::string> > _sliceStackDirectories;
+	// the names of the neuron slice stacks directories
+	pipeline::Input<std::vector<std::string> > _neuronSliceStackDirectories;
+
+	// the segmentation hypotheses for the mitochondria slices
+	pipeline::Input<ImageStack> _mitochondriaSlices;
+
+	// the names of the mitochondria slice stacks directories
+	pipeline::Input<std::vector<std::string> > _mitochondriaSliceStackDirectories;
 
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
@@ -100,14 +107,9 @@ private:
 	 * basic part
 	 */
 
-	// an image stack to image converter for the slice images
-	boost::shared_ptr<ImageExtractor>                 _sliceImageExtractor;
+	boost::shared_ptr<SegmentExtractionPipeline>      _neuronSegmentExtractorPipeline;
 
-	// a slice extractor for each section
-	std::vector<boost::shared_ptr<ProcessNode> >      _sliceExtractors;
-
-	// a segment extractor for each pair of timesteps
-	std::vector<boost::shared_ptr<SegmentExtractor> > _segmentExtractors;
+	boost::shared_ptr<SegmentExtractionPipeline>      _mitochondriaSegmentExtractorPipeline;
 
 	// the problem assembler that collects all segments and linear constraints
 	boost::shared_ptr<ProblemAssembler>               _problemAssembler;
