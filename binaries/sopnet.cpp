@@ -431,16 +431,29 @@ int main(int optionc, char** optionv) {
 		if (optionShowResult) {
 
 			resultView = boost::make_shared<NeuronsStackView>();
+			boost::shared_ptr<NeuronsStackView> undecidedView = boost::make_shared<NeuronsStackView>();
 
-			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay      = boost::make_shared<ContainerView<OverlayPlacing> >("result");
-			boost::shared_ptr<ImageStackView>                 sectionsView = boost::make_shared<ImageStackView>();
-			boost::shared_ptr<NamedView>                      namedView    = boost::make_shared<NamedView>("Result:");
+			boost::shared_ptr<ContainerView<OverlayPlacing> >    neuronsOverlay   = boost::make_shared<ContainerView<OverlayPlacing> >("result");
+			boost::shared_ptr<ContainerView<OverlayPlacing> >    undecidedOverlay = boost::make_shared<ContainerView<OverlayPlacing> >("result");
+			boost::shared_ptr<ContainerView<HorizontalPlacing> > compareView      = boost::make_shared<ContainerView<HorizontalPlacing> >("compare");
+			boost::shared_ptr<ImageStackView>                    sectionsView1    = boost::make_shared<ImageStackView>();
+			boost::shared_ptr<ImageStackView>                    sectionsView2    = boost::make_shared<ImageStackView>();
+			boost::shared_ptr<NamedView>                         namedView        = boost::make_shared<NamedView>("Result:");
+
+			boost::shared_ptr<NeuronExtractor> undecidedExtractor = boost::make_shared<NeuronExtractor>();
+			undecidedExtractor->setInput(sopnet->getOutput("undecided segments"));
 
 			resultView->setInput(neuronExtractor->getOutput("neurons"));
-			sectionsView->setInput(rawSectionsReader->getOutput());
-			overlay->addInput(resultView->getOutput());
-			overlay->addInput(sectionsView->getOutput());
-			namedView->setInput(overlay->getOutput());
+			undecidedView->setInput(undecidedExtractor->getOutput());
+			sectionsView1->setInput(rawSectionsReader->getOutput());
+			sectionsView2->setInput(rawSectionsReader->getOutput());
+			neuronsOverlay->addInput(resultView->getOutput());
+			neuronsOverlay->addInput(sectionsView1->getOutput());
+			undecidedOverlay->addInput(undecidedView->getOutput());
+			undecidedOverlay->addInput(sectionsView2->getOutput());
+			compareView->addInput(neuronsOverlay->getOutput());
+			compareView->addInput(undecidedOverlay->getOutput());
+			namedView->setInput(compareView->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
 		}

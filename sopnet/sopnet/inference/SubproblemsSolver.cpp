@@ -14,16 +14,14 @@ SubproblemsSolver::SubproblemsSolver() {
 void
 SubproblemsSolver::updateOutputs() {
 
-	std::string filename("subproblems.dat");
-
-	pipeline::Process<SubproblemsWriter> writer(filename);
+	pipeline::Process<SubproblemsWriter> writer("subproblems.dat");
 
 	writer->setInput(_subproblems);
 	writer->write();
 
 	// TODO: call scalar
 
-	pipeline::Process<SolutionReader> reader(filename);
+	pipeline::Process<SolutionReader> reader("solution.dat");
 	pipeline::Value<Solution> solution = reader->getOutput();
 
 	*_solution = *solution;

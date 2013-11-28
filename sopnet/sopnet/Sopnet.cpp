@@ -87,7 +87,8 @@ Sopnet::Sopnet(
 	_forceExplanation.registerBackwardCallback(&Sopnet::onParametersSet, this);
 
 	// tell the outside world what we've got
-	registerOutput(_reconstructor->getOutput(), "solution");
+	registerOutput(_reconstructor->getOutput("reconstruction"), "solution");
+	registerOutput(_reconstructor->getOutput("undecided segments"), "undecided segments");
 	registerOutput(_problemAssembler->getOutput("segments"), "segments");
 	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
 	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
