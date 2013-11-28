@@ -21,6 +21,7 @@
 #include <sopnet/inference/PriorCostFunction.h>
 #include <sopnet/inference/SegmentationCostFunctionParameters.h>
 #include <sopnet/inference/Reconstructor.h>
+#include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/RandomForestTrainer.h>
 #include "Sopnet.h"
@@ -43,7 +44,7 @@ util::ProgramOption optionLinearCostFunctionParametersFile(
 		util::_module           = "sopnet",
 		util::_long_name        = "linearCostFunctionParameters",
 		util::_description_text = "Path to a file containing the weights for the linear cost function.",
-		util::_default_value    = "feature_weights.dat");
+		util::_default_value    = "./feature_weights.dat");
 
 util::ProgramOption optionDecomposeProblem(
 		util::_module           = "sopnet.inference",
@@ -231,7 +232,10 @@ Sopnet::createInferencePipeline() {
 
 		_segmentCostFunction = boost::make_shared<LinearCostFunction>();
 		boost::shared_ptr<LinearCostFunctionParametersReader> reader
-				= boost::make_shared<LinearCostFunctionParametersReader>(optionLinearCostFunctionParametersFile.as<std::string>());
+				= boost::make_shared<LinearCostFunctionParametersReader>();
+		boost::shared_ptr<FileContentProvider> contentProvider
+				= boost::make_shared<FileContentProvider>(optionLinearCostFunctionParametersFile.as<std::string>());
+		reader->setInput(contentProvider->getOutput());
 		_segmentCostFunction->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 		_segmentCostFunction->setInput("parameters", reader->getOutput());
 

@@ -9,12 +9,13 @@ class LinearCostFunctionParametersReader : public pipeline::SimpleProcessNode<> 
 
 public:
 
-	LinearCostFunctionParametersReader(std::string filename);
+	LinearCostFunctionParametersReader(std::string filename = "");
 
 private:
 
 	void updateOutputs();
 
+	pipeline::Input<std::ifstream> _fileContent;
 	pipeline::Output<LinearCostFunctionParameters> _parameters;
 
 	std::string _filename;
