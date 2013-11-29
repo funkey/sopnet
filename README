@@ -22,12 +22,13 @@ cmake will try to find the required packages and tell you which ones are
 missing. All packages except for the vigra library and the Gurobi solver can be
 installed using the default Ubuntu repositories:
 
-  • libboost-all-dev
+  • libboost-all-dev (make sure libboost-timer-dev is included)
   • liblapack-dev
   • libx11-dev
   • libx11-xcb-dev
   • libxcb1-dev
   • libxrandr-dev
+  • libxi-dev
   • freeglut3-dev
   • libglew1.6-dev
   • libcairo2-dev
