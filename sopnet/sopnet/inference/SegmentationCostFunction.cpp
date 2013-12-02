@@ -46,6 +46,7 @@ SegmentationCostFunction::costs(
 				<< segmentCosts.size() << ", number of cached values "
 				<< _segmentationCosts.size() << ")" << std::endl;
 
+		_sliceSegmentationCosts.clear();
 		_segmentationCosts.clear();
 		_segmentationCosts.reserve(ends.size() + continuations.size() + branches.size());
 
@@ -183,7 +184,7 @@ SegmentationCostFunction::computeSegmentationCost(const Slice& slice) {
 	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()) {
 
 		// get the membrane data probability p(x|y=membrane)
-		double probMembrane = (*(*_membranes)[section])(pixel.x, pixel.y)/255.0;
+		double probMembrane = (*(*_membranes)[section])(pixel.x, pixel.y);
 
 		if (optionInvertMembraneMaps)
 			probMembrane = 1.0 - probMembrane;
