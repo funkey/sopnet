@@ -27,6 +27,7 @@ installed using the default Ubuntu repositories:
   • libx11-dev
   • libx11-xcb-dev
   • libxcb1-dev
+  • libxi-dev
   • libxrandr-dev
   • libxi-dev
   • freeglut3-dev
@@ -57,8 +58,14 @@ Gurobi Solver
 -------------
 
   Download and unpack the Gurobi solver, request a licence (academic licences
-  are free). Set the cmake variable Gurobi_ROOT_DIR to the path containing the
-  lib and bin directory.
+  are free). Run
+
+  $ ./grbgetkey <you-licence-id>
+
+  in the gurobi bin directory from an academic domain to download the licence
+  file (gurobi.lic). Make sure the environment variable GRB_LICENCE_FILE points
+  to it. Set the cmake variable Gurobi_ROOT_DIR to the path containing the lib
+  and bin directory.
 
 
 After cmake finished without errors, run
