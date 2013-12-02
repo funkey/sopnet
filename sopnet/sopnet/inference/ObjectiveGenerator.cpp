@@ -6,8 +6,7 @@ static logger::LogChannel objectivegeneratorlog("objectivegeneratorlog", "[Objec
 ObjectiveGenerator::ObjectiveGenerator() {
 
 	registerInput(_segments, "segments");
-	registerInput(_segmentCostFunction, "segment cost function");
-	registerInputs(_additionalCostFunctions, "additional cost functions");
+	registerInputs(_costFunctions, "cost functions");
 
 	registerOutput(_objective, "objective");
 }
@@ -29,8 +28,12 @@ ObjectiveGenerator::updateObjective() {
 	// create a vector of all accumulated costs
 	std::vector<double> allCosts(_segments->size(), 0);
 
-	// initialize segment costs
-	(*_segmentCostFunction)(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), allCosts);
+	// accumulate costs
+	for (unsigned int i = 0; i < _costFunctions.size(); i++) {
+
+		costs_function_type& costFunction = *_costFunctions[i];
+		costFunction(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), allCosts);
+	}
 
 	// end segments at the beginning and end of the stack should come for free
 	// (this is assuming that the end segments have the first entries in the 
@@ -43,13 +46,6 @@ ObjectiveGenerator::updateObjective() {
 			allCosts[i] = 0;
 
 		i++;
-	}
-
-	// accumulate additional costs
-	for (unsigned int i = 0; i < _additionalCostFunctions.size(); i++) {
-
-		costs_function_type& costFunction = *_additionalCostFunctions[i];
-		costFunction(_segments->getEnds(), _segments->getContinuations(), _segments->getBranches(), allCosts);
 	}
 
 	// set the coefficients
