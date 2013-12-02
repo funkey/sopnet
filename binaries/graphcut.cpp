@@ -131,17 +131,20 @@ int main(int optionc, char** optionv) {
 
 		// create image views
 		boost::shared_ptr<ImageStackView> membranesView = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> contrastView  = boost::make_shared<ImageStackView>();
 
 		// create graphcut dialog
 		boost::shared_ptr<GraphCutDialog> graphcutDialog = boost::make_shared<GraphCutDialog>();
 
 		// connect them to the window via the zoom view
 		mainContainer->addInput(membranesView->getOutput("painter"));
+		mainContainer->addInput(contrastView->getOutput("painter"));
 		mainContainer->addInput(graphcutDialog->getOutput("painter"));
 		zoomView->setInput(mainContainer->getOutput());
 
 		// create section readers
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
+		boost::shared_ptr<pipeline::ProcessNode> contrastReader;
 
 		// create image stack readers
 		if (!optionProjectName) {
@@ -150,6 +153,11 @@ int main(int optionc, char** optionv) {
 			// directoryies
 			membranesReader = boost::make_shared<ImageStackDirectoryReader>("./membranes/");
 
+			if (boost::filesystem::is_directory("./contrast/"))
+				contrastReader = boost::make_shared<ImageStackDirectoryReader>("./contrast/");
+			else
+				contrastReader = membranesReader;
+
 		} else {
 
 			// get the project filename
@@ -157,6 +165,8 @@ int main(int optionc, char** optionv) {
 
 			// try to read from project hdf5 file
 			membranesReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 0, 0);
+			// contrast image not yet supported
+			contrastReader = membranesReader;
 		}
 
 		// select a substack, if options are set
@@ -174,13 +184,14 @@ int main(int optionc, char** optionv) {
 
 		// set input for image stack views
 		membranesView->setInput(membranesReader->getOutput());
+		contrastView->setInput(contrastReader->getOutput());
 
 		// create graphcut
 		boost::shared_ptr<GraphCut> graphcut = boost::make_shared<GraphCut>();
 
 		// set input to graphcut
 		graphcut->setInput("image", membranesView->getOutput("current image"));
-		graphcut->setInput("potts image", membranesView->getOutput("current image"));
+		graphcut->setInput("potts image", contrastView->getOutput("current image"));
 		graphcut->setInput("parameters", graphcutDialog->getOutput("parameters"));
 
 		// create image view for graphcut result

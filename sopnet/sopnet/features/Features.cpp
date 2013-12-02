@@ -36,6 +36,12 @@ Features::resize(unsigned int numVectors, unsigned int numFeatures) {
 	_features.resize(numVectors, templ);
 }
 
+unsigned int
+Features::numFeatures() {
+
+	return _featureNames.size();
+}
+
 std::vector<double>&
 Features::get(unsigned int segmentId) {
 
@@ -106,14 +112,8 @@ std::ostream&
 operator<<(std::ostream& out, const Features& features) {
 
 	foreach (const std::string& name, features.getNames())
-		out << name << " ";
+		out << "\t" << name << std::endl;;
 	out << std::endl;
-
-	foreach (const std::vector<double>& feature, features) {
-		foreach (double f, feature)
-			out << f << " ";
-		out << std::endl;
-	}
 
 	return out;
 }

@@ -15,7 +15,7 @@ util::ProgramOption optionInvertMembraneMaps(
 		                          "(not inverting) is: bright pixel = hight membrane probability.");
 
 SegmentationCostFunction::SegmentationCostFunction() :
-	_costFunction(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4)) {
+	_costFunction(boost::make_shared<costs_function_type>(boost::bind(&SegmentationCostFunction::costs, this, _1, _2, _3, _4))) {
 
 	registerInput(_membranes, "membranes");
 	registerInput(_parameters, "parameters");

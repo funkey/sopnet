@@ -186,6 +186,7 @@ SegmentsPainter::updateRecording() {
 	glCheck(glEnable(GL_LIGHTING));
 	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
+	glCheck(glDisable(GL_DEPTH_TEST));
 
 	// draw thicker lines and points
 	glLineWidth(5.0);
@@ -317,7 +318,7 @@ SegmentsPainter::drawSlice(
 		}
 	}
 
-	glCheck(glColor4f(red, green, blue, 1.0));
+	glCheck(glColor4f(red, green, blue, 0.5));
 
 	_textures.get(slice->getId())->bind();
 

@@ -25,7 +25,7 @@ public:
 
 private:
 
-	bool drawSlice(const Slice& slice);
+	void drawSlice(const Slice& slice);
 
 	boost::shared_ptr<std::set<boost::shared_ptr<Slice> > > _selection;
 

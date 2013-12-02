@@ -1,12 +1,14 @@
 #include "SegmentFeaturesExtractor.h"
 #include "GeometryFeatureExtractor.h"
 #include "HistogramFeatureExtractor.h"
+#include "TypeFeatureExtractor.h"
 
 logger::LogChannel segmentfeaturesextractorlog("segmentfeaturesextractorlog", "[SegmentFeaturesExtractor] ");
 
 SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 	_geometryFeatureExtractor(boost::make_shared<GeometryFeatureExtractor>()),
 	_histogramFeatureExtractor(boost::make_shared<HistogramFeatureExtractor>(10)),
+	_typeFeatureExtractor(boost::make_shared<TypeFeatureExtractor>()),
 	_featuresAssembler(boost::make_shared<FeaturesAssembler>()) {
 
 	registerInput(_segments, "segments");
@@ -19,6 +21,7 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 
 	_featuresAssembler->addInput(_geometryFeatureExtractor->getOutput());
 	_featuresAssembler->addInput(_histogramFeatureExtractor->getOutput());
+	_featuresAssembler->addInput(_typeFeatureExtractor->getOutput());
 }
 
 void
@@ -29,6 +32,7 @@ SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 		_geometryFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 		_histogramFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 		_histogramFeatureExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
+		_typeFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 	}
 }
 

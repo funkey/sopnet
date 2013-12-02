@@ -21,7 +21,7 @@ ProblemGraphWriter::ProblemGraphWriter() {
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInputs(_linearConstraints, "linear constraints");
 	registerInput(_features, "features");
-	registerInput(_randomForestCostFunction, "random forest cost function");
+	registerInput(_randomForestCostFunction, "segment cost function");
 	registerInput(_segmentationCostFunction, "segmentation cost function");
 }
 
@@ -250,10 +250,7 @@ ProblemGraphWriter::writeSegment(const Segment& segment, std::ofstream& out, int
 			break;
 	}
 
-	const unsigned int variable = _problemConfiguration->getVariable(segment.getId());
-	// const double costs = _objective->getCoefficients()[variable];
 	out << " " << _randomForestCostMap[ segment.getId() ];
-
     out << " " << segment.getDirection() << " ";
 
 	const std::vector<double>&      features = _features->get(segment.getId());

@@ -2,8 +2,8 @@
 #define SOPNET_GUI_FEATURES_VIEW_H__
 
 #include <pipeline/all.h>
-#include <gui/TextPainter.h>
 #include <inference/LinearObjective.h>
+#include <sopnet/gui/FeaturesPainter.h>
 #include <sopnet/features/Features.h>
 #include <sopnet/inference/ProblemConfiguration.h>
 #include <sopnet/segments/Segments.h>
@@ -18,14 +18,13 @@ private:
 
 	void updateOutputs();
 
-	void appendFeatures(std::stringstream& stream, unsigned int segmentId);
-
 	pipeline::Input<Segments>             _segments;
 	pipeline::Input<Features>             _features;
 	pipeline::Input<ProblemConfiguration> _problemConfiguration;
 	pipeline::Input<LinearObjective>      _objective;
+	pipeline::Input<std::map<unsigned int, double> > _groundTruthScore;
 
-	pipeline::Output<gui::TextPainter> _painter;
+	pipeline::Output<FeaturesPainter> _painter;
 };
 
 #endif // SOPNET_GUI_FEATURES_VIEW_H__

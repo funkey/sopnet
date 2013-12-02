@@ -60,7 +60,7 @@ SplitMerge::updateOutputs() {
 }
 
 void
-SplitMerge::onInputSet(const pipeline::InputSetBase& signal) {
+SplitMerge::onInputSet(const pipeline::InputSetBase& /*signal*/) {
 
 	_initialSegmentsProcessed = false;
 
@@ -79,7 +79,7 @@ SplitMerge::onKeyDown(const gui::KeyDown& signal) {
 		std::vector<boost::shared_ptr<Slice> > currSlices;
 
 		// compare each section with the previous section
-		for (int interval = 0; interval < _segments->getNumInterSectionIntervals(); interval++) {
+		for (unsigned int interval = 0; interval < _segments->getNumInterSectionIntervals(); interval++) {
 
 			foreach (boost::shared_ptr<Slice> slice, *_selection) {
 
@@ -343,10 +343,10 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 		foreach (boost::shared_ptr<Segment> segment, closestSegments) {
 
 			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
-				if (slice->getSection() == *_section)
+				if (slice->getSection() == (unsigned int)*_section)
 					closestSlices.push_back(slice);
 			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
-				if (slice->getSection() == *_section)
+				if (slice->getSection() == (unsigned int)*_section)
 					closestSlices.push_back(slice);
 		}
 

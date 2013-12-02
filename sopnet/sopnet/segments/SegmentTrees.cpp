@@ -27,7 +27,7 @@ SegmentTrees::getLastSection() {
 void
 SegmentTrees::updateSectionNums() {
 
-	if (_lastSection = -1) {
+	if (_lastSection == -1) {
 
 		// for every neuron...
 		foreach (boost::shared_ptr<SegmentTree> neuron, _neurons) {

@@ -7,6 +7,7 @@ FeaturesView::FeaturesView() {
 	registerInput(_features, "features");
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInput(_objective, "objective");
+	registerInput(_groundTruthScore, "ground truth score", pipeline::Optional);
 	registerOutput(_painter, "painter");
 }
 
@@ -15,33 +16,23 @@ FeaturesView::updateOutputs() {
 
 	std::stringstream featuresString;
 
+	unsigned int segmentId = 0;
+
+	// get the id of the last (usually single) segment in _segments
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
-		appendFeatures(featuresString, end->getId());
+		segmentId = end->getId();
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations())
-		appendFeatures(featuresString, continuation->getId());
+		segmentId = continuation->getId();
 	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches())
-		appendFeatures(featuresString, branch->getId());
-
-	_painter->setText(featuresString.str());
-	_painter->setTextSize(10.0);
-}
-
-void
-FeaturesView::appendFeatures(std::stringstream& stream, unsigned int segmentId) {
+		segmentId = branch->getId();
 
 	const unsigned int variable = _problemConfiguration->getVariable(segmentId);
-	const double costs = _objective->getCoefficients()[variable];
 
-	stream << "costs: " << costs << "; ";
-
-	const std::vector<double>&      features = _features->get(segmentId);
-	const std::vector<std::string>& names    = _features->getNames();
-
-	for (unsigned int i = 0; i < features.size(); i++) {
-
-		if (i < names.size())
-			stream << names[i] << ": ";
-
-		stream << features[i] << ",  ";
-	}
+	_painter->setCosts(_objective->getCoefficients()[variable]);
+	_painter->setFeatures(_features->get(segmentId));
+	_painter->setFeatureNames(_features->getNames());
+	_painter->setSegmentId(segmentId);
+	if (_groundTruthScore)
+		_painter->setGroundTruthScore(_groundTruthScore);
 }
+

@@ -30,6 +30,8 @@ public:
 
 	void resize(unsigned int numVectors, unsigned int numFeatures);
 
+	unsigned int numFeatures();
+
 	std::vector<double>& get(unsigned int segmentId);
 
 	unsigned int size();

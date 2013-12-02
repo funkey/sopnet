@@ -22,7 +22,7 @@ util::ProgramOption optionUseOverlapOnly(
 		util::_description_text = "Instead of using the random forest prediction in the objective, use the number of overlapping pixels for each segment.");
 
 RandomForestCostFunction::RandomForestCostFunction() :
-	_costFunction(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4)),
+	_costFunction(boost::make_shared<costs_function_type>(boost::bind(&RandomForestCostFunction::costs, this, _1, _2, _3, _4))),
 	_maxSegmentCosts(-std::log(optionMinSegmentProbability.as<double>())),
 	_useOverlapOnly(optionUseOverlapOnly),
 	_overlapFeature(-1) {
@@ -48,7 +48,7 @@ RandomForestCostFunction::costs(
 
 	if (_useOverlapOnly && _overlapFeature == -1) {
 
-		for (int i = 0; i < _features->getNames().size(); i++)
+		for (unsigned int i = 0; i < _features->getNames().size(); i++)
 			if (_features->getNames()[i].compare("overlap") == 0) {
 				_overlapFeature = i;
 				break;
