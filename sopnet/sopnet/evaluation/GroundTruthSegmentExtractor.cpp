@@ -13,7 +13,8 @@ util::ProgramOption optionMaxSegmentDistance(
 		util::_description_text = "The maximal distance between slices in a ground-truth segment.",
 		util::_default_value    = 100);
 
-GroundTruthSegmentExtractor::GroundTruthSegmentExtractor() {
+GroundTruthSegmentExtractor::GroundTruthSegmentExtractor() :
+	_overlap(false, false) {
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
@@ -185,13 +186,13 @@ GroundTruthSegmentExtractor::probeBranch(boost::shared_ptr<BranchSegment> branch
 			<< branch->getTargetSlice2()->getComponent()->getCenter() << std::endl;
 
 	LOG_ALL(groundtruthsegmentextractorlog)
-		<< _setDifference(*branch->getSourceSlice(), *branch->getTargetSlice1(), true, false) << " "
-		<< _setDifference(*branch->getSourceSlice(), *branch->getTargetSlice2(), true, false) << std::endl;
+		<< normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice1()) << " "
+		<< normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice2()) << std::endl;
 
 	// there has to be overlap between source and both targets
-	if (_setDifference(*branch->getSourceSlice(), *branch->getTargetSlice1(), true, false) > 0.9)
+	if (normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice1()) > 0.9)
 		return;
-	if (_setDifference(*branch->getSourceSlice(), *branch->getTargetSlice2(), true, false) > 0.9)
+	if (normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice2()) > 0.9)
 		return;
 
 	// targets shouldn't move too much
@@ -247,3 +248,12 @@ GroundTruthSegmentExtractor::distance(const Slice& slice1, const Slice& slice2) 
 	return sqrt(diff.x*diff.x + diff.y*diff.y);
 }
 
+double
+GroundTruthSegmentExtractor::normalizedSetDifference(const Slice& slice1, const Slice& slice2) {
+
+	unsigned int overlap = _overlap(slice1, slice2);
+	unsigned int size1   = slice1.getComponent()->getSize();
+	unsigned int size2   = slice2.getComponent()->getSize();
+
+	return ((size1 - overlap) + (size2 - overlap))/(size1 + size2);
+}

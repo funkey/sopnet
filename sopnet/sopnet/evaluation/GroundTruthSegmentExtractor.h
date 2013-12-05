@@ -2,7 +2,7 @@
 #define SOPNET_GROUND_TRUTH_SEGMENT_EXTRACTOR_H__
 
 #include <pipeline/all.h>
-#include <sopnet/features/SetDifference.h>
+#include <sopnet/features/Overlap.h>
 #include <sopnet/slices/Slices.h>
 #include <sopnet/segments/Segments.h>
 
@@ -33,6 +33,11 @@ private:
 	 */
 	double distance(const Slice& slice1, const Slice& slice2);
 
+	/**
+	 * Get the normalized set difference between two slices.
+	 */
+	double normalizedSetDifference(const Slice& slice1, const Slice& slice2);
+
 	// slices of the previous section
 	pipeline::Input<Slices> _prevSlices;
 
@@ -60,8 +65,8 @@ private:
 	// the maximally allowed distance between slices in a segment
 	double _maxSegmentDistance;
 
-	// functor to compute the set difference between slices
-	SetDifference _setDifference;
+	// functor to compute the overlap between slices
+	Overlap _overlap;
 };
 
 #endif // SOPNET_GROUND_TRUTH_SEGMENT_EXTRACTOR_H__
