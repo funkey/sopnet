@@ -220,7 +220,7 @@ SegmentExtractor::extractSegments() {
 void
 SegmentExtractor::ensureMinContinuationPartners() {
 
-	// for all slices with fewer than the required number of partners
+	// for all slices with fewer than the required number of partners...
 	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
 
 		unsigned int prevId = (*_prevSlices)[i]->getId();
@@ -228,6 +228,9 @@ SegmentExtractor::ensureMinContinuationPartners() {
 		unsigned int numPartners = _continuationPartners[prevId].size();
 
 		if (numPartners < _minContinuationPartners) {
+
+			// sort overlapping slices by overlap
+			std::sort(_nextOverlaps[i].rbegin(), _nextOverlaps[i].rend());
 
 			// ...and all overlapping slices in the next section...
 			unsigned int j, overlap;
