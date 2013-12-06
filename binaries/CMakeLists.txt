@@ -4,3 +4,4 @@ define_module(watershed         BINARY SOURCES watershed.cpp         LINKS image
 define_module(problemdump       BINARY SOURCES problemdump.cpp       LINKS allsopnet)
 define_module(solve_subproblems BINARY SOURCES solve_subproblems.cpp LINKS allsopnet)
 define_module(splitmerge        BINARY SOURCES splitmerge.cpp        LINKS allsopnet)
+define_module(median_filter     BINARY SOURCES median_filter.cpp     LINKS imageprocessing gui)
