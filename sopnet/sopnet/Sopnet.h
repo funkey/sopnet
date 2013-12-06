@@ -81,6 +81,12 @@ private:
 	// the names of the mitochondria slice stacks directories
 	pipeline::Input<std::vector<std::string> > _mitochondriaSliceStackDirectories;
 
+	// the segmentation hypotheses for the synapse slices
+	pipeline::Input<ImageStack> _synapseSlices;
+
+	// the names of the synapse slice stacks directories
+	pipeline::Input<std::vector<std::string> > _synapseSliceStackDirectories;
+
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruth;
 
@@ -110,6 +116,8 @@ private:
 	boost::shared_ptr<SegmentExtractionPipeline>      _neuronSegmentExtractorPipeline;
 
 	boost::shared_ptr<SegmentExtractionPipeline>      _mitochondriaSegmentExtractorPipeline;
+
+	boost::shared_ptr<SegmentExtractionPipeline>      _synapseSegmentExtractorPipeline;
 
 	// the problem assembler that collects all segments and linear constraints
 	boost::shared_ptr<ProblemAssembler>               _problemAssembler;
