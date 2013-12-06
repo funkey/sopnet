@@ -27,7 +27,6 @@ installed using the default Ubuntu repositories:
   • libx11-dev
   • libx11-xcb-dev
   • libxcb1-dev
-  • libxi-dev
   • libxrandr-dev
   • libxi-dev
   • freeglut3-dev
