@@ -3,7 +3,7 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
-#include <sopnet/features/SetDifference.h>
+#include <sopnet/features/Overlap.h>
 #include <sopnet/segments/Segments.h>
 #include <util/point.hpp>
 
@@ -66,7 +66,7 @@ private:
 	std::map<const Slice*, std::vector<boost::shared_ptr<SegmentType> > >
 	slicesToSegments(const std::vector<boost::shared_ptr<SegmentType> >& segments);
 
-	unsigned int setDifference(const Slice& slice1, const Slice& slice2);
+	double normalizedSetDifference(const Slice& slice1, const Slice& slice2);
 
 	pipeline::Input<Segments> _groundTruth;
 
@@ -78,8 +78,8 @@ private:
 
 	pipeline::Output<std::map<unsigned int, double> > _groundTruthScore;
 
-	// functor to compute the set difference between slices
-	SetDifference _setDifference;
+	// functor to compute the overlap between slices
+	Overlap _overlap;
 
 	std::map<unsigned int, boost::shared_ptr<Segment> > _allSegmentIds;
 

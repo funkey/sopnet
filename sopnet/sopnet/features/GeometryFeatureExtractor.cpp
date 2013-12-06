@@ -119,14 +119,6 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 
 	double distance = difference.x*difference.x + difference.y*difference.y;
 
-	double setDifference = _setDifference(*continuation.getSourceSlice(), *continuation.getTargetSlice(), false, false);
-
-	double setDifferenceRatio = setDifference/(sourceSize + targetSize);
-
-	double alignedSetDifference = _setDifference(*continuation.getSourceSlice(), *continuation.getTargetSlice(), false, true);
-
-	double alignedSetDifferenceRatio = setDifference/(sourceSize + targetSize);
-
 	double overlap = _overlap(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
 	double overlapRatio = overlap/(sourceSize + targetSize - overlap);
@@ -134,6 +126,14 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 	double alignedOverlap = _alignedOverlap(*continuation.getSourceSlice(), *continuation.getTargetSlice());
 
 	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize - overlap);
+
+	double setDifference = (sourceSize - overlap) + (targetSize - overlap);
+
+	double setDifferenceRatio = setDifference/(sourceSize + targetSize);
+
+	double alignedSetDifference = (sourceSize - alignedOverlap) + (targetSize - alignedOverlap);
+
+	double alignedSetDifferenceRatio = alignedSetDifference/(sourceSize + targetSize);
 
 	features[0] = distance;
 	features[1] = setDifference;
@@ -175,26 +175,28 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vect
 	unsigned int sourceSize  = branch.getSourceSlice()->getComponent()->getSize();
 	unsigned int targetSize1 = branch.getTargetSlice1()->getComponent()->getSize();
 	unsigned int targetSize2 = branch.getTargetSlice2()->getComponent()->getSize();
+	unsigned int targetSize  = targetSize1 + targetSize2;
 
-	util::point<double> difference = sourceCenter - (targetCenter1*targetSize1 + targetCenter2*targetSize2)/((double)(targetSize1 + targetSize2));
+	util::point<double> difference = sourceCenter - (targetCenter1*targetSize1 + targetCenter2*targetSize2)/((double)(targetSize));
 
 	double distance = difference.x*difference.x + difference.y*difference.y;
 
-	double setDifference = _setDifference(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), false, false);
-
-	double setDifferenceRatio = setDifference/(sourceSize + targetSize1 + targetSize2);
-
-	double alignedSetDifference = _setDifference(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice(), false, true);
-
-	double alignedSetDifferenceRatio = alignedSetDifference/(sourceSize + targetSize1 + targetSize2);
 
 	double overlap = _overlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
 
-	double overlapRatio = overlap/(sourceSize + targetSize1 + targetSize2 - overlap);
+	double overlapRatio = overlap/(sourceSize + targetSize - overlap);
 
 	double alignedOverlap = _alignedOverlap(*branch.getTargetSlice1(), *branch.getTargetSlice2(), *branch.getSourceSlice());
 
-	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize1 + targetSize2 - alignedOverlap);
+	double alignedOverlapRatio = alignedOverlap/(sourceSize + targetSize - alignedOverlap);
+
+	double setDifference = (sourceSize - overlap) + (targetSize - overlap);
+
+	double setDifferenceRatio = setDifference/(sourceSize + targetSize);
+
+	double alignedSetDifference = (sourceSize - alignedOverlap) + (targetSize - alignedOverlap);
+
+	double alignedSetDifferenceRatio = alignedSetDifference/(sourceSize + targetSize);
 
 	features[0] = distance;
 	features[1] = setDifference;

@@ -18,7 +18,8 @@ util::ProgramOption optionMaxGoldStandardDistance(
 
 GoldStandardExtractor::GoldStandardExtractor() :
 	_goldStandard(boost::make_shared<Segments>()),
-	_negativeSamples(boost::make_shared<Segments>()) {
+	_negativeSamples(boost::make_shared<Segments>()),
+	_overlap(false, false) {
 
 	_maxEndDistance          = optionMaxGoldStandardDistance;
 	_maxContinuationDistance = optionMaxGoldStandardDistance;
@@ -84,7 +85,7 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 				continue;
 
 			// normalized, non-aligned set difference
-			float similarity = _setDifference(*end1->getSlice(), *end2->getSlice(), true, false);
+			float similarity = normalizedSetDifference(*end1->getSlice(), *end2->getSlice());
 
 			endPairs.push_back(Pair<EndSegment>(similarity, end1, end2));
 			(*_groundTruthScore)[end2->getId()] = similarity;
@@ -100,8 +101,8 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			// mean of the two normalized set differences
 			float similarity =
-					(_setDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice(), true, false) +
-					 _setDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice(), true, false))/2.0;
+					(normalizedSetDifference(*continuation1->getSourceSlice(), *continuation2->getSourceSlice()) +
+					 normalizedSetDifference(*continuation1->getTargetSlice(), *continuation2->getTargetSlice()))/2.0;
 
 			continuationPairs.push_back(Pair<ContinuationSegment>(similarity, continuation1, continuation2));
 			(*_groundTruthScore)[continuation2->getId()] = similarity;
@@ -117,9 +118,9 @@ GoldStandardExtractor::findGoldStandard(unsigned int interval) {
 
 			// mean of the three normalized set differences
 			float similarity =
-					(_setDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice(),  true, false) +
-					 _setDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1(), true, false) +
-					 _setDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2(), true, false))/3.0;
+					(normalizedSetDifference(*branch1->getSourceSlice(),  *branch2->getSourceSlice()) +
+					 normalizedSetDifference(*branch1->getTargetSlice1(), *branch2->getTargetSlice1()) +
+					 normalizedSetDifference(*branch1->getTargetSlice2(), *branch2->getTargetSlice2()))/3.0;
 
 			branchPairs.push_back(Pair<BranchSegment>(similarity, branch1, branch2));
 			(*_groundTruthScore)[branch2->getId()] = similarity;
@@ -360,3 +361,12 @@ GoldStandardExtractor::slicesToSegments(const std::vector<boost::shared_ptr<Segm
 	return slices;
 }
 
+double
+GoldStandardExtractor::normalizedSetDifference(const Slice& slice1, const Slice& slice2) {
+
+	unsigned int overlap = _overlap(slice1, slice2);
+	unsigned int size1   = slice1.getComponent()->getSize();
+	unsigned int size2   = slice2.getComponent()->getSize();
+
+	return ((size1 - overlap) + (size2 - overlap))/(size1 + size2);
+}

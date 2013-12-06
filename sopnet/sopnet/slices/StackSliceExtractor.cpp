@@ -1,7 +1,6 @@
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/Mser.h>
 #include <sopnet/features/Overlap.h>
-#include <sopnet/features/SetDifference.h>
 #include <util/ProgramOptions.h>
 #include "ComponentTreeConverter.h"
 #include "StackSliceExtractor.h"
@@ -145,8 +144,7 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 
 	std::vector<Slices> slices = allSlices;
 
-	Overlap overlap(true /* normalize */, false /* don't align */);
-	SetDifference setDifference;
+	Overlap normalizedOverlap(true /* normalize */, false /* don't align */);
 
 	double overlapThreshold             = optionSimilarityThreshold;
 	unsigned int setDifferenceThreshold = optionSetDifferenceThreshold;
@@ -167,12 +165,24 @@ StackSliceExtractor::SliceCollector::removeDuplicatesPass(const std::vector<Slic
 				// for each slice
 				foreach (boost::shared_ptr<Slice> subSlice, slices[subLevel]) {
 
-					// if the overlap exceeds the threshold, store subSlice as a
-					// duplicate of slice
-					if (overlap.exceeds(*slice, *subSlice, overlapThreshold) && setDifference(*slice, *subSlice, false, false) < setDifferenceThreshold) {
+					// if the overlap exceeds the threshold...
+					if (normalizedOverlap.exceeds(*slice, *subSlice, overlapThreshold)) {
 
-						duplicates.push_back(subSlice);
-						toBeRemoved.push_back(subSlice);
+						// get the set difference
+						Overlap nonNormalizedOverlap(false, false);
+						int overlap = nonNormalizedOverlap(*slice, *subSlice);
+						int sliceSize = slice->getComponent()->getSize();
+						int subSliceSize = subSlice->getComponent()->getSize();
+
+						// ...and the set difference is small enough, store 
+						// subSlice as aduplicate of slice
+						unsigned int setDifference = (sliceSize - overlap) + (subSliceSize - overlap);
+
+						if (setDifference < setDifferenceThreshold) {
+
+							duplicates.push_back(subSlice);
+							toBeRemoved.push_back(subSlice);
+						}
 					}
 				}
 

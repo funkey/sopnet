@@ -9,7 +9,9 @@ LinearConstraint::setCoefficient(unsigned int varNum, double coef) {
 
 	if (coef == 0) {
 
-		_coefs.erase(_coefs.find(varNum));
+		std::map<unsigned int, double>::iterator i = _coefs.find(varNum);
+		if (i != _coefs.end())
+			_coefs.erase(_coefs.find(varNum));
 
 	} else {
 

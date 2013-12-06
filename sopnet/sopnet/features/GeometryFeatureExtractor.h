@@ -6,7 +6,6 @@
 #include "Distance.h"
 #include "Features.h"
 #include "Overlap.h"
-#include "SetDifference.h"
 
 class GeometryFeatureExtractor : public pipeline::SimpleProcessNode<> {
 
@@ -30,8 +29,6 @@ private:
 	pipeline::Input<Segments> _segments;
 
 	pipeline::Output<Features> _features;
-
-	SetDifference _setDifference;
 
 	Overlap _overlap;
 	Overlap _alignedOverlap;

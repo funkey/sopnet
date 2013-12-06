@@ -85,6 +85,8 @@ Sopnet::Sopnet(
 	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories");
 	registerInput(_mitochondriaSlices, "mitochondria slices");
 	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories");
+	registerInput(_synapseSlices, "synapse slices");
+	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories");
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
@@ -99,6 +101,10 @@ Sopnet::Sopnet(
 	_mitochondriaSlices.registerBackwardSlot(_update);
 	_mitochondriaSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
 	_mitochondriaSliceStackDirectories.registerBackwardSlot(_update);
+	_synapseSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_synapseSlices.registerBackwardSlot(_update);
+	_synapseSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
+	_synapseSliceStackDirectories.registerBackwardSlot(_update);
 	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
 	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
 	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
@@ -192,6 +198,8 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("neuron linear constraints");
 	_problemAssembler->clearInputs("mitochondria segments");
 	_problemAssembler->clearInputs("mitochondria linear constraints");
+	_problemAssembler->clearInputs("synapse segments");
+	_problemAssembler->clearInputs("synapse linear constraints");
 
 	// make sure relevant input information is available
 	_update();
@@ -205,7 +213,13 @@ Sopnet::createBasicPipeline() {
 	if (_mitochondriaSliceStackDirectories)
 		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories, !_problemWriter);
 	else if (_mitochondriaSlices)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, _forceExplanation, !_problemWriter);
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, false, !_problemWriter);
+
+	_synapseSegmentExtractorPipeline.reset();
+	if (_synapseSliceStackDirectories)
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories, !_problemWriter);
+	else if (_synapseSlices)
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices, false, !_problemWriter);
 
 	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 
@@ -217,6 +231,12 @@ Sopnet::createBasicPipeline() {
 
 			_problemAssembler->addInput("mitochondria segments", _mitochondriaSegmentExtractorPipeline->getSegments(i));
 			_problemAssembler->addInput("mitochondria linear constraints", _mitochondriaSegmentExtractorPipeline->getConstraints(i));
+		}
+
+		if (_synapseSegmentExtractorPipeline) {
+
+			_problemAssembler->addInput("synapse segments", _synapseSegmentExtractorPipeline->getSegments(i));
+			_problemAssembler->addInput("synapse linear constraints", _synapseSegmentExtractorPipeline->getConstraints(i));
 		}
 	}
 }

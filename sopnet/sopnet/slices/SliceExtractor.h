@@ -13,6 +13,7 @@
 
 // forward declaration
 class ComponentTreeDownSampler;
+class ComponentTreePruner;
 class ComponentTreeConverter;
 template <typename Precision> class Mser;
 class MserParameters;
@@ -52,6 +53,7 @@ private:
 	boost::shared_ptr<Mser<Precision> >         _mser;
 	boost::shared_ptr<MserParameters>           _defaultMserParameters;
 	boost::shared_ptr<ComponentTreeDownSampler> _downSampler;
+	boost::shared_ptr<ComponentTreePruner>      _pruner;
 	boost::shared_ptr<ComponentTreeConverter>   _converter;
 	boost::shared_ptr<LinearConstraintsFilter>  _filter;
 };

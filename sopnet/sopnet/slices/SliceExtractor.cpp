@@ -1,7 +1,9 @@
 #include <util/ProgramOptions.h>
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/ComponentTreeDownSampler.h>
+#include <imageprocessing/ComponentTreePruner.h>
 #include <imageprocessing/Mser.h>
+#include <pipeline/Value.h>
 #include "ComponentTreeConverter.h"
 #include "SliceExtractor.h"
 
@@ -25,11 +27,18 @@ util::ProgramOption optionMaxSliceSize(
 		util::_description_text = "The maximal size of a neuron slice in pixels.",
 		util::_default_value    = 100*100);
 
+util::ProgramOption optionMaxSliceMerges(
+		util::_module           = "sopnet",
+		util::_long_name        = "maxSliceMerges",
+		util::_description_text = "Limit the height of the slice component tree, counting the height from the leafs.",
+		util::_default_value    = 3);
+
 template <typename Precision>
 SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	_mser(boost::make_shared<Mser<Precision> >()),
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
+	_pruner(boost::make_shared<ComponentTreePruner>()),
 	_converter(boost::make_shared<ComponentTreeConverter>(section)),
 	_filter(boost::make_shared<LinearConstraintsFilter>()) {
 
@@ -47,10 +56,18 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	_defaultMserParameters->minArea      =  optionMinSliceSize;
 	_defaultMserParameters->maxArea      =  optionMaxSliceSize;
 
+	LOG_DEBUG(sliceextractorlog)
+			<< "extracting slices with min size " << optionMinSliceSize.as<int>()
+			<< ", max size " << optionMaxSliceSize.as<int>()
+			<< ", and max tree depth " << optionMaxSliceMerges.as<int>()
+			<< std::endl;
+
 	// setup internal pipeline
 	_mser->setInput("parameters", _defaultMserParameters);
 	_downSampler->setInput(_mser->getOutput());
-	_converter->setInput(_downSampler->getOutput());
+	_pruner->setInput("component tree", _downSampler->getOutput());
+	_pruner->setInput("max height", pipeline::Value<int>(optionMaxSliceMerges.as<int>()));
+	_converter->setInput(_pruner->getOutput());
 	_filter->setInput("linear constraints", _converter->getOutput("linear constraints"));
 }
 
