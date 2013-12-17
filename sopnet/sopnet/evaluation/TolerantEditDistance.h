@@ -27,7 +27,11 @@ private:
 
 	std::set<float>& getReconstructionLabels();
 
+	void clearCells();
+
 	void clearPossibleMatches();
+
+	unsigned int getCellIndex(float gtLabel, float recLabel);
 
 	void registerPossibleMatch(float gtLabel, float recLabel);
 
@@ -51,8 +55,11 @@ private:
 	pipeline::Output<ImageStack> _correctedReconstruction;
 	pipeline::Output<ImageStack> _errors;
 
-	// map from rec labels to maps from gt label to cell
-	std::map<float, std::map<float, cell_t> > _cells;
+	// list of all cells
+	std::vector<cell_t> _cells;
+
+	// map from rec labels to maps from gt label to cell indices
+	std::map<float, std::map<float, std::vector<unsigned int> > > _cellsByRecToGtLabel;
 
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;

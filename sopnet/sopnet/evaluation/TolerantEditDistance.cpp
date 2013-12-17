@@ -47,7 +47,7 @@ TolerantEditDistance::extractCells() {
 	if (_groundTruth->height() != _reconstruction->height() || _groundTruth->width() != _reconstruction->width())
 		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size"));
 
-	_cells.clear();
+	clearCells();
 	clearPossibleMatches();
 
 	_depth  = _groundTruth->size();
@@ -67,9 +67,14 @@ TolerantEditDistance::extractCells() {
 				float gtLabel  = (*gt)(x, y);
 				float recLabel = (*rec)(x, y);
 
-				_cells[recLabel][gtLabel].add(cell_t::Location(x, y, z));
-				_cells[recLabel][gtLabel].setReconstructionLabel(recLabel);
-				_cells[recLabel][gtLabel].setGroundTruthLabel(gtLabel);
+				// TODO: At the moment, cells are unique wrt (gtLabel,recLabel).
+				// Later, we will have multiple cells per labeling. Change this 
+				// function accordingly.
+				unsigned int cellIndex = getCellIndex(gtLabel, recLabel);
+
+				_cells[cellIndex].add(cell_t::Location(x, y, z));
+				_cells[cellIndex].setReconstructionLabel(recLabel);
+				_cells[cellIndex].setGroundTruthLabel(gtLabel);
 
 				registerPossibleMatch(gtLabel, recLabel);
 			}
@@ -99,15 +104,16 @@ TolerantEditDistance::enumerateCellLabels() {
 	pitch[2] = 10.0;
 
 	// for each reconstruction label
-	foreach (float recLabel, _cells | boost::adaptors::map_keys) {
+	foreach (float recLabel, getReconstructionLabels()) {
 
 		LOG_ALL(tedlog) << "create distance map for reconstruction label " << recLabel << std::endl;
 
 		// create distance map
 		distance = 0.0f;
-		foreach (cell_t& cell, _cells[recLabel] | boost::adaptors::map_values)
-			foreach (const cell_t::Location& l, cell)
-				distance(l.x, l.y, l.z) = 1.0f;
+		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
+			foreach (unsigned int cellIndex, cellIndices)
+				foreach (const cell_t::Location& l, _cells[cellIndex])
+					distance(l.x, l.y, l.z) = 1.0f;
 		vigra::separableMultiDistSquared(
 				distance,
 				distance,
@@ -117,25 +123,24 @@ TolerantEditDistance::enumerateCellLabels() {
 		LOG_ALL(tedlog) << "get all cells within " << _maxDistanceThreshold << "nm..." << std::endl;
 
 		// for each cell that does not have the current reconstruction label
-		foreach (float k, _cells | boost::adaptors::map_keys)
-			foreach (cell_t& cell, _cells[k] | boost::adaptors::map_values)
-				if (cell.getReconstructionLabel() != recLabel) {
+		foreach (cell_t& cell, _cells)
+			if (cell.getReconstructionLabel() != recLabel) {
 
-					// get the max closest distance to current reconstruction 
-					// label
-					float maxDistance = 0;
-					foreach (const cell_t::Location& l, cell)
-						if (distance(l.x, l.y, l.z) > maxDistance)
-							maxDistance = distance(l.x, l.y, l.z);
+				// get the max closest distance to current reconstruction 
+				// label
+				float maxDistance = 0;
+				foreach (const cell_t::Location& l, cell)
+					if (distance(l.x, l.y, l.z) > maxDistance)
+						maxDistance = distance(l.x, l.y, l.z);
 
-					// if maximum distance map value < threshold, this cell can 
-					// have the current reconstruction label as an alternative
-					if (maxDistance < _maxDistanceThreshold) {
+				// if maximum distance map value < threshold, this cell can 
+				// have the current reconstruction label as an alternative
+				if (maxDistance < _maxDistanceThreshold) {
 
-						cell.addAlternativeLabel(recLabel);
-						registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
-					}
+					cell.addAlternativeLabel(recLabel);
+					registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
 				}
+			}
 	}
 }
 
@@ -151,30 +156,33 @@ TolerantEditDistance::findBestCellLabels() {
 	// introduce indicators for each cell and each possible label of that cell
 	unsigned int var = 0;
 	foreach (float recLabel, getReconstructionLabels())
-		foreach (cell_t& cell, _cells[recLabel] | boost::adaptors::map_values) {
+		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
+			foreach (unsigned int cellIndex, cellIndices) {
 
-			// first indicator variable for this cell
-			unsigned int begin = var;
+				cell_t& cell = _cells[cellIndex];
 
-			// one variable for the default label
-			LOG_ALL(tedlog) << "add indicator for default label of current cell: " << std::endl;
-			assignIndicatorVariable(var++, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
+				// first indicator variable for this cell
+				unsigned int begin = var;
 
-			LOG_ALL(tedlog) << "add indicators for alternative labels of current cell: " << std::endl;
-			foreach (float l, cell.getAlternativeLabels())
-				assignIndicatorVariable(var++, cell.getGroundTruthLabel(), l);
+				// one variable for the default label
+				LOG_ALL(tedlog) << "add indicator for default label of current cell: " << std::endl;
+				assignIndicatorVariable(var++, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
 
-			// last +1 indicator variable for this cell
-			unsigned int end = var;
+				LOG_ALL(tedlog) << "add indicators for alternative labels of current cell: " << std::endl;
+				foreach (float l, cell.getAlternativeLabels())
+					assignIndicatorVariable(var++, cell.getGroundTruthLabel(), l);
 
-			// every cell needs to have a label
-			LinearConstraint constraint;
-			for (unsigned int i = begin; i < end; i++)
-				constraint.setCoefficient(i, 1.0);
-			constraint.setRelation(Equal);
-			constraint.setValue(1);
-			constraints->add(constraint);
-		}
+				// last +1 indicator variable for this cell
+				unsigned int end = var;
+
+				// every cell needs to have a label
+				LinearConstraint constraint;
+				for (unsigned int i = begin; i < end; i++)
+					constraint.setCoefficient(i, 1.0);
+				constraint.setRelation(Equal);
+				constraint.setValue(1);
+				constraints->add(constraint);
+			}
 
 	// labels can not disappear
 	foreach (float recLabel, getReconstructionLabels()) {
@@ -346,11 +354,34 @@ TolerantEditDistance::getGroundTruthLabels() {
 }
 
 void
+TolerantEditDistance::clearCells() {
+
+	_cells.clear();
+	_cellsByRecToGtLabel.clear();
+}
+
+void
 TolerantEditDistance::clearPossibleMatches() {
 
 	_possibleGroundTruthMatches.clear();
 	_groundTruthLabels.clear();
 	_reconstructionLabels.clear();
+}
+
+unsigned int
+TolerantEditDistance::getCellIndex(float gtLabel, float recLabel) {
+
+	if (
+			_cellsByRecToGtLabel.count(recLabel) == 0 ||
+			_cellsByRecToGtLabel[recLabel].count(gtLabel) == 0) {
+
+		// create a new cell
+		_cells.push_back(cell_t());
+		_cellsByRecToGtLabel[recLabel][gtLabel].push_back(static_cast<unsigned int>(_cells.size() - 1));
+	}
+
+	// NOTE: For now we know there is only one.
+	return _cellsByRecToGtLabel[recLabel][gtLabel][0];
 }
 
 void
