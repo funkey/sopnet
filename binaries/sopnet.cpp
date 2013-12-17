@@ -480,7 +480,7 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
 
 			if (optionShowErrors)
-				resultView->setInput("errors", resultEvaluator->getOutput());
+				resultView->setInput("slice errors", resultEvaluator->getOutput());
 
 			resultView->setInput(sopnet->getOutput("solution"));
 			rotateView->setInput(resultView->getOutput());
@@ -496,7 +496,7 @@ int main(int optionc, char** optionv) {
 			boost::shared_ptr<NamedView>    namedView       = boost::make_shared<NamedView>("Ground-truth:");
 
 			if (optionShowErrors)
-				groundTruthView->setInput("errors", resultEvaluator->getOutput());
+				groundTruthView->setInput("slice errors", resultEvaluator->getOutput());
 
 			groundTruthView->setInput(sopnet->getOutput("ground truth segments"));
 			groundTruthView->setInput("raw sections", rawSectionsReader->getOutput());
@@ -541,7 +541,7 @@ int main(int optionc, char** optionv) {
 
 			neuronsView->setInput(neuronExtractor->getOutput());
 			if (optionShowErrors)
-				neuronsView->setInput("errors", resultEvaluator->getOutput());
+				neuronsView->setInput("slice errors", resultEvaluator->getOutput());
 			namedView->setInput(neuronsView->getOutput());
 
 			controlContainer->addInput(namedView->getOutput());
@@ -561,7 +561,7 @@ int main(int optionc, char** optionv) {
 			variationOfInformation->setInput("stack 1", groundTruthReader->getOutput());
 			variationOfInformation->setInput("stack 2", resultIdMapCreator->getOutput());
 
-			errorsView->setInput("errors", resultEvaluator->getOutput());
+			errorsView->setInput("slice errors", resultEvaluator->getOutput());
 			errorsView->setInput("variation of information", variationOfInformation->getOutput());
 			namedView->setInput(errorsView->getOutput());
 

@@ -5,7 +5,7 @@
 
 #include <sopnet/features/Overlap.h>
 #include <sopnet/segments/Segments.h>
-#include "Errors.h"
+#include "SliceErrors.h"
 
 class ResultEvaluator : public pipeline::SimpleProcessNode<> {
 
@@ -53,16 +53,16 @@ private:
 			std::vector<boost::shared_ptr<Slice> >& resultSlices,
 			unsigned int                            numSlice);
 
-	Errors getErrors(
+	SliceErrors getSliceErrors(
 			const Mapping& mapping,
 			const Mapping& previousMapping,
 			unsigned int section);
 
-	Errors getIntraErrors(
+	SliceErrors getIntraSliceErrors(
 			const Mapping& mapping,
 			unsigned int section);
 
-	Errors getInterErrors(
+	SliceErrors getInterSliceErrors(
 			const Mapping& mapping,
 			const Mapping& previousMapping,
 			unsigned int section);
@@ -70,7 +70,7 @@ private:
 	pipeline::Input<Segments> _result;
 	pipeline::Input<Segments> _groundTruth;
 
-	pipeline::Output<Errors> _errors;
+	pipeline::Output<SliceErrors> _sliceErrors;
 
 	unsigned int _numSections;
 

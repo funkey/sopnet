@@ -8,7 +8,7 @@ SegmentsView::SegmentsView(std::string name) :
 
 	registerInput(_segments, "segments");
 	registerInput(_rawSections, "raw sections", pipeline::Optional);
-	registerInput(_errors, "errors", pipeline::Optional);
+	registerInput(_sliceErrors, "slice errors", pipeline::Optional);
 
 	registerOutput(_painter, "painter");
 
@@ -69,8 +69,8 @@ SegmentsView::updateOutputs() {
 	if (_rawSections)
 		_painter->setImageStack(_rawSections);
 
-	if (_errors)
-		_painter->setErrors(_errors);
+	if (_sliceErrors)
+		_painter->setSliceErrors(_sliceErrors);
 
 	_painter->setSegments(_segments);
 

@@ -4,7 +4,7 @@
 #include <gui/RecordablePainter.h>
 #include <gui/Texture.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/evaluation/Errors.h>
+#include <sopnet/evaluation/SliceErrors.h>
 #include <sopnet/segments/Segments.h>
 #include "SliceTextures.h"
 
@@ -27,7 +27,7 @@ public:
 	/**
 	 * Set the errors to highlight.
 	 */
-	void setErrors(boost::shared_ptr<Errors> errors);
+	void setSliceErrors(boost::shared_ptr<SliceErrors> sliceErrors);
 
 	void showEnds(bool show);
 
@@ -63,7 +63,7 @@ private:
 
 	boost::shared_ptr<Segments> _segments;
 
-	boost::shared_ptr<Errors> _errors;
+	boost::shared_ptr<SliceErrors> _sliceErrors;
 
 	util::rect<double> _size;
 

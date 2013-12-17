@@ -11,7 +11,7 @@ NeuronsView::NeuronsView() :
 		_neuronsChanged(true) {
 
 	registerInput(_neurons, "neurons");
-	registerInput(_errors, "errors", pipeline::Optional);
+	registerInput(_sliceErrors, "slice errors", pipeline::Optional);
 	registerOutput(_container->getOutput(), "painter");
 	registerOutput(_currentNeuron, "current neuron");
 
@@ -41,8 +41,8 @@ NeuronsView::updateOutputs() {
 			rotateView->getOutput().registerForwardCallback(callback, this, signals::Transparent);
 
 			neuronView->setInput("segments", neuron);
-			if (_errors)
-				neuronView->setInput("errors", _errors);
+			if (_sliceErrors)
+				neuronView->setInput("slice errors", _sliceErrors);
 			rotateView->setInput(neuronView->getOutput());
 			_container->addInput(rotateView->getOutput());
 

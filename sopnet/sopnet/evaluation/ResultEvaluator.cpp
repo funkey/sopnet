@@ -16,7 +16,7 @@ ResultEvaluator::ResultEvaluator(double minOverlap) :
 
 	registerInput(_result, "result");
 	registerInput(_groundTruth, "ground truth");
-	registerOutput(_errors, "errors");
+	registerOutput(_sliceErrors, "slice errors");
 }
 
 void
@@ -26,7 +26,7 @@ ResultEvaluator::updateOutputs() {
 
 	_numSections = std::max((int)_result->getNumInterSectionIntervals(), (int)_groundTruth->getNumInterSectionIntervals());
 
-	LOG_DEBUG(resultevaluatorlog) << "compute errors for " << _numSections << " sections" << std::endl;
+	LOG_DEBUG(resultevaluatorlog) << "compute slice errors for " << _numSections << " sections" << std::endl;
 
 	// First, find all slices in the result and ground-truth.
 	findAllSlicesAndLinks();
@@ -35,11 +35,11 @@ ResultEvaluator::updateOutputs() {
 	std::vector<Mappings> allMappings;
 
 	// pointers from any mapping of any section to the mapping in the previous 
-	// section with minimal accumulated error
+	// section with minimal accumulated slice error
 	std::vector<std::map<int, int> > bestPreviousMapping;
 
-	// all minimal errors until a section and a mapping of this section
-	std::vector<std::vector<Errors> > accumulatedErrors;
+	// all minimal sliceErrors until a section and a mapping of this section
+	std::vector<std::vector<SliceErrors> > accumulatedSliceErrors;
 
 	// For each section...
 	for (unsigned int section = 0; section < _numSections; section++) {
@@ -56,85 +56,85 @@ ResultEvaluator::updateOutputs() {
 
 		if (section == 0) {
 
-			LOG_ALL(resultevaluatorlog) << "calculating errors of first section" << std::endl;
+			LOG_ALL(resultevaluatorlog) << "calculating slice errors of first section" << std::endl;
 
-			// The errors of the first section consist only of the intra-section 
-			// errors.
-			std::vector<Errors> firstErrors;
+			// The slice errors of the first section consist only of the 
+			// intra-section slice errors.
+			std::vector<SliceErrors> firstSliceErrors;
 
 			foreach (Mapping& mapping, currentMappings)
-				firstErrors.push_back(getIntraErrors(mapping, 0));
+				firstSliceErrors.push_back(getIntraSliceErrors(mapping, 0));
 
-			accumulatedErrors.push_back(firstErrors);
+			accumulatedSliceErrors.push_back(firstSliceErrors);
 
-			LOG_ALL(resultevaluatorlog) << "section 0: " << firstErrors << std::endl;
+			LOG_ALL(resultevaluatorlog) << "section 0: " << firstSliceErrors << std::endl;
 
 			continue;
 		}
 
-		// new vector of errors for current section
-		accumulatedErrors.push_back(std::vector<Errors>(currentMappings.size(), Errors()));
+		// new vector of slice errors for current section
+		accumulatedSliceErrors.push_back(std::vector<SliceErrors>(currentMappings.size(), SliceErrors()));
 
 		Mappings& previousMappings = allMappings[section - 1];
 
-		// Compute errors of all mappings of current section when combined with 
-		// any mapping of previous section.
+		// Compute slice errors of all mappings of current section when combined 
+		// with any mapping of previous section.
 
-		std::map<int, std::map<int, Errors> > errors;
+		std::map<int, std::map<int, SliceErrors> > sliceErrors;
 
 		LOG_DEBUG(resultevaluatorlog)
-				<< "computing errors for all " << currentMappings.size() << "x"
+				<< "computing slice errors for all " << currentMappings.size() << "x"
 				<< previousMappings.size() << " combinations" << std::endl;
 
 		for (unsigned int i = 0; i < currentMappings.size(); i++)
 			for (unsigned int j = 0; j < previousMappings.size(); j++)
-				errors[i][j] = getErrors(currentMappings[i], previousMappings[j], section);
+				sliceErrors[i][j] = getSliceErrors(currentMappings[i], previousMappings[j], section);
 
 		// For each mapping of the current section, get the minimal number of 
-		// errors up to the current section, remember which mapping in the 
+		// slice errors up to the current section, remember which mapping in the 
 		// previous section was involved.
 
-		LOG_ALL(resultevaluatorlog) << "searching for minimal accumulated errors" << std::endl;
+		LOG_ALL(resultevaluatorlog) << "searching for minimal accumulated slice errors" << std::endl;
 
 		for (unsigned int i = 0; i < currentMappings.size(); i++) {
 
-			int numErrors = -1;
+			int numSliceErrors = -1;
 
 			for (unsigned int j = 0; j < previousMappings.size(); j++) {
 
-				// the error until j in the previous section
-				const Errors& previousErrors = accumulatedErrors[section-1][j];
+				// the sliceError until j in the previous section
+				const SliceErrors& previousSliceErrors = accumulatedSliceErrors[section-1][j];
 
-				// the error until i when going over j
-				Errors currentErrors = errors[i][j] + previousErrors;
+				// the sliceError until i when going over j
+				SliceErrors currentSliceErrors = sliceErrors[i][j] + previousSliceErrors;
 
 				// remember the best j
-				if (currentErrors.total() < numErrors || numErrors == -1) {
+				if (currentSliceErrors.total() < numSliceErrors || numSliceErrors == -1) {
 
-					numErrors = currentErrors.total();
+					numSliceErrors = currentSliceErrors.total();
 					bestPreviousMapping[section][i] = j;
-					accumulatedErrors[section][i] = currentErrors;
+					accumulatedSliceErrors[section][i] = currentSliceErrors;
 				}
 			}
 		}
 
-		LOG_ALL(resultevaluatorlog) << "section " << section << ": " << accumulatedErrors[section] << std::endl;
+		LOG_ALL(resultevaluatorlog) << "section " << section << ": " << accumulatedSliceErrors[section] << std::endl;
 
 		LOG_ALL(resultevaluatorlog) << "done with section " << section << std::endl;
 	}
 
-	// Choose the mapping with the lowest acummulated error.
+	// Choose the mapping with the lowest acummulated slice error.
 
-	Errors minErrors;
+	SliceErrors minSliceErrors;
 	int bestMapping = -1;
 
 	LOG_DEBUG(resultevaluatorlog) << "walking backwards to find sequence of optimal mappings" << std::endl;
 
 	for (unsigned int i = 0; i < allMappings[_numSections-1].size(); i++) {
 
-		if (accumulatedErrors[_numSections-1][i].total() < minErrors.total() || bestMapping == -1) {
+		if (accumulatedSliceErrors[_numSections-1][i].total() < minSliceErrors.total() || bestMapping == -1) {
 
-			minErrors   = accumulatedErrors[_numSections-1][i];
+			minSliceErrors   = accumulatedSliceErrors[_numSections-1][i];
 			bestMapping = i;
 		}
 	}
@@ -153,25 +153,25 @@ ResultEvaluator::updateOutputs() {
 
 	// Set outputs.
 
-	*_errors = minErrors;
+	*_sliceErrors = minSliceErrors;
 
 	LOG_DEBUG(resultevaluatorlog) << "done" << std::endl;
 
 	LOG_ALL(resultevaluatorlog) << "false merges:" << std::endl;
 	int a, b;
-	foreach (boost::tie(a, b), minErrors.falseMerges())
+	foreach (boost::tie(a, b), minSliceErrors.falseMerges())
 		LOG_ALL(resultevaluatorlog) << "[" << a << ", " << b << "]" << std::endl;
 	LOG_ALL(resultevaluatorlog) << "false splits:" << std::endl;
-	foreach (boost::tie(a, b), minErrors.falseSplits())
+	foreach (boost::tie(a, b), minSliceErrors.falseSplits())
 		LOG_ALL(resultevaluatorlog) << "[" << a << ", " << b << "]" << std::endl;
 
 	// dump to output (useful for redirection into file)
 	LOG_USER(resultevaluatorlog) << "# FP FN FS FM" << std::endl;
 	LOG_USER(resultevaluatorlog)
-			<< minErrors.numFalsePositives() << " "
-			<< minErrors.numFalseNegatives() << " "
-			<< minErrors.numFalseSplits() << " "
-			<< minErrors.numFalseMerges() << std::endl;
+			<< minSliceErrors.numFalsePositives() << " "
+			<< minSliceErrors.numFalseNegatives() << " "
+			<< minSliceErrors.numFalseSplits() << " "
+			<< minSliceErrors.numFalseMerges() << std::endl;
 }
 
 ResultEvaluator::Mappings
@@ -420,28 +420,28 @@ ResultEvaluator::createMappings(
 	LOG_ALL(resultevaluatorlog) << "done with slice #" << numSlice << std::endl;
 }
 
-Errors
-ResultEvaluator::getErrors(
+SliceErrors
+ResultEvaluator::getSliceErrors(
 		const Mapping& mapping,
 		const Mapping& previousMapping,
 		unsigned int section) {
 
-	// Compute the errors for the given mappings of 'section' and the previous 
-	// section.
+	// Compute the slice errors for the given mappings of 'section' and the 
+	// previous section.
 
-	// Get intra-section errors.
+	// Get intra-section slice errors.
 
-	Errors intraErrors = getIntraErrors(mapping, section);
+	SliceErrors intraSliceErrors = getIntraSliceErrors(mapping, section);
 
-	// Get inter-section errors.
+	// Get inter-section slice errors.
 
-	Errors interErrors = getInterErrors(mapping, previousMapping, section);
+	SliceErrors interSliceErrors = getInterSliceErrors(mapping, previousMapping, section);
 
-	return intraErrors + interErrors;
+	return intraSliceErrors + interSliceErrors;
 }
 
-Errors
-ResultEvaluator::getIntraErrors(const Mapping& mapping, unsigned int section) {
+SliceErrors
+ResultEvaluator::getIntraSliceErrors(const Mapping& mapping, unsigned int section) {
 
 	// Get all result slice ids of the current section.
 
@@ -474,30 +474,30 @@ ResultEvaluator::getIntraErrors(const Mapping& mapping, unsigned int section) {
 		groundTruthIds.erase(groundTruthId);
 	}
 
-	Errors errors;
+	SliceErrors sliceErrors;
 
 	// Remaining result slice ids are false positives.
 
-	errors.falsePositives() = resultIds;
+	sliceErrors.falsePositives() = resultIds;
 
 	// Remaining ground-truth slice ids are false negatives.
 
-	errors.falseNegatives() = groundTruthIds;
+	sliceErrors.falseNegatives() = groundTruthIds;
 
 	LOG_ALL(resultevaluatorlog)
-			<< errors.numFalsePositives() << " false positives, "
-			<< errors.numFalseNegatives() << " false negatives" << std::endl;
+			<< sliceErrors.numFalsePositives() << " false positives, "
+			<< sliceErrors.numFalseNegatives() << " false negatives" << std::endl;
 
-	return errors;
+	return sliceErrors;
 }
 
-Errors
-ResultEvaluator::getInterErrors(
+SliceErrors
+ResultEvaluator::getInterSliceErrors(
 		const Mapping& mapping,
 		const Mapping& previousMapping,
 		unsigned int section) {
 
-	Errors interErrors;
+	SliceErrors interSliceErrors;
 
 	// Create a look-up table for result ids to ground-truth ids under the 
 	// current mapping.
@@ -565,14 +565,14 @@ ResultEvaluator::getInterErrors(
 
 	foreach (boost::tie(a, b), trueResultLinks)
 		resultLinks.erase(std::make_pair(a, b));
-	interErrors.falseMerges() = resultLinks;
+	interSliceErrors.falseMerges() = resultLinks;
 
 	// Remaining ground-truth links are false splits.
 
 	foreach (boost::tie(a, b), foundGroundTruthLinks)
 		groundTruthLinks.erase(std::make_pair(a, b));
-	interErrors.falseSplits() = groundTruthLinks;
+	interSliceErrors.falseSplits() = groundTruthLinks;
 
-	return interErrors;
+	return interSliceErrors;
 }
 

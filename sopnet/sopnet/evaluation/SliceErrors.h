@@ -1,9 +1,9 @@
-#ifndef SOPNET_EVALUATION_ERRORS_H__
-#define SOPNET_EVALUATION_ERRORS_H__
+#ifndef SOPNET_EVALUATION_SLICEERRORS_H__
+#define SOPNET_EVALUATION_SLICEERRORS_H__
 
 #include <pipeline/all.h>
 
-class Errors : public pipeline::Data {
+class SliceErrors : public pipeline::Data {
 
 public:
 
@@ -33,9 +33,9 @@ public:
 	const std::set<std::pair<int, int> >& falseSplits() const { return _falseSplits; }
 	const std::set<std::pair<int, int> >& falseMerges() const { return _falseMerges; }
 
-	Errors operator+(const Errors& other) const {
+	SliceErrors operator+(const SliceErrors& other) const {
 
-		Errors result;
+		SliceErrors result;
 
 		result.falsePositives() = falsePositives();
 		result.falseNegatives() = falseNegatives();
@@ -60,7 +60,7 @@ private:
 	std::set<std::pair<int, int> > _falseMerges;
 };
 
-std::ostream& operator<<(std::ostream& os, const Errors& errors);
+std::ostream& operator<<(std::ostream& os, const SliceErrors& sliceErrors);
 
-#endif // SOPNET_EVALUATION_ERRORS_H__
+#endif // SOPNET_EVALUATION_SLICEERRORS_H__
 

@@ -6,7 +6,7 @@
 #include <gui/Keys.h>
 #include <gui/KeySignals.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/evaluation/Errors.h>
+#include <sopnet/evaluation/SliceErrors.h>
 #include <sopnet/segments/Segments.h>
 #include "SegmentsPainter.h"
 
@@ -22,9 +22,9 @@ private:
 
 	void onKeyDown(gui::KeyDown& signal);
 
-	pipeline::Input<Segments>   _segments;
-	pipeline::Input<ImageStack> _rawSections;
-	pipeline::Input<Errors>     _errors;
+	pipeline::Input<Segments>    _segments;
+	pipeline::Input<ImageStack>  _rawSections;
+	pipeline::Input<SliceErrors> _sliceErrors;
 
 	pipeline::Output<SegmentsPainter> _painter;
 
