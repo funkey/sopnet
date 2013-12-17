@@ -45,7 +45,18 @@ GurobiBackend::~GurobiBackend() {
 }
 
 void
-GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) {
+GurobiBackend::initialize(
+		unsigned int numVariables,
+		VariableType variableType) {
+
+	initialize(numVariables, variableType, std::map<unsigned int, VariableType>());
+}
+
+void
+GurobiBackend::initialize(
+		unsigned int                                numVariables,
+		VariableType                                defaultVariableType,
+		const std::map<unsigned int, VariableType>& specialVariableTypes) {
 
 	if (gurobilog.getLogLevel() >= Debug)
 		setVerbose(true);
@@ -68,7 +79,7 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		delete[] _variables;
 
 	// add new variables to the model
-	if (variableType == Binary) {
+	if (defaultVariableType == Binary) {
 
 		LOG_DEBUG(gurobilog) << "creating " << _numVariables << " binary variables" << std::endl;
 
@@ -76,7 +87,7 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 
 		_model.update();
 
-	} else if (variableType == Continuous) {
+	} else if (defaultVariableType == Continuous) {
 
 		LOG_DEBUG(gurobilog) << "creating " << _numVariables << " continuous variables" << std::endl;
 
@@ -88,7 +99,7 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		for (unsigned int i = 0; i < _numVariables; i++)
 			_variables[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
 
-	} else if (variableType == Integer) {
+	} else if (defaultVariableType == Integer) {
 
 		LOG_DEBUG(gurobilog) << "creating " << _numVariables << " integer variables" << std::endl;
 
@@ -99,6 +110,16 @@ GurobiBackend::initialize(unsigned int numVariables, VariableType variableType) 
 		// remove default lower bound on variables
 		for (unsigned int i = 0; i < _numVariables; i++)
 			_variables[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
+	}
+
+	// handle special variable types
+	unsigned int v;
+	VariableType type;
+	foreach (boost::tie(v, type), specialVariableTypes) {
+
+		char t = (type == Binary ? 'B' : (type == Integer ? 'I' : 'C'));
+		LOG_ALL(gurobilog) << "changing type of variable " << v << " to " << t << std::endl;
+		_variables[v].set(GRB_CharAttr_VType, t);
 	}
 
 	LOG_DEBUG(gurobilog) << "creating " << _numVariables << " ceofficients" << std::endl;

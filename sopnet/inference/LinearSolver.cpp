@@ -62,9 +62,15 @@ LinearSolver::updateLinearProgram() {
 
 		LOG_DEBUG(linearsolverlog) << "initializing solver" << std::endl;
 
-		_solver->initialize(
-				getNumVariables(),
-				(_parameters ? _parameters->getVariableType() : Continuous));
+		if (_parameters)
+			_solver->initialize(
+					getNumVariables(),
+					_parameters->getDefaultVariableType(),
+					_parameters->getSpecialVariableTypes());
+		else
+			_solver->initialize(
+					getNumVariables(),
+					Continuous);
 
 		_parametersDirty = false;
 	}

@@ -17,7 +17,28 @@ public:
 	 * @param variableType The type of the variables (Continuous, Integer,
 	 *                     Binary).
 	 */
-	virtual void initialize(unsigned int numVariables, VariableType variableType) = 0;
+	virtual void initialize(
+			unsigned int numVariables,
+			VariableType variableType) = 0;
+
+	/**
+	 * Initialise the linear solver for the given type of variables.
+	 *
+	 * @param numVariables
+	 *             The number of variables in the problem.
+	 * 
+	 * @param defaultVariableType
+	 *             The default type of the variables (Continuous, Integer, 
+	 *             Binary).
+	 *
+	 * @param specialVariableTypes
+	 *             A map of variable numbers to variable types to override the 
+	 *             default.
+	 */
+	virtual void initialize(
+			unsigned int                                numVariables,
+			VariableType                                defaultVariableType,
+			const std::map<unsigned int, VariableType>& specialVariableTypes) = 0;
 
 	/**
 	 * Set the objective.

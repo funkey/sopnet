@@ -41,7 +41,14 @@ public:
 	// solver backend implementation //
 	///////////////////////////////////
 
-	void initialize(unsigned int numVariables, VariableType varibleType);
+	void initialize(
+			unsigned int numVariables,
+			VariableType variableType);
+
+	void initialize(
+			unsigned int                                numVariables,
+			VariableType                                defaultVariableType,
+			const std::map<unsigned int, VariableType>& specialVariableTypes);
 
 	void setObjective(const LinearObjective& objective);
 
