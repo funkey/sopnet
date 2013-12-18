@@ -3,6 +3,9 @@
  */
 
 #include <iostream>
+#include <gui/Window.h>
+#include <gui/ZoomView.h>
+#include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
@@ -56,9 +59,17 @@ int main(int optionc, char** optionv) {
 		editDistance->setInput("ground truth", groundTruthReader->getOutput());
 		editDistance->setInput("reconstruction", reconstructionReader->getOutput());
 
-		pipeline::Value<ImageStack> errors = editDistance->getOutput();
+		// start GUI
 
-		LOG_USER(out) << "[main] error stack contains " << errors->size() << " images" << std::endl;
+		pipeline::Process<ImageStackView> stackView;
+		pipeline::Process<gui::ZoomView>  zoomView;
+		pipeline::Process<gui::Window>    window("edit distance");
+
+		stackView->setInput(editDistance->getOutput("corrected reconstruction"));
+		zoomView->setInput(stackView->getOutput());
+		window->setInput(zoomView->getOutput());
+
+		window->processEvents();
 
 	} catch (Exception& e) {
 
