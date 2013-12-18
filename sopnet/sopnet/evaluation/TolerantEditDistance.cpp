@@ -19,13 +19,15 @@ util::ProgramOption optionToleranceDistanceThreshold(
 		util::_default_value    = 100);
 
 TolerantEditDistance::TolerantEditDistance() :
+	_cells(boost::make_shared<std::vector<cell_t> >()),
 	_maxDistanceThreshold(optionToleranceDistanceThreshold) {
 
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_reconstruction, "reconstruction");
 
 	registerOutput(_correctedReconstruction, "corrected reconstruction");
-	registerOutput(_errorLocations, "error locations");
+	registerOutput(_splitLocations, "splits");
+	registerOutput(_mergeLocations, "merges");
 	registerOutput(_errors, "errors");
 }
 
@@ -76,9 +78,9 @@ TolerantEditDistance::extractCells() {
 				// function accordingly.
 				unsigned int cellIndex = getCellIndex(gtLabel, recLabel);
 
-				_cells[cellIndex].add(cell_t::Location(x, y, z));
-				_cells[cellIndex].setReconstructionLabel(recLabel);
-				_cells[cellIndex].setGroundTruthLabel(gtLabel);
+				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
+				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
+				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
 
 				registerPossibleMatch(gtLabel, recLabel);
 			}
@@ -116,7 +118,7 @@ TolerantEditDistance::enumerateCellLabels() {
 		distance = 0.0f;
 		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
 			foreach (unsigned int cellIndex, cellIndices)
-				foreach (const cell_t::Location& l, _cells[cellIndex])
+				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
 					distance(l.x, l.y, l.z) = 1.0f;
 		vigra::separableMultiDistSquared(
 				distance,
@@ -127,7 +129,7 @@ TolerantEditDistance::enumerateCellLabels() {
 		LOG_ALL(tedlog) << "get all cells within " << _maxDistanceThreshold << "nm..." << std::endl;
 
 		// for each cell that does not have the current reconstruction label
-		foreach (cell_t& cell, _cells)
+		foreach (cell_t& cell, *_cells)
 			if (cell.getReconstructionLabel() != recLabel) {
 
 				// get the max closest distance to current reconstruction 
@@ -163,7 +165,7 @@ TolerantEditDistance::findBestCellLabels() {
 		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
 			foreach (unsigned int cellIndex, cellIndices) {
 
-				cell_t& cell = _cells[cellIndex];
+				cell_t& cell = (*_cells)[cellIndex];
 
 				// first indicator variable for this cell
 				unsigned int begin = var;
@@ -346,17 +348,53 @@ TolerantEditDistance::findBestCellLabels() {
 void
 TolerantEditDistance::findErrors() {
 
+	// prepare error location image stack
+
+	for (unsigned int i = 0; i < _depth; i++) {
+
+		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
+		_splitLocations->add(boost::make_shared<Image>(_width, _height, data));
+		data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
+		_mergeLocations->add(boost::make_shared<Image>(_width, _height, data));
+	}
+
+	// prepare error data structure
+
+	_errors->setCells(_cells);
+
+	// fill error data structure
+
 	for (unsigned int i = 0; i < _numIndicatorVars; i++) {
 
 		if ((*_solution)[i]) {
 
 			unsigned int cellIndex = _labelingByVar[i].first;
 			float        recLabel  = _labelingByVar[i].second;
-			cell_t&      cell      = _cells[cellIndex];
 
-			_errors->addMapping(cell.getGroundTruthLabel(), recLabel, cell.size());
+			_errors->addMapping(cellIndex, recLabel);
 		}
 	}
+
+	// fill error location image stack
+
+	// all cells that changed label within tolerance
+
+	// all cells that split the ground truth
+	float gtLabel;
+	typedef Errors::cell_map_t::mapped_type::value_type mapping_t;
+	foreach (gtLabel, _errors->getSplitLabels())
+		foreach (const mapping_t& cells, _errors->getSplits(gtLabel))
+			foreach (unsigned int cellIndex, cells.second)
+				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
+					(*(*_splitLocations)[l.z])(l.x, l.y) = cells.first;
+
+	// all cells that split the reconstruction
+	float recLabel;
+	foreach (recLabel, _errors->getMergeLabels())
+		foreach (const mapping_t& cells, _errors->getMerges(recLabel))
+			foreach (unsigned int cellIndex, cells.second)
+				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
+					(*(*_mergeLocations)[l.z])(l.x, l.y) += cells.first;
 
 	LOG_DEBUG(tedlog) << "num splits: " << (*_solution)[_splits] << std::endl;
 	LOG_DEBUG(tedlog) << "num merges: " << (*_solution)[_merges] << std::endl;
@@ -385,7 +423,7 @@ TolerantEditDistance::correctReconstruction() {
 
 			unsigned int cellIndex = _labelingByVar[i].first;
 			float        recLabel  = _labelingByVar[i].second;
-			cell_t&      cell      = _cells[cellIndex];
+			cell_t&      cell      = (*_cells)[cellIndex];
 
 			foreach (const cell_t::Location& l, cell)
 				(*(*_correctedReconstruction)[l.z])(l.x, l.y) = recLabel;
@@ -408,7 +446,7 @@ TolerantEditDistance::getGroundTruthLabels() {
 void
 TolerantEditDistance::clear() {
 
-	_cells.clear();
+	_cells->clear();
 	_cellsByRecToGtLabel.clear();
 	_indicatorVarsByRecLabel.clear();
 	_indicatorVarsByGtToRecLabel.clear();
@@ -417,8 +455,9 @@ TolerantEditDistance::clear() {
 	_groundTruthLabels.clear();
 	_reconstructionLabels.clear();
 	_errors->clear();
-
 	_correctedReconstruction->clear();
+	_splitLocations->clear();
+	_mergeLocations->clear();
 }
 
 unsigned int
@@ -429,8 +468,8 @@ TolerantEditDistance::getCellIndex(float gtLabel, float recLabel) {
 			_cellsByRecToGtLabel[recLabel].count(gtLabel) == 0) {
 
 		// create a new cell
-		_cells.push_back(cell_t());
-		_cellsByRecToGtLabel[recLabel][gtLabel].push_back(static_cast<unsigned int>(_cells.size() - 1));
+		_cells->push_back(cell_t());
+		_cellsByRecToGtLabel[recLabel][gtLabel].push_back(static_cast<unsigned int>(_cells->size() - 1));
 	}
 
 	// NOTE: For now we know there is only one.

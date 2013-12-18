@@ -3,6 +3,9 @@
  */
 
 #include <iostream>
+#include <gui/ContainerView.h>
+#include <gui/HorizontalPlacing.h>
+#include <gui/NamedView.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <imageprocessing/gui/ImageStackView.h>
@@ -61,12 +64,40 @@ int main(int optionc, char** optionv) {
 
 		// start GUI
 
-		pipeline::Process<ImageStackView> stackView;
+		pipeline::Process<ImageStackView> gtView;
+		pipeline::Process<ImageStackView> recView;
+		pipeline::Process<ImageStackView> corRecView;
+		pipeline::Process<ImageStackView> splitsView;
+		pipeline::Process<ImageStackView> mergesView;
+		pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > container;
 		pipeline::Process<gui::ZoomView>  zoomView;
 		pipeline::Process<gui::Window>    window("edit distance");
 
-		stackView->setInput(editDistance->getOutput("corrected reconstruction"));
-		zoomView->setInput(stackView->getOutput());
+		gtView->setInput(groundTruthReader->getOutput());
+		recView->setInput(reconstructionReader->getOutput());
+		corRecView->setInput(editDistance->getOutput("corrected reconstruction"));
+		splitsView->setInput(editDistance->getOutput("splits"));
+		mergesView->setInput(editDistance->getOutput("merges"));
+
+		pipeline::Process<gui::NamedView> gtNamedView("ground truth");
+		pipeline::Process<gui::NamedView> recNamedView("reconstruction");
+		pipeline::Process<gui::NamedView> corRecNamedView("corrected");
+		pipeline::Process<gui::NamedView> splitsNamedView("splits");
+		pipeline::Process<gui::NamedView> mergesNamedView("merges");
+
+		gtNamedView->setInput(gtView->getOutput());
+		recNamedView->setInput(recView->getOutput());
+		corRecNamedView->setInput(corRecView->getOutput());
+		splitsNamedView->setInput(splitsView->getOutput());
+		mergesNamedView->setInput(mergesView->getOutput());
+
+		container->addInput(gtNamedView->getOutput());
+		container->addInput(recNamedView->getOutput());
+		container->addInput(corRecNamedView->getOutput());
+		container->addInput(splitsNamedView->getOutput());
+		container->addInput(mergesNamedView->getOutput());
+
+		zoomView->setInput(container->getOutput());
 		window->setInput(zoomView->getOutput());
 
 		window->processEvents();

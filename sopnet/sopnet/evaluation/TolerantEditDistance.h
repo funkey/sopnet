@@ -15,7 +15,8 @@ public:
 
 private:
 
-	typedef Cell<float> cell_t;
+	typedef Cell<float>                             cell_t;
+	typedef boost::shared_ptr<std::vector<cell_t> > cells_t;
 
 	void updateOutputs();
 
@@ -57,11 +58,12 @@ private:
 	pipeline::Input<ImageStack> _reconstruction;
 
 	pipeline::Output<ImageStack> _correctedReconstruction;
-	pipeline::Output<ImageStack> _errorLocations;
+	pipeline::Output<ImageStack> _splitLocations;
+	pipeline::Output<ImageStack> _mergeLocations;
 	pipeline::Output<Errors>     _errors;
 
 	// list of all cells
-	std::vector<cell_t> _cells;
+	cells_t _cells;
 
 	// map from rec labels to maps from gt label to cell indices
 	std::map<float, std::map<float, std::vector<unsigned int> > > _cellsByRecToGtLabel;
