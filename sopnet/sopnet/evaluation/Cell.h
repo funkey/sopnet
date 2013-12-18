@@ -120,6 +120,14 @@ public:
 	}
 
 	/**
+	 * Get the number of locations in this cell.
+	 */
+	unsigned int size() const {
+
+		return _content.size();
+	}
+
+	/**
 	 * Iterator access to the locations of the cell.
 	 */
 	typedef typename std::set<Location>::iterator       iterator;

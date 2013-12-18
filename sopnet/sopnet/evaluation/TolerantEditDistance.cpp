@@ -25,17 +25,24 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerInput(_reconstruction, "reconstruction");
 
 	registerOutput(_correctedReconstruction, "corrected reconstruction");
+	registerOutput(_errorLocations, "error locations");
 	registerOutput(_errors, "errors");
 }
 
 void
 TolerantEditDistance::updateOutputs() {
 
+	clear();
+
 	extractCells();
 
 	enumerateCellLabels();
 
 	findBestCellLabels();
+
+	findErrors();
+
+	correctReconstruction();
 }
 
 void
@@ -46,9 +53,6 @@ TolerantEditDistance::extractCells() {
 
 	if (_groundTruth->height() != _reconstruction->height() || _groundTruth->width() != _reconstruction->width())
 		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size"));
-
-	clearCells();
-	clearPossibleMatches();
 
 	_depth  = _groundTruth->size();
 	_width  = _groundTruth->width();
@@ -166,11 +170,11 @@ TolerantEditDistance::findBestCellLabels() {
 
 				// one variable for the default label
 				LOG_ALL(tedlog) << "add indicator for default label of current cell: " << std::endl;
-				assignIndicatorVariable(var++, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
+				assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
 
 				LOG_ALL(tedlog) << "add indicators for alternative labels of current cell: " << std::endl;
 				foreach (float l, cell.getAlternativeLabels())
-					assignIndicatorVariable(var++, cell.getGroundTruthLabel(), l);
+					assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), l);
 
 				// last +1 indicator variable for this cell
 				unsigned int end = var;
@@ -183,6 +187,7 @@ TolerantEditDistance::findBestCellLabels() {
 				constraint.setValue(1);
 				constraints->add(constraint);
 			}
+	_numIndicatorVars = var;
 
 	// labels can not disappear
 	foreach (float recLabel, getReconstructionLabels()) {
@@ -262,11 +267,11 @@ TolerantEditDistance::findBestCellLabels() {
 
 	// introduce total split number
 
-	unsigned int splits = var++;
-	parameters->setVariableType(splits, Integer);
+	_splits = var++;
+	parameters->setVariableType(_splits, Integer);
 
 	LinearConstraint sumOfSplits;
-	sumOfSplits.setCoefficient(splits, 1);
+	sumOfSplits.setCoefficient(_splits, 1);
 	for (unsigned int i = splitBegin; i < splitEnd; i++)
 		sumOfSplits.setCoefficient(i, -1);
 	sumOfSplits.setRelation(Equal);
@@ -304,11 +309,11 @@ TolerantEditDistance::findBestCellLabels() {
 
 	// introduce total merge number
 
-	unsigned int merges = var++;
-	parameters->setVariableType(merges, Integer);
+	_merges = var++;
+	parameters->setVariableType(_merges, Integer);
 
 	LinearConstraint sumOfMerges;
-	sumOfMerges.setCoefficient(merges, 1);
+	sumOfMerges.setCoefficient(_merges, 1);
 	for (unsigned int i = mergeBegin; i < mergeEnd; i++)
 		sumOfMerges.setCoefficient(i, -1);
 	sumOfMerges.setRelation(Equal);
@@ -323,8 +328,8 @@ TolerantEditDistance::findBestCellLabels() {
 
 	pipeline::Value<LinearObjective> objective(var);
 
-	objective->setCoefficient(splits, 1);
-	objective->setCoefficient(merges, 1);
+	objective->setCoefficient(_splits, 1);
+	objective->setCoefficient(_merges, 1);
 	objective->setSense(Minimize);
 
 	// solve
@@ -335,10 +340,57 @@ TolerantEditDistance::findBestCellLabels() {
 	solver->setInput("linear constraints", constraints);
 	solver->setInput("parameters", parameters);
 
-	pipeline::Value<Solution> solution = solver->getOutput("solution");
+	_solution = solver->getOutput("solution");
+}
 
-	LOG_DEBUG(tedlog) << "num splits: " << (*solution)[splits] << std::endl;
-	LOG_DEBUG(tedlog) << "num merges: " << (*solution)[merges] << std::endl;
+void
+TolerantEditDistance::findErrors() {
+
+	for (unsigned int i = 0; i < _numIndicatorVars; i++) {
+
+		if ((*_solution)[i]) {
+
+			unsigned int cellIndex = _labelingByVar[i].first;
+			float        recLabel  = _labelingByVar[i].second;
+			cell_t&      cell      = _cells[cellIndex];
+
+			_errors->addMapping(cell.getGroundTruthLabel(), recLabel, cell.size());
+		}
+	}
+
+	LOG_DEBUG(tedlog) << "num splits: " << (*_solution)[_splits] << std::endl;
+	LOG_DEBUG(tedlog) << "num merges: " << (*_solution)[_merges] << std::endl;
+
+	LOG_ALL(tedlog) << "error counts from Errors data structure:" << std::endl;
+	LOG_ALL(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
+	LOG_ALL(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
+}
+
+void
+TolerantEditDistance::correctReconstruction() {
+
+	// prepare output image
+
+	for (unsigned int i = 0; i < _depth; i++) {
+
+		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
+		_correctedReconstruction->add(boost::make_shared<Image>(_width, _height, data));
+	}
+
+	// read solution
+
+	for (unsigned int i = 0; i < _numIndicatorVars; i++) {
+
+		if ((*_solution)[i]) {
+
+			unsigned int cellIndex = _labelingByVar[i].first;
+			float        recLabel  = _labelingByVar[i].second;
+			cell_t&      cell      = _cells[cellIndex];
+
+			foreach (const cell_t::Location& l, cell)
+				(*(*_correctedReconstruction)[l.z])(l.x, l.y) = recLabel;
+		}
+	}
 }
 
 std::set<float>&
@@ -354,18 +406,19 @@ TolerantEditDistance::getGroundTruthLabels() {
 }
 
 void
-TolerantEditDistance::clearCells() {
+TolerantEditDistance::clear() {
 
 	_cells.clear();
 	_cellsByRecToGtLabel.clear();
-}
-
-void
-TolerantEditDistance::clearPossibleMatches() {
-
+	_indicatorVarsByRecLabel.clear();
+	_indicatorVarsByGtToRecLabel.clear();
+	_labelingByVar.clear();
 	_possibleGroundTruthMatches.clear();
 	_groundTruthLabels.clear();
 	_reconstructionLabels.clear();
+	_errors->clear();
+
+	_correctedReconstruction->clear();
 }
 
 unsigned int
@@ -406,12 +459,14 @@ TolerantEditDistance::getPossibleMathesByRec(float recLabel) {
 }
 
 void
-TolerantEditDistance::assignIndicatorVariable(unsigned int var, float gtLabel, float recLabel) {
+TolerantEditDistance::assignIndicatorVariable(unsigned int var, unsigned int cellIndex, float gtLabel, float recLabel) {
 
 	LOG_ALL(tedlog) << "variable " << var << " indicates a single mapping from " << gtLabel << " to " << recLabel << std::endl;
 
 	_indicatorVarsByRecLabel[recLabel].push_back(var);
 	_indicatorVarsByGtToRecLabel[gtLabel][recLabel].push_back(var);
+
+	_labelingByVar[var] = std::make_pair(cellIndex, recLabel);
 }
 
 std::vector<unsigned int>&

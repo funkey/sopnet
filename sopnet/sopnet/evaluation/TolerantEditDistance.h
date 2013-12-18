@@ -3,6 +3,8 @@
 
 #include <imageprocessing/ImageStack.h>
 #include <pipeline/SimpleProcessNode.h>
+#include <inference/Solution.h>
+#include "Errors.h"
 #include "Cell.h"
 
 class TolerantEditDistance : public pipeline::SimpleProcessNode<> {
@@ -23,13 +25,15 @@ private:
 
 	void findBestCellLabels();
 
+	void findErrors();
+
+	void correctReconstruction();
+
 	std::set<float>& getGroundTruthLabels();
 
 	std::set<float>& getReconstructionLabels();
 
-	void clearCells();
-
-	void clearPossibleMatches();
+	void clear();
 
 	unsigned int getCellIndex(float gtLabel, float recLabel);
 
@@ -39,7 +43,7 @@ private:
 
 	std::set<float>& getPossibleMathesByRec(float recLabel);
 
-	void assignIndicatorVariable(unsigned int var, float gtLabel, float recLabel);
+	void assignIndicatorVariable(unsigned int var, unsigned int cellIndex, float gtLabel, float recLabel);
 
 	std::vector<unsigned int>& getIndicatorsByRec(float recLabel);
 
@@ -53,7 +57,8 @@ private:
 	pipeline::Input<ImageStack> _reconstruction;
 
 	pipeline::Output<ImageStack> _correctedReconstruction;
-	pipeline::Output<ImageStack> _errors;
+	pipeline::Output<ImageStack> _errorLocations;
+	pipeline::Output<Errors>     _errors;
 
 	// list of all cells
 	std::vector<cell_t> _cells;
@@ -85,8 +90,21 @@ private:
 	// label
 	std::map<float, std::map<float, std::vector<unsigned int> > > _indicatorVarsByGtToRecLabel;
 
+	// (cell index, new label) by indicator variable
+	std::map<unsigned int, std::pair<unsigned int, float> > _labelingByVar;
+
 	// map from ground truth label x reconstruction label to match variable
 	std::map<float, std::map<float, unsigned int> > _matchVars;
+
+	// the number of indicator variables in the ILP
+	unsigned int _numIndicatorVars;
+
+	// the ILP variables for the number of splits and merges
+	unsigned int _splits;
+	unsigned int _merges;
+
+	// the solution of the ILP
+	pipeline::Value<Solution> _solution;
 };
 
 #endif // SOPNET_EVALUATION_TOLERANT_EDIT_DISTANCE_H__
