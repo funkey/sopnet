@@ -69,7 +69,6 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackView> corRecView;
 		pipeline::Process<ImageStackView> splitsView;
 		pipeline::Process<ImageStackView> mergesView;
-		pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > container;
 		pipeline::Process<gui::ZoomView>  zoomView;
 		pipeline::Process<gui::Window>    window("edit distance");
 
@@ -91,6 +90,9 @@ int main(int optionc, char** optionv) {
 		splitsNamedView->setInput(splitsView->getOutput());
 		mergesNamedView->setInput(mergesView->getOutput());
 
+		pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > container;
+		container->setSpacing(10);
+		container->setAlign(gui::HorizontalPlacing::Bottom);
 		container->addInput(gtNamedView->getOutput());
 		container->addInput(recNamedView->getOutput());
 		container->addInput(corRecNamedView->getOutput());
