@@ -1,5 +1,7 @@
 #include <boost/range/adaptors.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <vigra/multi_distance.hxx>
+#include <vigra/multi_labeling.hxx>
 
 #include <inference/LinearConstraints.h>
 #include <inference/LinearObjective.h>
@@ -62,6 +64,12 @@ TolerantEditDistance::extractCells() {
 
 	LOG_ALL(tedlog) << "extracting cells in " << _width << "x" << _height << "x" << _depth << " volume" << std::endl;
 
+	vigra::Shape3 shape(_width, _height, _depth);
+	vigra::MultiArray<3, std::pair<float, float> > gtAndRec(shape);
+	vigra::MultiArray<3, unsigned int>             cellIds(shape);
+
+	// prepare gt and rec image
+
 	for (unsigned int z = 0; z < _groundTruth->size(); z++) {
 
 		boost::shared_ptr<Image> gt  = (*_groundTruth)[z];
@@ -73,16 +81,42 @@ TolerantEditDistance::extractCells() {
 				float gtLabel  = (*gt)(x, y);
 				float recLabel = (*rec)(x, y);
 
-				// TODO: At the moment, cells are unique wrt (gtLabel,recLabel).
-				// Later, we will have multiple cells per labeling. Change this 
-				// function accordingly.
-				unsigned int cellIndex = getCellIndex(gtLabel, recLabel);
+				gtAndRec(x, y, z) = std::make_pair(gtLabel, recLabel);
+			}
+	}
+
+	// find connected components in gt and rec image
+
+	unsigned int numCells = vigra::labelMultiArray(gtAndRec, cellIds);
+
+	// create a cell for each fund connected component
+
+	_cells->resize(numCells);
+	std::set<unsigned int> foundCells;
+	for (unsigned int z = 0; z < _groundTruth->size(); z++) {
+
+		boost::shared_ptr<Image> gt  = (*_groundTruth)[z];
+		boost::shared_ptr<Image> rec = (*_reconstruction)[z];
+
+		for (unsigned int x = 0; x < gt->width(); x++)
+			for (unsigned int y = 0; y < gt->width(); y++) {
+
+				float gtLabel  = (*gt)(x, y);
+				float recLabel = (*rec)(x, y);
+
+				// argh, vigra starts counting at 1!
+				unsigned int cellIndex = cellIds(x, y, z) - 1;
 
 				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
 				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
 
-				registerPossibleMatch(gtLabel, recLabel);
+				if (foundCells.count(cellIndex) == 0) {
+
+					registerCell(gtLabel, recLabel, cellIndex);
+					registerPossibleMatch(gtLabel, recLabel);
+					foundCells.insert(cellIndex);
+				}
 			}
 	}
 
@@ -352,9 +386,9 @@ TolerantEditDistance::findErrors() {
 
 	for (unsigned int i = 0; i < _depth; i++) {
 
-		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
+		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
 		_splitLocations->add(boost::make_shared<Image>(_width, _height, data));
-		data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
+		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
 		_mergeLocations->add(boost::make_shared<Image>(_width, _height, data));
 	}
 
@@ -394,7 +428,7 @@ TolerantEditDistance::findErrors() {
 		foreach (const mapping_t& cells, _errors->getMerges(recLabel))
 			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
-					(*(*_mergeLocations)[l.z])(l.x, l.y) += cells.first;
+					(*(*_mergeLocations)[l.z])(l.x, l.y) = cells.first;
 
 	LOG_DEBUG(tedlog) << "num splits: " << (*_solution)[_splits] << std::endl;
 	LOG_DEBUG(tedlog) << "num merges: " << (*_solution)[_merges] << std::endl;
@@ -460,20 +494,10 @@ TolerantEditDistance::clear() {
 	_mergeLocations->clear();
 }
 
-unsigned int
-TolerantEditDistance::getCellIndex(float gtLabel, float recLabel) {
+void
+TolerantEditDistance::registerCell(float gtLabel, float recLabel, unsigned int cellIndex) {
 
-	if (
-			_cellsByRecToGtLabel.count(recLabel) == 0 ||
-			_cellsByRecToGtLabel[recLabel].count(gtLabel) == 0) {
-
-		// create a new cell
-		_cells->push_back(cell_t());
-		_cellsByRecToGtLabel[recLabel][gtLabel].push_back(static_cast<unsigned int>(_cells->size() - 1));
-	}
-
-	// NOTE: For now we know there is only one.
-	return _cellsByRecToGtLabel[recLabel][gtLabel][0];
+	_cellsByRecToGtLabel[recLabel][gtLabel].push_back(cellIndex);
 }
 
 void

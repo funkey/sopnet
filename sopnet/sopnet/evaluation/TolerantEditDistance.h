@@ -36,7 +36,7 @@ private:
 
 	void clear();
 
-	unsigned int getCellIndex(float gtLabel, float recLabel);
+	void registerCell(float gtLabel, float recLabel, unsigned int cellIndex);
 
 	void registerPossibleMatch(float gtLabel, float recLabel);
 
