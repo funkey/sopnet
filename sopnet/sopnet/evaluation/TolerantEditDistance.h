@@ -54,12 +54,21 @@ private:
 
 	unsigned int getMatchVariable(float gtLabel, float recLabel);
 
+	// is there a background label?
+	bool _haveBackgroundLabel;
+
+	// the optional background labels of the ground truth and reconstruction
+	float _gtBackgroundLabel;
+	float _recBackgroundLabel;
+
 	pipeline::Input<ImageStack> _groundTruth;
 	pipeline::Input<ImageStack> _reconstruction;
 
 	pipeline::Output<ImageStack> _correctedReconstruction;
 	pipeline::Output<ImageStack> _splitLocations;
 	pipeline::Output<ImageStack> _mergeLocations;
+	pipeline::Output<ImageStack> _fpLocations;
+	pipeline::Output<ImageStack> _fnLocations;
 	pipeline::Output<Errors>     _errors;
 
 	// list of all cells

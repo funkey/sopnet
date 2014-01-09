@@ -20,9 +20,37 @@ util::ProgramOption optionToleranceDistanceThreshold(
 		util::_description_text = "The maximum allowed distance for a boundary shift in nm.",
 		util::_default_value    = 100);
 
+util::ProgramOption optionHaveBackgroundLabel(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "haveBackgroundLabel",
+		util::_description_text = "Indicates that there is a background label with a default value of 0.",
+		util::_default_value    = false);
+
+util::ProgramOption optionGroundTruthBackgroundLabel(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "groundTruthBackgroundLabel",
+		util::_description_text = "The value of the ground-truth background label.",
+		util::_default_value    = 0.0);
+
+util::ProgramOption optionReconstructionBackgroundLabel(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "reconstructionBackgroundLabel",
+		util::_description_text = "The value of the reconstruction background label.",
+		util::_default_value    = 0.0);
+
 TolerantEditDistance::TolerantEditDistance() :
+	_haveBackgroundLabel(optionHaveBackgroundLabel),
+	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
+	_recBackgroundLabel(optionReconstructionBackgroundLabel),
+	_errors(_haveBackgroundLabel ? boost::make_shared<Errors>(_gtBackgroundLabel, _recBackgroundLabel) : boost::make_shared<Errors>()),
 	_cells(boost::make_shared<std::vector<cell_t> >()),
 	_maxDistanceThreshold(optionToleranceDistanceThreshold) {
+
+	if (optionHaveBackgroundLabel) {
+		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;
+	} else {
+		LOG_ALL(tedlog) << "started TolerantEditDistance without background label" << std::endl;
+	}
 
 	registerInput(_groundTruth, "ground truth");
 	registerInput(_reconstruction, "reconstruction");
@@ -30,6 +58,8 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerOutput(_correctedReconstruction, "corrected reconstruction");
 	registerOutput(_splitLocations, "splits");
 	registerOutput(_mergeLocations, "merges");
+	registerOutput(_fpLocations, "false positives");
+	registerOutput(_fnLocations, "false negatives");
 	registerOutput(_errors, "errors");
 }
 
@@ -44,9 +74,9 @@ TolerantEditDistance::updateOutputs() {
 
 	findBestCellLabels();
 
-	findErrors();
-
 	correctReconstruction();
+
+	findErrors();
 }
 
 void
@@ -64,19 +94,18 @@ TolerantEditDistance::extractCells() {
 
 	LOG_ALL(tedlog) << "extracting cells in " << _width << "x" << _height << "x" << _depth << " volume" << std::endl;
 
-	vigra::Shape3 shape(_width, _height, _depth);
-	vigra::MultiArray<3, std::pair<float, float> > gtAndRec(shape);
-	vigra::MultiArray<3, unsigned int>             cellIds(shape);
+	vigra::MultiArray<3, std::pair<float, float> > gtAndRec(vigra::Shape3(_width, _height, _depth));
+	vigra::MultiArray<3, unsigned int>             cellIds(vigra::Shape3(_width, _height, _depth));
 
 	// prepare gt and rec image
 
-	for (unsigned int z = 0; z < _groundTruth->size(); z++) {
+	for (unsigned int z = 0; z < _depth; z++) {
 
 		boost::shared_ptr<Image> gt  = (*_groundTruth)[z];
 		boost::shared_ptr<Image> rec = (*_reconstruction)[z];
 
-		for (unsigned int x = 0; x < gt->width(); x++)
-			for (unsigned int y = 0; y < gt->width(); y++) {
+		for (unsigned int x = 0; x < _width; x++)
+			for (unsigned int y = 0; y < _height; y++) {
 
 				float gtLabel  = (*gt)(x, y);
 				float recLabel = (*rec)(x, y);
@@ -87,25 +116,30 @@ TolerantEditDistance::extractCells() {
 
 	// find connected components in gt and rec image
 
+	cellIds = 0;
 	unsigned int numCells = vigra::labelMultiArray(gtAndRec, cellIds);
 
-	// create a cell for each fund connected component
+	LOG_DEBUG(tedlog) << "found " << numCells << " cells" << std::endl;
+
+	// create a cell for each found connected component
 
 	_cells->resize(numCells);
 	std::set<unsigned int> foundCells;
-	for (unsigned int z = 0; z < _groundTruth->size(); z++) {
+	for (unsigned int z = 0; z < _depth; z++) {
 
 		boost::shared_ptr<Image> gt  = (*_groundTruth)[z];
 		boost::shared_ptr<Image> rec = (*_reconstruction)[z];
 
-		for (unsigned int x = 0; x < gt->width(); x++)
-			for (unsigned int y = 0; y < gt->width(); y++) {
+		for (unsigned int x = 0; x < _width; x++)
+			for (unsigned int y = 0; y < _height; y++) {
 
 				float gtLabel  = (*gt)(x, y);
 				float recLabel = (*rec)(x, y);
 
 				// argh, vigra starts counting at 1!
 				unsigned int cellIndex = cellIds(x, y, z) - 1;
+
+				LOG_ALL(tedlog) << "adding pixel (" << x << ", " << y << ", " << z << ") with value " << cellIds(x, y, z) << " to cell " << cellIndex << std::endl;
 
 				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
@@ -119,6 +153,14 @@ TolerantEditDistance::extractCells() {
 				}
 			}
 	}
+
+	foreach (unsigned int cellIndex, foundCells)
+		LOG_ALL(tedlog)
+				<< "cell " << cellIndex
+				<< ": size = " << (*_cells)[cellIndex].size()
+				<< ", gt_label = " << (*_cells)[cellIndex].getGroundTruthLabel()
+				<< ", rec_label = " << (*_cells)[cellIndex].getReconstructionLabel()
+				<< std::endl;
 
 	LOG_ALL(tedlog)
 			<< "found "
@@ -135,13 +177,15 @@ TolerantEditDistance::enumerateCellLabels() {
 	// get the maximal closest distance of any cell to any reconstruction label
 
 	vigra::Shape3 shape(_width, _height, _depth);
-	vigra::MultiArray<3, float> distance(shape);
+	vigra::MultiArray<3, float> distance2(shape);
 
 	// TODO: read from program options
 	float pitch[3];
-	pitch[0] = 1.0;
-	pitch[1] = 1.0;
-	pitch[2] = 10.0;
+	pitch[0] = 4.0;
+	pitch[1] = 4.0;
+	pitch[2] = 40.0;
+
+	float maxDistanceThreshold2 = _maxDistanceThreshold*_maxDistanceThreshold;
 
 	// for each reconstruction label
 	foreach (float recLabel, getReconstructionLabels()) {
@@ -149,38 +193,46 @@ TolerantEditDistance::enumerateCellLabels() {
 		LOG_ALL(tedlog) << "create distance map for reconstruction label " << recLabel << std::endl;
 
 		// create distance map
-		distance = 0.0f;
+		distance2 = 0.0f;
 		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
 			foreach (unsigned int cellIndex, cellIndices)
 				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
-					distance(l.x, l.y, l.z) = 1.0f;
+					distance2(l.x, l.y, l.z) = 1.0f;
 		vigra::separableMultiDistSquared(
-				distance,
-				distance,
+				distance2,
+				distance2,
 				true /* background */,
 				pitch);
 
 		LOG_ALL(tedlog) << "get all cells within " << _maxDistanceThreshold << "nm..." << std::endl;
 
 		// for each cell that does not have the current reconstruction label
-		foreach (cell_t& cell, *_cells)
+		for (unsigned int cellIndex = 0; cellIndex < _cells->size(); cellIndex++) {
+
+			cell_t& cell = (*_cells)[cellIndex];
+
 			if (cell.getReconstructionLabel() != recLabel) {
 
 				// get the max closest distance to current reconstruction 
 				// label
-				float maxDistance = 0;
+				float maxDistance2 = 0;
 				foreach (const cell_t::Location& l, cell)
-					if (distance(l.x, l.y, l.z) > maxDistance)
-						maxDistance = distance(l.x, l.y, l.z);
+					if (distance2(l.x, l.y, l.z) > maxDistance2)
+						maxDistance2 = distance2(l.x, l.y, l.z);
+
+				LOG_ALL(tedlog) << "max distance of cell " << cellIndex << " to label " << recLabel << " is " << sqrt(maxDistance2) << std::endl;
 
 				// if maximum distance map value < threshold, this cell can 
 				// have the current reconstruction label as an alternative
-				if (maxDistance < _maxDistanceThreshold) {
+				if (maxDistance2 < maxDistanceThreshold2) {
+
+					LOG_ALL(tedlog) << "cell " << cellIndex << " can be relabelled to " << recLabel << std::endl;
 
 					cell.addAlternativeLabel(recLabel);
 					registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
 				}
 			}
+		}
 	}
 }
 
@@ -390,6 +442,10 @@ TolerantEditDistance::findErrors() {
 		_splitLocations->add(boost::make_shared<Image>(_width, _height, data));
 		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
 		_mergeLocations->add(boost::make_shared<Image>(_width, _height, data));
+		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
+		_fpLocations->add(boost::make_shared<Image>(_width, _height, data));
+		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
+		_fnLocations->add(boost::make_shared<Image>(_width, _height, data));
 	}
 
 	// prepare error data structure
@@ -430,12 +486,30 @@ TolerantEditDistance::findErrors() {
 				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
 					(*(*_mergeLocations)[l.z])(l.x, l.y) = cells.first;
 
-	LOG_DEBUG(tedlog) << "num splits: " << (*_solution)[_splits] << std::endl;
-	LOG_DEBUG(tedlog) << "num merges: " << (*_solution)[_merges] << std::endl;
+	if (_haveBackgroundLabel) {
 
-	LOG_ALL(tedlog) << "error counts from Errors data structure:" << std::endl;
-	LOG_ALL(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
-	LOG_ALL(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
+		// all cells that are false positives
+		foreach (const mapping_t& cells, _errors->getFalsePositives())
+			if (cells.first != _recBackgroundLabel) {
+				foreach (unsigned int cellIndex, cells.second)
+					foreach (const cell_t::Location& l, (*_cells)[cellIndex])
+						(*(*_fpLocations)[l.z])(l.x, l.y) = cells.first;
+			}
+
+		// all cells that are false negatives
+		foreach (const mapping_t& cells, _errors->getFalseNegatives())
+			if (cells.first != _gtBackgroundLabel) {
+				foreach (unsigned int cellIndex, cells.second)
+					foreach (const cell_t::Location& l, (*_cells)[cellIndex])
+						(*(*_fnLocations)[l.z])(l.x, l.y) = cells.first;
+			}
+	}
+
+	LOG_DEBUG(tedlog) << "error counts from Errors data structure:" << std::endl;
+	LOG_DEBUG(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
+	LOG_DEBUG(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
+	LOG_DEBUG(tedlog) << "num false positives: " << _errors->getNumFalsePositives() << std::endl;
+	LOG_DEBUG(tedlog) << "num false negatives: " << _errors->getNumFalseNegatives() << std::endl;
 }
 
 void

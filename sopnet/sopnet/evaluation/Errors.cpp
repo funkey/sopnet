@@ -122,7 +122,8 @@ Errors::getMergeLabels() {
 
 	std::set<float> mergeLabels;
 	foreach (float k, _merges | boost::adaptors::map_keys)
-		mergeLabels.insert(k);
+		if (!_haveBackgroundLabel || k != _recBackgroundLabel)
+			mergeLabels.insert(k);
 	return mergeLabels;
 }
 
@@ -133,7 +134,8 @@ Errors::getSplitLabels() {
 
 	std::set<float> splitLabels;
 	foreach (float k, _splits | boost::adaptors::map_keys)
-		splitLabels.insert(k);
+		if (!_haveBackgroundLabel || k != _gtBackgroundLabel)
+			splitLabels.insert(k);
 	return splitLabels;
 }
 

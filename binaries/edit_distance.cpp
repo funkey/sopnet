@@ -69,6 +69,8 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackView> corRecView;
 		pipeline::Process<ImageStackView> splitsView;
 		pipeline::Process<ImageStackView> mergesView;
+		pipeline::Process<ImageStackView> fpView;
+		pipeline::Process<ImageStackView> fnView;
 		pipeline::Process<gui::ZoomView>  zoomView;
 		pipeline::Process<gui::Window>    window("edit distance");
 
@@ -77,18 +79,24 @@ int main(int optionc, char** optionv) {
 		corRecView->setInput(editDistance->getOutput("corrected reconstruction"));
 		splitsView->setInput(editDistance->getOutput("splits"));
 		mergesView->setInput(editDistance->getOutput("merges"));
+		fpView->setInput(editDistance->getOutput("false positives"));
+		fnView->setInput(editDistance->getOutput("false negatives"));
 
 		pipeline::Process<gui::NamedView> gtNamedView("ground truth");
 		pipeline::Process<gui::NamedView> recNamedView("reconstruction");
 		pipeline::Process<gui::NamedView> corRecNamedView("corrected");
 		pipeline::Process<gui::NamedView> splitsNamedView("splits");
 		pipeline::Process<gui::NamedView> mergesNamedView("merges");
+		pipeline::Process<gui::NamedView> fpNamedView("false positives");
+		pipeline::Process<gui::NamedView> fnNamedView("false negatives");
 
 		gtNamedView->setInput(gtView->getOutput());
 		recNamedView->setInput(recView->getOutput());
 		corRecNamedView->setInput(corRecView->getOutput());
 		splitsNamedView->setInput(splitsView->getOutput());
 		mergesNamedView->setInput(mergesView->getOutput());
+		fpNamedView->setInput(fpView->getOutput());
+		fnNamedView->setInput(fnView->getOutput());
 
 		pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > container;
 		container->setSpacing(10);
@@ -98,6 +106,8 @@ int main(int optionc, char** optionv) {
 		container->addInput(corRecNamedView->getOutput());
 		container->addInput(splitsNamedView->getOutput());
 		container->addInput(mergesNamedView->getOutput());
+		container->addInput(fpNamedView->getOutput());
+		container->addInput(fnNamedView->getOutput());
 
 		zoomView->setInput(container->getOutput());
 		window->setInput(zoomView->getOutput());
