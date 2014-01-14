@@ -174,65 +174,98 @@ TolerantEditDistance::extractCells() {
 void
 TolerantEditDistance::enumerateCellLabels() {
 
-	// get the maximal closest distance of any cell to any reconstruction label
-
-	vigra::Shape3 shape(_width, _height, _depth);
-	vigra::MultiArray<3, float> distance2(shape);
+	// list of all location offsets within threshold distance
+	std::vector<cell_t::Location> thresholdOffsets;
 
 	// TODO: read from program options
-	float pitch[3];
-	pitch[0] = 4.0;
-	pitch[1] = 4.0;
-	pitch[2] = 40.0;
+	float _resolutionX = 4.0;
+	float _resolutionY = 4.0;
+	float _resolutionZ = 40.0;
 
-	float maxDistanceThreshold2 = _maxDistanceThreshold*_maxDistanceThreshold;
+	int distanceX = std::min((float)_width,  _maxDistanceThreshold/_resolutionX);
+	int distanceY = std::min((float)_height, _maxDistanceThreshold/_resolutionY);
+	int distanceZ = std::min((float)_depth,  _maxDistanceThreshold/_resolutionZ);
 
-	// for each reconstruction label
-	foreach (float recLabel, getReconstructionLabels()) {
+	LOG_DEBUG(tedlog) << "creaing distance thresholds" << std::endl;
 
-		LOG_ALL(tedlog) << "create distance map for reconstruction label " << recLabel << std::endl;
+	for (int x = -distanceX; x <= distanceX; x++)
+		for (int y = -distanceY; y <= distanceY; y++)
+			for (int z = -distanceZ; z <= distanceZ; z++)
+				if (
+						x*_resolutionX*x*_resolutionX +
+						y*_resolutionY*y*_resolutionY +
+						z*_resolutionZ*z*_resolutionZ <= _maxDistanceThreshold*_maxDistanceThreshold)
 
-		// create distance map
-		distance2 = 0.0f;
-		foreach (std::vector<unsigned int>& cellIndices, _cellsByRecToGtLabel[recLabel] | boost::adaptors::map_values)
-			foreach (unsigned int cellIndex, cellIndices)
-				foreach (const cell_t::Location& l, (*_cells)[cellIndex])
-					distance2(l.x, l.y, l.z) = 1.0f;
-		vigra::separableMultiDistSquared(
-				distance2,
-				distance2,
-				true /* background */,
-				pitch);
+					thresholdOffsets.push_back(cell_t::Location(x, y, z));
 
-		LOG_ALL(tedlog) << "get all cells within " << _maxDistanceThreshold << "nm..." << std::endl;
+	LOG_DEBUG(tedlog) << "there are " << thresholdOffsets.size() << " pixel offsets for distance threshold " << _maxDistanceThreshold << std::endl;
 
-		// for each cell that does not have the current reconstruction label
-		for (unsigned int cellIndex = 0; cellIndex < _cells->size(); cellIndex++) {
+	LOG_DEBUG(tedlog) << "searching for label alternatives" << std::endl;
 
-			cell_t& cell = (*_cells)[cellIndex];
+	// for each cell
+		// DEBUG
+	unsigned int index = 0;
+	foreach (cell_t& cell, *_cells) {
 
-			if (cell.getReconstructionLabel() != recLabel) {
+		float cellLabel = cell.getReconstructionLabel();
 
-				// get the max closest distance to current reconstruction 
-				// label
-				float maxDistance2 = 0;
-				foreach (const cell_t::Location& l, cell)
-					if (distance2(l.x, l.y, l.z) > maxDistance2)
-						maxDistance2 = distance2(l.x, l.y, l.z);
+		// DEBUG
+		LOG_ALL(tedlog) << "processing cell " << index << std::endl;
 
-				LOG_ALL(tedlog) << "max distance of cell " << cellIndex << " to label " << recLabel << " is " << sqrt(maxDistance2) << std::endl;
+		std::set<float> alternativeLabels;
 
-				// if maximum distance map value < threshold, this cell can 
-				// have the current reconstruction label as an alternative
-				if (maxDistance2 < maxDistanceThreshold2) {
+		// for each location i in that cell
+		foreach (const cell_t::Location& i, cell) {
 
-					LOG_ALL(tedlog) << "cell " << cellIndex << " can be relabelled to " << recLabel << std::endl;
+			std::set<float> thresholdLabels;
 
-					cell.addAlternativeLabel(recLabel);
-					registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
-				}
+			// for all locations within threshold of i, get current alternative 
+			// labels
+			foreach (cell_t::Location& offset, thresholdOffsets) {
+
+				cell_t::Location j(i.x + offset.x, i.y + offset.y, i.z + offset.z);
+
+				if (j.x < 0 || j.x >= (int)_width || j.y < 0 || j.y >= (int)_height || j.z < 0 || j.z >= (int)_depth)
+					continue;
+
+				float label = (*(*_reconstruction)[j.z])(j.x, j.y);
+
+				// collect all alternative labels
+				if (label != cellLabel)
+					thresholdLabels.insert(label);
+			}
+
+			if (alternativeLabels.size() != 0) {
+
+				// intersect new alternative labels with current alternative 
+				// labels
+				std::set<float> intersection;
+				std::insert_iterator<std::set<float> > inserter(intersection, intersection.begin());
+				std::set_intersection(alternativeLabels.begin(), alternativeLabels.end(), thresholdLabels.begin(), thresholdLabels.end(), inserter);
+				std::swap(intersection, alternativeLabels);
+
+				// if empty, break
+				if (alternativeLabels.size() == 0)
+					break;
+
+			} else {
+
+				// this must be the first location we test, simply accept new 
+				// alternative labels
+				alternativeLabels = thresholdLabels;
 			}
 		}
+
+		// for each alternative label
+		foreach (float recLabel, alternativeLabels) {
+
+			// register possible match
+			cell.addAlternativeLabel(recLabel);
+			registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
+		}
+
+		// DEBUG
+		index++;
 	}
 }
 
