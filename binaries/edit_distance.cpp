@@ -10,6 +10,7 @@
 #include <gui/ZoomView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
+#include <imageprocessing/io/ImageStackDirectoryWriter.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
@@ -113,6 +114,26 @@ int main(int optionc, char** optionv) {
 		window->setInput(zoomView->getOutput());
 
 		window->processEvents();
+
+		// save results
+
+		pipeline::Process<ImageStackDirectoryWriter> correctedWriter("corrected");
+		pipeline::Process<ImageStackDirectoryWriter> splitsWriter("splits");
+		pipeline::Process<ImageStackDirectoryWriter> mergesWriter("merges");
+		pipeline::Process<ImageStackDirectoryWriter> fpWriter("false_positives");
+		pipeline::Process<ImageStackDirectoryWriter> fnWriter("false_negatives");
+
+		correctedWriter->setInput(editDistance->getOutput("corrected reconstruction"));
+		splitsWriter->setInput(editDistance->getOutput("splits"));
+		mergesWriter->setInput(editDistance->getOutput("merges"));
+		fpWriter->setInput(editDistance->getOutput("false positives"));
+		fnWriter->setInput(editDistance->getOutput("false negatives"));
+
+		correctedWriter->write();
+		splitsWriter->write();
+		mergesWriter->write();
+		fpWriter->write();
+		fnWriter->write();
 
 	} catch (Exception& e) {
 
