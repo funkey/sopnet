@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <boost/range/adaptors.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <vigra/multi_distance.hxx>
@@ -139,8 +141,6 @@ TolerantEditDistance::extractCells() {
 				// argh, vigra starts counting at 1!
 				unsigned int cellIndex = cellIds(x, y, z) - 1;
 
-				LOG_ALL(tedlog) << "adding pixel (" << x << ", " << y << ", " << z << ") with value " << cellIds(x, y, z) << " to cell " << cellIndex << std::endl;
-
 				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
 				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
@@ -257,10 +257,8 @@ TolerantEditDistance::findBestCellLabels() {
 				unsigned int begin = var;
 
 				// one variable for the default label
-				LOG_ALL(tedlog) << "add indicator for default label of current cell: " << std::endl;
 				assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
 
-				LOG_ALL(tedlog) << "add indicators for alternative labels of current cell: " << std::endl;
 				foreach (float l, cell.getAlternativeLabels())
 					assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), l);
 
@@ -332,8 +330,6 @@ TolerantEditDistance::findBestCellLabels() {
 
 		unsigned int splitVar = var++;
 
-		LOG_ALL(tedlog) << "variable " << splitVar << " counts the number of splits for ground truth label " << gtLabel << std::endl;
-
 		parameters->setVariableType(splitVar, Integer);
 
 		LinearConstraint positive;
@@ -374,8 +370,6 @@ TolerantEditDistance::findBestCellLabels() {
 
 		unsigned int mergeVar = var++;
 
-		LOG_ALL(tedlog) << "variable " << mergeVar << " counts the number of merges for reconstruction label " << recLabel << std::endl;
-
 		parameters->setVariableType(mergeVar, Integer);
 
 		LinearConstraint positive;
@@ -407,10 +401,6 @@ TolerantEditDistance::findBestCellLabels() {
 	sumOfMerges.setRelation(Equal);
 	sumOfMerges.setValue(0);
 	constraints->add(sumOfMerges);
-
-	LOG_ALL(tedlog) << "final constraints are: " << std::endl;
-	foreach (LinearConstraint& c, *constraints)
-		LOG_ALL(tedlog) << "\t" << c << std::endl;
 
 	// create objective
 
@@ -598,8 +588,6 @@ TolerantEditDistance::getPossibleMathesByRec(float recLabel) {
 void
 TolerantEditDistance::assignIndicatorVariable(unsigned int var, unsigned int cellIndex, float gtLabel, float recLabel) {
 
-	LOG_ALL(tedlog) << "variable " << var << " indicates a single mapping from " << gtLabel << " to " << recLabel << std::endl;
-
 	_indicatorVarsByRecLabel[recLabel].push_back(var);
 	_indicatorVarsByGtToRecLabel[gtLabel][recLabel].push_back(var);
 
@@ -620,8 +608,6 @@ TolerantEditDistance::getIndicatorsGtToRec(float gtLabel, float recLabel) {
 
 void
 TolerantEditDistance::assignMatchVariable(unsigned int var, float gtLabel, float recLabel) {
-
-	LOG_ALL(tedlog) << "variable " << var << " indicates a match of " << gtLabel << " to " << recLabel << std::endl;
 
 	_matchVars[gtLabel][recLabel] = var;
 }
