@@ -367,6 +367,8 @@ TolerantEditDistance::findErrors() {
 			unsigned int cellIndex = _labelingByVar[i].first;
 			float        recLabel  = _labelingByVar[i].second;
 
+			LOG_ALL(tedlog) << "adding mapping from cell " << cellIndex << " to " << recLabel << std::endl;
+
 			_errors->addMapping(cellIndex, recLabel);
 		}
 	}
