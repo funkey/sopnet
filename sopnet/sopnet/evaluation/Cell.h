@@ -100,7 +100,15 @@ public:
 	 */
 	void add(const Location& l) {
 
-		_content.insert(l);
+		_content.push_back(l);
+	}
+
+	/**
+	 * Add a boundary location to this cell.
+	 */
+	void addBoundary(const Location& l) {
+
+		_boundary.push_back(l);
 	}
 
 	/**
@@ -119,6 +127,18 @@ public:
 		return true;
 	}
 
+	bool removeBoundary(const Location& l) {
+
+		iterator i = _boundary.find(l);
+
+		if (i != _boundary.end())
+			_boundary.erase(i);
+		else
+			return false;
+
+		return true;
+	}
+
 	/**
 	 * Get the number of locations in this cell.
 	 */
@@ -127,11 +147,16 @@ public:
 		return _content.size();
 	}
 
+	const std::vector<Location>& getBoundary() const {
+
+		return _boundary;
+	}
+
 	/**
 	 * Iterator access to the locations of the cell.
 	 */
-	typedef typename std::set<Location>::iterator       iterator;
-	typedef typename std::set<Location>::const_iterator const_iterator;
+	typedef typename std::vector<Location>::iterator       iterator;
+	typedef typename std::vector<Location>::const_iterator const_iterator;
 
 	iterator begin() { return _content.begin(); }
 	iterator end() { return _content.end(); }
@@ -151,7 +176,10 @@ private:
 	std::set<LabelType> _alternativeLabels;
 
 	// the volume locations that constitute this cell
-	std::set<Location> _content;
+	std::vector<Location> _content;
+
+	// the locations that are forming the boundary
+	std::vector<Location> _boundary;
 };
 
 #endif // SOPNET_EVALUATION_CELL_H__

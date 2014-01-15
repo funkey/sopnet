@@ -49,6 +49,8 @@ DistanceToleranceFunction::extractCells(
 				// argh, vigra starts counting at 1!
 				unsigned int cellIndex = cellLabels(x, y, z) - 1;
 
+				if (_boundaryMap(x, y, z))
+					(*_cells)[cellIndex].addBoundary(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
 				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
@@ -172,9 +174,9 @@ DistanceToleranceFunction::createNeighborhood() {
 
 	std::vector<cell_t::Location> thresholdOffsets;
 
-	for (int x = -_maxDistanceThresholdX; x <= _maxDistanceThresholdX; x++)
+	for (int z = -_maxDistanceThresholdZ; z <= _maxDistanceThresholdZ; z++)
 		for (int y = -_maxDistanceThresholdY; y <= _maxDistanceThresholdY; y++)
-			for (int z = -_maxDistanceThresholdZ; z <= _maxDistanceThresholdZ; z++)
+			for (int x = -_maxDistanceThresholdX; x <= _maxDistanceThresholdX; x++)
 				if (
 						x*_resolutionX*x*_resolutionX +
 						y*_resolutionY*y*_resolutionY +
@@ -195,8 +197,8 @@ DistanceToleranceFunction::getAlternativeLabels(
 
 	float cellLabel = cell.getReconstructionLabel();
 
-	// for each location i in that cell
-	foreach (const cell_t::Location& i, cell) {
+	// for each boundary location i in that cell
+	foreach (const cell_t::Location& i, cell.getBoundary()) {
 
 		// all the labels in the neighborhood of i
 		std::set<float> neighborhoodLabels;
@@ -210,6 +212,11 @@ DistanceToleranceFunction::getAlternativeLabels(
 			if (j.x < 0 || j.x >= (int)_width || j.y < 0 || j.y >= (int)_height || j.z < 0 || j.z >= (int)_depth)
 				continue;
 
+			// is this a boundary?
+			if (!_boundaryMap(j.x, j.y, j.z))
+				continue;
+
+			// now we have found a boundary pixel within our neighborhood
 			float label = (*(recLabels)[j.z])(j.x, j.y);
 
 			// collect all alternative labels
