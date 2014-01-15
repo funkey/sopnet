@@ -58,7 +58,7 @@ public:
 	/**
 	 * Get the original reconstruction label of this cell.
 	 */
-	LabelType getReconstructionLabel() {
+	LabelType getReconstructionLabel() const {
 
 		return _label;
 	}
@@ -74,7 +74,7 @@ public:
 	/**
 	 * Get the ground truth label of this cell.
 	 */
-	LabelType getGroundTruthLabel() {
+	LabelType getGroundTruthLabel() const {
 
 		return _groundTruthLabel;
 	}
@@ -90,7 +90,7 @@ public:
 	/**
 	 * Get the current list of alternative labels for this cell.
 	 */
-	std::set<LabelType>& getAlternativeLabels() {
+	const std::set<LabelType>& getAlternativeLabels() const {
 
 		return _alternativeLabels;
 	}
