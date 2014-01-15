@@ -41,10 +41,10 @@ util::ProgramOption optionReconstructionBackgroundLabel(
 		util::_default_value    = 0.0);
 
 TolerantEditDistance::TolerantEditDistance() :
-	_errors(_haveBackgroundLabel ? boost::make_shared<Errors>(_gtBackgroundLabel, _recBackgroundLabel) : boost::make_shared<Errors>()),
 	_haveBackgroundLabel(optionHaveBackgroundLabel),
 	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
-	_recBackgroundLabel(optionReconstructionBackgroundLabel) {
+	_recBackgroundLabel(optionReconstructionBackgroundLabel),
+	_errors(_haveBackgroundLabel ? boost::make_shared<Errors>(_gtBackgroundLabel, _recBackgroundLabel) : boost::make_shared<Errors>()) {
 
 	if (optionHaveBackgroundLabel) {
 		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;

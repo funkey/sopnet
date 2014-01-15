@@ -42,6 +42,13 @@ private:
 
 	unsigned int getMatchVariable(float gtLabel, float recLabel);
 
+	// is there a background label?
+	bool _haveBackgroundLabel;
+
+	// the optional background labels of the ground truth and reconstruction
+	float _gtBackgroundLabel;
+	float _recBackgroundLabel;
+
 	pipeline::Input<ImageStack> _groundTruth;
 	pipeline::Input<ImageStack> _reconstruction;
 
@@ -57,13 +64,6 @@ private:
 
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;
-
-	// is there a background label?
-	bool _haveBackgroundLabel;
-
-	// the optional background labels of the ground truth and reconstruction
-	float _gtBackgroundLabel;
-	float _recBackgroundLabel;
 
 	// reconstruction label indicators by reconstruction label
 	std::map<float, std::vector<unsigned int> > _indicatorVarsByRecLabel;

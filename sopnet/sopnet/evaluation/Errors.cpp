@@ -1,13 +1,18 @@
 #include <boost/range/adaptors.hpp>
 #include <util/exceptions.h>
 #include <util/foreach.h>
+#include <util/Logger.h>
 #include "Errors.h"
+
+logger::LogChannel errorslog("errorslog", "[Errors] ");
 
 Errors::Errors() :
 	_haveBackgroundLabel(false),
 	_dirty(true) {
 
 	clear();
+
+	LOG_DEBUG(errorslog) << "created errors data structure without background label" << std::endl;
 }
 
 Errors::Errors(float gtBackgroundLabel, float recBackgroundLabel) :
@@ -17,6 +22,8 @@ Errors::Errors(float gtBackgroundLabel, float recBackgroundLabel) :
 	_dirty(true) {
 
 	clear();
+
+	LOG_DEBUG(errorslog) << "created errors data structure with background label" << std::endl;
 }
 
 void
