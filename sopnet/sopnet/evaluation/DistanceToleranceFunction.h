@@ -20,8 +20,11 @@ private:
 	// find alternative cell labels
 	void enumerateCellLabels(const ImageStack& recLabels);
 
-	// find all cells that can be relabeled
-	std::vector<unsigned int> getRelabelCandidates(const ImageStack& recLabels);
+	// create a b/w image of reconstruction label changes
+	void createBoundaryMap(const ImageStack& recLabels);
+
+	// create a distance2 image of boundary distances
+	void createBoundaryDistanceMap();
 
 	// find all offset locations for the given distance threshold
 	std::vector<cell_t::Location> createNeighborhood();
@@ -52,6 +55,11 @@ private:
 
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;
+
+	vigra::MultiArray<3, bool>  _boundaryMap;
+	vigra::MultiArray<3, float> _boundaryDistance2;
+
+	std::vector<unsigned int> _relabelCandidates;
 };
 
 #endif // SOPNET_EVALUATION_DISTANCE_TOLERANCE_FUNCTION_H__

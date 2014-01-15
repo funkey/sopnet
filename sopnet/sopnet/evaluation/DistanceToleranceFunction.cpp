@@ -25,10 +25,14 @@ DistanceToleranceFunction::extractCells(
 	_width  = gtLabels.width();
 	_height = gtLabels.height();
 
+	createBoundaryMap(recLabels);
+	createBoundaryDistanceMap();
+
 	// create a cell for each found connected component in cellLabels
 	_cells->resize(numCells);
 
-	// TODO: find max boundary distance on-the-fly
+	// the maximum boundary distance of any location for each cell
+	std::vector<float> maxBoundaryDistances(numCells, 0);
 
 	std::set<unsigned int> foundCells;
 	for (unsigned int z = 0; z < _depth; z++) {
@@ -49,6 +53,8 @@ DistanceToleranceFunction::extractCells(
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
 				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
 
+				maxBoundaryDistances[cellIndex] = std::max(maxBoundaryDistances[cellIndex], _boundaryDistance2(x, y, z));
+
 				if (foundCells.count(cellIndex) == 0) {
 
 					registerPossibleMatch(gtLabel, recLabel);
@@ -57,7 +63,47 @@ DistanceToleranceFunction::extractCells(
 			}
 	}
 
+	for (unsigned int cellIndex = 0; cellIndex < numCells; cellIndex++)
+		if (maxBoundaryDistances[cellIndex] < _maxDistanceThreshold*_maxDistanceThreshold)
+			_relabelCandidates.push_back(cellIndex);
+
 	enumerateCellLabels(recLabels);
+}
+
+void
+DistanceToleranceFunction::createBoundaryMap(const ImageStack& recLabels) {
+
+	vigra::Shape3 shape(_width, _height, _depth);
+	_boundaryMap.reshape(shape);
+
+	// create boundary map
+	LOG_DEBUG(distancetolerancelog) << "creating boundary map of size " << shape << std::endl;
+	_boundaryMap = 0.0f;
+	for (unsigned int x = 0; x < _width; x++)
+		for (unsigned int y = 0; y < _height; y++)
+			for (unsigned int z = 0; z < _depth; z++)
+				if (isBoundaryVoxel(x, y, z, recLabels))
+					_boundaryMap(x, y, z) = 1.0f;
+}
+
+void
+DistanceToleranceFunction::createBoundaryDistanceMap() {
+
+	vigra::Shape3 shape(_width, _height, _depth);
+	_boundaryDistance2.reshape(shape);
+
+	float pitch[3];
+	pitch[0] = _resolutionX;
+	pitch[1] = _resolutionY;
+	pitch[2] = _resolutionZ;
+
+	// compute l2 distance for each pixel to boundary
+	LOG_DEBUG(distancetolerancelog) << "computing boundary distances" << std::endl;
+	vigra::separableMultiDistSquared(
+			_boundaryMap,
+			_boundaryDistance2,
+			true /* background */,
+			pitch);
 }
 
 void
@@ -67,13 +113,9 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 	_maxDistanceThresholdY = std::min((float)_height, _maxDistanceThreshold/_resolutionY);
 	_maxDistanceThresholdZ = std::min((float)_depth,  _maxDistanceThreshold/_resolutionZ);
 
-	LOG_DEBUG(distancetolerancelog) << "getting relabel candidates" << std::endl;
+	LOG_DEBUG(distancetolerancelog) << "there are " << _relabelCandidates.size() << " cells that can be relabeled" << std::endl;
 
-	std::vector<unsigned int> relabelCandidates = getRelabelCandidates(recLabels);
-
-	LOG_DEBUG(distancetolerancelog) << "there are " << relabelCandidates.size() << " cells that can be relabeled" << std::endl;
-
-	if (relabelCandidates.size() == 0)
+	if (_relabelCandidates.size() == 0)
 		return;
 
 	LOG_DEBUG(distancetolerancelog) << "creating distance threshold neighborhood" << std::endl;
@@ -84,7 +126,7 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 	LOG_DEBUG(distancetolerancelog) << "there are " << neighborhood.size() << " pixels in the neighborhood for a threshold of " << _maxDistanceThreshold << std::endl;
 
 	// for each cell
-	foreach (unsigned int index, relabelCandidates) {
+	foreach (unsigned int index, _relabelCandidates) {
 
 		cell_t& cell = (*_cells)[index];
 
@@ -103,82 +145,6 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 		// DEBUG
 		index++;
 	}
-}
-
-std::vector<unsigned int>
-DistanceToleranceFunction::getRelabelCandidates(const ImageStack& recLabels) {
-
-	std::vector<unsigned int> candidates;
-
-	// get the closest distance of any pixel to any label boundary
-
-	vigra::Shape3 shape(_width, _height, _depth);
-	vigra::MultiArray<3, float> boundaryDistance2(shape);
-
-	float pitch[3];
-	pitch[0] = _resolutionX;
-	pitch[1] = _resolutionY;
-	pitch[2] = _resolutionZ;
-
-	// create boundary map
-	LOG_DEBUG(distancetolerancelog) << "creating boundary map of size " << shape << std::endl;
-	boundaryDistance2 = 0.0f;
-	for (unsigned int x = 0; x < _width; x++)
-		for (unsigned int y = 0; y < _height; y++)
-			for (unsigned int z = 0; z < _depth; z++)
-				if (isBoundaryVoxel(x, y, z, recLabels))
-					boundaryDistance2(x, y, z) = 1.0f;
-
-	vigra::MultiArray<2, float> exportImage(vigra::Shape2(_width, _height));
-	for (int x = 0; x < (int)_width; x++)
-		for (int y = 0; y < (int)_height; y++)
-			exportImage(x, y) = boundaryDistance2(x, y, 0);
-	vigra::exportImage(exportImage, vigra::ImageExportInfo("boundaries.png"));
-
-	// compute l2 distance for each pixel to boundary
-	LOG_DEBUG(distancetolerancelog) << "computing boundary distances" << std::endl;
-	vigra::separableMultiDistSquared(
-			boundaryDistance2,
-			boundaryDistance2,
-			true /* background */,
-			pitch);
-
-	for (int x = 0; x < (int)_width; x++)
-		for (int y = 0; y < (int)_height; y++)
-			exportImage(x, y) = boundaryDistance2(x, y, 0);
-	vigra::exportImage(exportImage, vigra::ImageExportInfo("distances.png"));
-
-	float maxDistanceThreshold2 = _maxDistanceThreshold*_maxDistanceThreshold;
-
-	LOG_DEBUG(distancetolerancelog) << "checking for relabel candidates" << std::endl;
-	for (unsigned int cellIndex = 0; cellIndex < _cells->size(); cellIndex++) {
-
-		LOG_ALL(distancetolerancelog) << "checking cell " << cellIndex << std::endl;
-
-		bool isCandidate = true;
-
-		foreach (const cell_t::Location& l, (*_cells)[cellIndex]) {
-
-			if (boundaryDistance2(l.x, l.y, l.z) >= maxDistanceThreshold2) {
-
-				LOG_ALL(distancetolerancelog)
-						<< "\tthis cell is not a candidate, location ("
-						<< l.x << ", " << l.y << ", " << l.z
-						<< " has distance " << sqrt(boundaryDistance2(l.x, l.y, l.z))
-						<< " to boundary" << std::endl;
-				isCandidate = false;
-				break;
-			}
-		}
-
-		if (isCandidate) {
-
-			LOG_ALL(distancetolerancelog) << "\tthis cell is a candidate" << std::endl;
-			candidates.push_back(cellIndex);
-		}
-	}
-
-	return candidates;
 }
 
 bool
