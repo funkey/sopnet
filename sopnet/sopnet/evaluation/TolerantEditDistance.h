@@ -4,6 +4,7 @@
 #include <imageprocessing/ImageStack.h>
 #include <pipeline/SimpleProcessNode.h>
 #include <inference/Solution.h>
+#include "LocalToleranceFunction.h"
 #include "Errors.h"
 #include "Cell.h"
 
@@ -13,54 +14,23 @@ public:
 
 	TolerantEditDistance();
 
+	~TolerantEditDistance();
+
 private:
 
-	typedef Cell<float>                             cell_t;
-	typedef boost::shared_ptr<std::vector<cell_t> > cells_t;
+	typedef LocalToleranceFunction::cell_t cell_t;
 
 	void updateOutputs();
 
+	void clear();
+
 	void extractCells();
-
-	void enumerateCellLabels();
-
-	// TOLERANCE FUNCTION RELATED -- TO BE OUTSOURCED
-
-		// find all cells that can be relabeled
-		std::vector<unsigned int> getRelabelCandidates();
-
-		// find all offset locations for the given distance threshold
-		std::vector<cell_t::Location> createNeighborhood();
-
-		// search for all relabeling alternatives for the given cell and 
-		// neighborhood
-		std::set<float> getAlternativeLabels(const cell_t& cell, const std::vector<cell_t::Location>& neighborhood);
-
-		// test, whether a voxel is surrounded by at least one other voxel with 
-		// a different label
-		bool isBoundaryVoxel(int x, int y, int z, ImageStack& stack);
-
-	// END OF TOLERANCE FUNCTION RELATED
 
 	void findBestCellLabels();
 
 	void findErrors();
 
 	void correctReconstruction();
-
-	std::set<float>& getGroundTruthLabels();
-
-	std::set<float>& getReconstructionLabels();
-
-	void clear();
-
-	void registerCell(float gtLabel, float recLabel, unsigned int cellIndex);
-
-	void registerPossibleMatch(float gtLabel, float recLabel);
-
-	std::set<float>& getPossibleMatchesByGt(float gtLabel);
-
-	std::set<float>& getPossibleMathesByRec(float recLabel);
 
 	void assignIndicatorVariable(unsigned int var, unsigned int cellIndex, float gtLabel, float recLabel);
 
@@ -72,13 +42,6 @@ private:
 
 	unsigned int getMatchVariable(float gtLabel, float recLabel);
 
-	// is there a background label?
-	bool _haveBackgroundLabel;
-
-	// the optional background labels of the ground truth and reconstruction
-	float _gtBackgroundLabel;
-	float _recBackgroundLabel;
-
 	pipeline::Input<ImageStack> _groundTruth;
 	pipeline::Input<ImageStack> _reconstruction;
 
@@ -89,39 +52,18 @@ private:
 	pipeline::Output<ImageStack> _fnLocations;
 	pipeline::Output<Errors>     _errors;
 
-	// list of all cells
-	cells_t _cells;
-
-	// map from rec labels to maps from gt label to cell indices
-	std::map<float, std::map<float, std::vector<unsigned int> > > _cellsByRecToGtLabel;
+	// the local tolerance function to use
+	LocalToleranceFunction* _toleranceFunction;
 
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;
 
-	// the distance threshold in nm
-	float _maxDistanceThreshold;
+	// is there a background label?
+	bool _haveBackgroundLabel;
 
-	// the size of one voxel
-	float _resolutionX;
-	float _resolutionY;
-	float _resolutionZ;
-
-	// the distance threshold in pixels for each direction
-	int _maxDistanceThresholdX;
-	int _maxDistanceThresholdY;
-	int _maxDistanceThresholdZ;
-
-	// set of all ground truth labels
-	std::set<float> _groundTruthLabels;
-
-	// set of all reconstruction labels
-	std::set<float> _reconstructionLabels;
-
-	// all possible label matchings, from ground truth to reconstruction
-	std::map<float, std::set<float> > _possibleGroundTruthMatches;
-
-	// all possible label matchings, from reconstruction to ground truth
-	std::map<float, std::set<float> > _possibleReconstructionMatches;
+	// the optional background labels of the ground truth and reconstruction
+	float _gtBackgroundLabel;
+	float _recBackgroundLabel;
 
 	// reconstruction label indicators by reconstruction label
 	std::map<float, std::vector<unsigned int> > _indicatorVarsByRecLabel;
