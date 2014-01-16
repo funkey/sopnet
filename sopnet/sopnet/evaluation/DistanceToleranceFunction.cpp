@@ -74,7 +74,7 @@ DistanceToleranceFunction::extractCells(
 		if (maxBoundaryDistances[cellIndex] < _maxDistanceThreshold*_maxDistanceThreshold)
 			_relabelCandidates.push_back(cellIndex);
 
-	enumerateCellLabels(recLabels);
+	enumerateCellLabels(recLabels, cellLabels);
 }
 
 void
@@ -114,7 +114,7 @@ DistanceToleranceFunction::createBoundaryDistanceMap() {
 }
 
 void
-DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
+DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels, const vigra::MultiArray<3, unsigned int>& cellLabels) {
 
 	_maxDistanceThresholdX = std::min((float)_width,  _maxDistanceThreshold/_resolutionX);
 	_maxDistanceThresholdY = std::min((float)_height, _maxDistanceThreshold/_resolutionY);
@@ -125,6 +125,11 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 	if (_relabelCandidates.size() == 0)
 		return;
 
+	// modify boundary map to show us which cells can be relabelled
+	foreach (unsigned int cellIndex, _relabelCandidates)
+		foreach (const cell_t::Location& b, (*_cells)[cellIndex].getBoundary())
+			_boundaryMap(b.x, b.y, b.z) = 2;
+
 	LOG_DEBUG(distancetolerancelog) << "creating distance threshold neighborhood" << std::endl;
 
 	// list of all location offsets within threshold distance
@@ -132,26 +137,67 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 
 	LOG_DEBUG(distancetolerancelog) << "there are " << neighborhood.size() << " pixels in the neighborhood for a threshold of " << _maxDistanceThreshold << std::endl;
 
-	// for each cell
-	foreach (unsigned int index, _relabelCandidates) {
+	// map from cell indices to all alternative labels it can assume
+	std::map<unsigned int, std::set<float> > mapped;
 
-		cell_t& cell = (*_cells)[index];
+	// map from cell index X reconstruction label to covered locations
+	std::map<unsigned int, std::map<float, std::set<cell_t::Location> > > covered;
 
-		LOG_ALL(distancetolerancelog) << "processing cell " << index << std::endl;
+	LOG_DEBUG(distancetolerancelog) << "determining label coverage" << std::endl;
 
-		std::set<float> alternativeLabels = getAlternativeLabels(cell, neighborhood, recLabels);
+	// for each location i
+	for (int z = 0; z < (int)_depth; z++) {
 
-		// for each alternative label
-		foreach (float recLabel, alternativeLabels) {
+		LOG_DEBUG(distancetolerancelog) << "processing section " << z << std::endl;
 
-			// register possible match
-			cell.addAlternativeLabel(recLabel);
-			registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
+		for (int y = 0; y < (int)_height; y++) {
+			for (int x = 0; x < (int)_width; x++) {
+
+				// is boundary location?
+				if (!_boundaryMap(x, y, z))
+					continue;
+
+				// get label k
+				float k = (*recLabels[z])(x, y);
+
+				// for each neighbor j
+				foreach (const cell_t::Location n, neighborhood) {
+
+					cell_t::Location l(x + n.x, y + n.y, z + n.z);
+
+					// is in volume?
+					if (l.x < 0 || l.x >= (int)_width || l.y < 0 || l.y >= (int)_height || l.z < 0 || l.z >= (int)_depth)
+						continue;
+
+					// is boundary location of a relabel candidate cell?
+					if (_boundaryMap(x, y, z) != 2)
+						continue;
+
+					// get cell label A
+					unsigned int A = cellLabels(x, y, z);
+
+					// A->k already mapped?
+					if (mapped[A].count(k))
+						continue;
+
+					// add j to covered[A][k]
+					covered[A][k].insert(l);
+
+					// number of covered == boundary size of A?
+					if (covered[A][k].size() == (*_cells)[A].getBoundarySize())
+						mapped[A].insert(k);
+				}
+			}
 		}
-
-		// DEBUG
-		index++;
 	}
+
+	LOG_DEBUG(distancetolerancelog) << "setting alternative cell labels" << std::endl;
+
+
+	typedef std::map<unsigned int, std::set<float> >::value_type mapping_t;
+	foreach (mapping_t& r, mapped)
+		foreach (float k, r.second)
+			(*_cells)[r.first].addAlternativeLabel(k);
 }
 
 bool
@@ -195,7 +241,7 @@ DistanceToleranceFunction::createNeighborhood() {
 std::set<float>
 DistanceToleranceFunction::getAlternativeLabels(
 		const cell_t& cell,
-		const std::vector<cell_t::Location>& neighborhood,
+		const std::vector<cell_t::Location>& /*neighborhood*/,
 		const ImageStack& recLabels) {
 
 	std::set<float> alternativeLabels;

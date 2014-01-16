@@ -163,6 +163,11 @@ public:
 		return _boundary;
 	}
 
+	unsigned int getBoundarySize() const {
+
+		return _boundary.size();
+	}
+
 	const Location& getBoundingBoxMin() const {
 
 		return _min;

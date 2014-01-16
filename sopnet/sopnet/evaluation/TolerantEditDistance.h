@@ -14,7 +14,7 @@ public:
 
 	TolerantEditDistance();
 
-	~TolerantEditDistance();
+	virtual ~TolerantEditDistance();
 
 private:
 

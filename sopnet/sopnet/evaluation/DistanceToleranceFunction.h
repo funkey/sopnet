@@ -39,7 +39,7 @@ private:
 	};
 
 	// find alternative cell labels
-	void enumerateCellLabels(const ImageStack& recLabels);
+	void enumerateCellLabels(const ImageStack& recLabels, const vigra::MultiArray<3, unsigned int>& cellLabels);
 
 	// create a b/w image of reconstruction label changes
 	void createBoundaryMap(const ImageStack& recLabels);
@@ -77,7 +77,7 @@ private:
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;
 
-	vigra::MultiArray<3, bool>  _boundaryMap;
+	vigra::MultiArray<3, short> _boundaryMap;
 	vigra::MultiArray<3, float> _boundaryDistance2;
 
 	std::vector<unsigned int> _relabelCandidates;
