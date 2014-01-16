@@ -23,6 +23,8 @@ public:
 	typedef Cell<float>                             cell_t;
 	typedef boost::shared_ptr<std::vector<cell_t> > cells_t;
 
+	virtual ~LocalToleranceFunction() {}
+
 	/**
 	 * Clear all extracted cells and supplemental data structures.
 	 */

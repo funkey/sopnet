@@ -1,6 +1,8 @@
 #include <vigra/multi_distance.hxx>
 #include <vigra/impex.hxx>
 
+#include <external/nanoflann/nanoflann.hpp>
+
 #include <util/Logger.h>
 #include "DistanceToleranceFunction.h"
 
@@ -125,17 +127,24 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels, cons
 	if (_relabelCandidates.size() == 0)
 		return;
 
-	// modify boundary map to show us which cells can be relabelled
+	// create kd-tree of relabel candidate boundary locations
+
+	BoundaryLocations boundaryLocations;
+	boundaryLocations.resX = (int)_resolutionX;
+	boundaryLocations.resY = (int)_resolutionY;
+	boundaryLocations.resZ = (int)_resolutionZ;
 	foreach (unsigned int cellIndex, _relabelCandidates)
 		foreach (const cell_t::Location& b, (*_cells)[cellIndex].getBoundary())
-			_boundaryMap(b.x, b.y, b.z) = 2;
+			boundaryLocations.locations.push_back(b);
 
-	LOG_DEBUG(distancetolerancelog) << "creating distance threshold neighborhood" << std::endl;
+	typedef nanoflann::KDTreeSingleIndexAdaptor<
+		nanoflann::L2_Simple_Adaptor<int, BoundaryLocations>,
+		BoundaryLocations,
+		3 /* dim */
+		> boundary_kd_tree_t;
 
-	// list of all location offsets within threshold distance
-	std::vector<cell_t::Location> neighborhood = createNeighborhood();
-
-	LOG_DEBUG(distancetolerancelog) << "there are " << neighborhood.size() << " pixels in the neighborhood for a threshold of " << _maxDistanceThreshold << std::endl;
+	boundary_kd_tree_t index(3 /*dim*/, boundaryLocations, nanoflann::KDTreeSingleIndexAdaptorParams(10 /* max leaf */) );
+	index.buildIndex();
 
 	// map from cell indices to all alternative labels it can assume
 	std::map<unsigned int, std::set<float> > mapped;
@@ -146,12 +155,16 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels, cons
 	LOG_DEBUG(distancetolerancelog) << "determining label coverage" << std::endl;
 
 	// for each location i
-	for (int z = 0; z < (int)_depth; z++) {
+	int i[3];
+	int& x = i[0];
+	int& y = i[1];
+	int& z = i[2];
+	for (z = 0; z < (int)_depth; z++) {
 
 		LOG_DEBUG(distancetolerancelog) << "processing section " << z << std::endl;
 
-		for (int y = 0; y < (int)_height; y++) {
-			for (int x = 0; x < (int)_width; x++) {
+		for (y = 0; y < (int)_height; y++) {
+			for (x = 0; x < (int)_width; x++) {
 
 				// is boundary location?
 				if (!_boundaryMap(x, y, z))
@@ -160,18 +173,18 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels, cons
 				// get label k
 				float k = (*recLabels[z])(x, y);
 
-				// for each neighbor j
-				foreach (const cell_t::Location n, neighborhood) {
 
-					cell_t::Location l(x + n.x, y + n.y, z + n.z);
+				// get all relabel candidate boundary points within threshold distance
+				std::vector<std::pair<size_t, int> > points;
+				nanoflann::SearchParams params(0 /* ignored parameter */);
+				index.radiusSearch(&i[0], (int)(_maxDistanceThreshold*_maxDistanceThreshold), points, params);
 
-					// is in volume?
-					if (l.x < 0 || l.x >= (int)_width || l.y < 0 || l.y >= (int)_height || l.z < 0 || l.z >= (int)_depth)
-						continue;
+				LOG_ALL(distancetolerancelog) << "found " << points.size() << " boundary points around (" << x << ", " << y << ", " << z << ")" << std::endl;
+				size_t index;
+				double dist;
+				foreach (boost::tie(index, dist), points) {
 
-					// is boundary location of a relabel candidate cell?
-					if (_boundaryMap(l.x, l.y, l.z) != 2)
-						continue;
+					cell_t::Location& l = boundaryLocations.locations[index];
 
 					// get cell label A
 					unsigned int A = cellLabels(l.x, l.y, l.z);
