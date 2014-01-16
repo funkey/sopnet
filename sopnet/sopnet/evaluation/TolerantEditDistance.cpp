@@ -381,8 +381,6 @@ TolerantEditDistance::findErrors() {
 			unsigned int cellIndex = _labelingByVar[i].first;
 			float        recLabel  = _labelingByVar[i].second;
 
-			LOG_ALL(tedlog) << "adding mapping from cell " << cellIndex << " to " << recLabel << std::endl;
-
 			_errors->addMapping(cellIndex, recLabel);
 		}
 	}
@@ -402,11 +400,9 @@ TolerantEditDistance::findErrors() {
 	typedef Errors::cell_map_t::mapped_type::value_type mapping_t;
 	foreach (gtLabel, _errors->getSplitLabels())
 		foreach (const mapping_t& cells, _errors->getSplits(gtLabel))
-			foreach (unsigned int cellIndex, cells.second) {
-				LOG_ALL(tedlog) << "cell " << cellIndex << " participates in a split" << std::endl;
+			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
 					(*(*_splitLocations)[l.z])(l.x, l.y) = cells.first;
-			}
 
 	// all cells that split the reconstruction
 	float recLabel;
