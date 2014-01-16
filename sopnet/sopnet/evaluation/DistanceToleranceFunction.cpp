@@ -49,8 +49,6 @@ DistanceToleranceFunction::extractCells(
 				// argh, vigra starts counting at 1!
 				unsigned int cellIndex = cellLabels(x, y, z) - 1;
 
-				if (_boundaryMap(x, y, z))
-					(*_cells)[cellIndex].addBoundary(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].add(cell_t::Location(x, y, z));
 				(*_cells)[cellIndex].setReconstructionLabel(recLabel);
 				(*_cells)[cellIndex].setGroundTruthLabel(gtLabel);
@@ -132,17 +130,22 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 
 		cell_t& cell = (*_cells)[index];
 
-		LOG_ALL(distancetolerancelog) << "processing cell " << index << std::endl;
+		LOG_ALL(distancetolerancelog) << "processing cell " << index << std::flush;
 
 		std::set<float> alternativeLabels = getAlternativeLabels(cell, neighborhood, recLabels);
 
+		LOG_ALL(distancetolerancelog) << "; can map to ";
+
 		// for each alternative label
 		foreach (float recLabel, alternativeLabels) {
+
+			LOG_ALL(distancetolerancelog) << recLabel << " ";
 
 			// register possible match
 			cell.addAlternativeLabel(recLabel);
 			registerPossibleMatch(cell.getGroundTruthLabel(), recLabel);
 		}
+		LOG_ALL(distancetolerancelog) << std::endl;
 
 		// DEBUG
 		index++;
@@ -159,9 +162,9 @@ DistanceToleranceFunction::isBoundaryVoxel(int x, int y, int z, const ImageStack
 			for (int dx = -1; dx <= 1; dx++)
 				if (
 						!(dx == 0 && dy == 0 && dz == 0) &&
-						(x + dx) >= 0 && (x + dx) < _width  &&
-						(y + dy) >= 0 && (y + dy) < _height &&
-						(z + dz) >= 0 && (z + dz) < _depth)
+						(x + dx) >= 0 && (x + dx) < (int)_width  &&
+						(y + dy) >= 0 && (y + dy) < (int)_height &&
+						(z + dz) >= 0 && (z + dz) < (int)_depth)
 
 					if ((*stack[z + dz])(x + dx, y + dy) != center)
 						return true;
@@ -197,8 +200,8 @@ DistanceToleranceFunction::getAlternativeLabels(
 
 	float cellLabel = cell.getReconstructionLabel();
 
-	// for each boundary location i in that cell
-	foreach (const cell_t::Location& i, cell.getBoundary()) {
+	// for each location i in that cell
+	foreach (const cell_t::Location& i, cell) {
 
 		// all the labels in the neighborhood of i
 		std::set<float> neighborhoodLabels;
