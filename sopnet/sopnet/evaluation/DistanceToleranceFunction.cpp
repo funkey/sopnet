@@ -170,11 +170,11 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels, cons
 						continue;
 
 					// is boundary location of a relabel candidate cell?
-					if (_boundaryMap(x, y, z) != 2)
+					if (_boundaryMap(l.x, l.y, l.z) != 2)
 						continue;
 
 					// get cell label A
-					unsigned int A = cellLabels(x, y, z);
+					unsigned int A = cellLabels(l.x, l.y, l.z);
 
 					// A->k already mapped?
 					if (mapped[A].count(k))
