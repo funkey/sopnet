@@ -17,6 +17,27 @@ public:
 
 private:
 
+	// functor to test coverage of locations from a center point and radius
+	struct covered_from {
+
+		covered_from(int x_, int y_, int z_) :
+			x(x_), y(y_), z(z_) {}
+
+		bool operator()(const cell_t::Location& l) {
+
+			return
+					((x-l.x)*(x-l.x)*resX2 +
+					 (y-l.y)*(y-l.y)*resY2 +
+					 (z-l.z)*(z-l.z)*resZ2 <= r2);
+		}
+
+		// center
+		int x, y, z;
+
+		// resolution in x, y, z, and max radius
+		static int resX2, resY2, resZ2, r2;
+	};
+
 	// find alternative cell labels
 	void enumerateCellLabels(const ImageStack& recLabels);
 

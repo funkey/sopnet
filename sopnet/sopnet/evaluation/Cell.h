@@ -47,6 +47,10 @@ public:
 		}
 	};
 
+	Cell() :
+		_min(0, 0, 0),
+		_max(0, 0, 0) {}
+
 	/**
 	 * Set the original reconstruction label of this cell.
 	 */
@@ -109,6 +113,13 @@ public:
 	void addBoundary(const Location& l) {
 
 		_boundary.push_back(l);
+
+		_min.x = std::min(_min.x, l.x);
+		_min.y = std::min(_min.y, l.y);
+		_min.z = std::min(_min.z, l.z);
+		_max.x = std::max(_max.x, l.x + 1);
+		_max.y = std::max(_max.y, l.y + 1);
+		_max.z = std::max(_max.z, l.z + 1);
 	}
 
 	/**
@@ -152,6 +163,16 @@ public:
 		return _boundary;
 	}
 
+	const Location& getBoundingBoxMin() const {
+
+		return _min;
+	}
+
+	const Location& getBoundingBoxMax() const {
+
+		return _max;
+	}
+
 	/**
 	 * Iterator access to the locations of the cell.
 	 */
@@ -180,6 +201,10 @@ private:
 
 	// the locations that are forming the boundary
 	std::vector<Location> _boundary;
+
+	// corners of the bounding box for this cell
+	Location _min;
+	Location _max;
 };
 
 #endif // SOPNET_EVALUATION_CELL_H__

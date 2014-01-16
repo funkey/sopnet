@@ -6,6 +6,11 @@
 
 logger::LogChannel distancetolerancelog("distancetolerancelog", "[DistanceToleranceFunction] ");
 
+int DistanceToleranceFunction::covered_from::resX2;
+int DistanceToleranceFunction::covered_from::resY2;
+int DistanceToleranceFunction::covered_from::resZ2;
+int DistanceToleranceFunction::covered_from::r2;
+
 DistanceToleranceFunction::DistanceToleranceFunction(float distanceThreshold) :
 	_maxDistanceThreshold(distanceThreshold) {
 
@@ -159,9 +164,9 @@ DistanceToleranceFunction::isBoundaryVoxel(int x, int y, int z, const ImageStack
 			for (int dx = -1; dx <= 1; dx++)
 				if (
 						!(dx == 0 && dy == 0 && dz == 0) &&
-						(x + dx) >= 0 && (x + dx) < _width  &&
-						(y + dy) >= 0 && (y + dy) < _height &&
-						(z + dz) >= 0 && (z + dz) < _depth)
+						(x + dx) >= 0 && (x + dx) < (int)_width  &&
+						(y + dy) >= 0 && (y + dy) < (int)_height &&
+						(z + dz) >= 0 && (z + dz) < (int)_depth)
 
 					if ((*stack[z + dz])(x + dx, y + dy) != center)
 						return true;
@@ -197,53 +202,63 @@ DistanceToleranceFunction::getAlternativeLabels(
 
 	float cellLabel = cell.getReconstructionLabel();
 
-	// for each boundary location i in that cell
-	foreach (const cell_t::Location& i, cell.getBoundary()) {
+	// get the extended bounding box for this cell
 
-		// all the labels in the neighborhood of i
-		std::set<float> neighborhoodLabels;
+	cell_t::Location min = cell.getBoundingBoxMin();
+	cell_t::Location max = cell.getBoundingBoxMax();
 
-		// for all locations within the neighborhood, get alternative labels
-		foreach (const cell_t::Location& n, neighborhood) {
+	min.x -= _maxDistanceThresholdX;
+	min.y -= _maxDistanceThresholdY;
+	min.z -= _maxDistanceThresholdZ;
+	max.x += _maxDistanceThresholdX;
+	max.y += _maxDistanceThresholdY;
+	max.z += _maxDistanceThresholdZ;
 
-			cell_t::Location j(i.x + n.x, i.y + n.y, i.z + n.z);
+	// list of all still uncovered locations in cell for each possible label
+	std::map<float, std::list<cell_t::Location> > uncovered;
 
-			// are we leaving the image?
-			if (j.x < 0 || j.x >= (int)_width || j.y < 0 || j.y >= (int)_height || j.z < 0 || j.z >= (int)_depth)
-				continue;
+	// all boundary locations of the cell
+	std::list<cell_t::Location> boundaryLocations(cell.getBoundary().begin(), cell.getBoundary().end());
 
-			// is this a boundary?
-			if (!_boundaryMap(j.x, j.y, j.z))
-				continue;
+	// prepare coverage functor
+	covered_from::resX2 = (int)(_resolutionX*_resolutionX);
+	covered_from::resY2 = (int)(_resolutionY*_resolutionY);
+	covered_from::resZ2 = (int)(_resolutionZ*_resolutionZ);
+	covered_from::r2    = (int)(_maxDistanceThreshold*_maxDistanceThreshold);
 
-			// now we have found a boundary pixel within our neighborhood
-			float label = (*(recLabels)[j.z])(j.x, j.y);
+	// for each location in extended bounding box of cell
+	for (int z = min.z; z < max.z; z++)
+		for (int y = min.y; y < max.y; y++)
+			for (int x = min.x; x < max.x; x++) {
 
-			// collect all alternative labels
-			if (label != cellLabel)
-				neighborhoodLabels.insert(label);
-		}
+				// within volume?
+				if (x < 0 || x >= (int)_width || y < 0 || y >= (int)_height || z < 0 || z >= (int)_depth)
+					continue;
 
-		if (alternativeLabels.size() != 0) {
+				// process only boundary pixels
+				if (!_boundaryMap(x, y, z))
+					continue;
 
-			// intersect new alternative labels with current alternative 
-			// labels
-			std::set<float> intersection;
-			std::insert_iterator<std::set<float> > inserter(intersection, intersection.begin());
-			std::set_intersection(alternativeLabels.begin(), alternativeLabels.end(), neighborhoodLabels.begin(), neighborhoodLabels.end(), inserter);
-			std::swap(intersection, alternativeLabels);
+				// process only other labels
+				float k = (*recLabels[z])(x, y);
+				if (k == cellLabel)
+					continue;
 
-			// if empty, break
-			if (alternativeLabels.size() == 0)
-				break;
+				// process only labels that haven't been tested positively
+				if (alternativeLabels.count(k) == 1)
+					continue;
 
-		} else {
+				// first time we see this label?
+				if (uncovered.count(k) == 0)
+					uncovered[k] = boundaryLocations;
 
-			// this must be the first location we test, simply accept new 
-			// alternative labels
-			alternativeLabels = neighborhoodLabels;
-		}
-	}
+				// remove all locations within threshold of (x, y, z)
+				uncovered[k].remove_if(covered_from(x, y, z));
+
+				// completely covered?
+				if (uncovered[k].size() == 0)
+					alternativeLabels.insert(k);
+			}
 
 	return alternativeLabels;
 }
