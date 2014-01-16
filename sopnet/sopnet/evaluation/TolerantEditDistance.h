@@ -65,6 +65,9 @@ private:
 	// the extends of the ground truth and reconstruction
 	unsigned int _width, _height, _depth;
 
+	// the number of cells
+	unsigned int _numCells;
+
 	// reconstruction label indicators by reconstruction label
 	std::map<float, std::vector<unsigned int> > _indicatorVarsByRecLabel;
 
@@ -80,6 +83,9 @@ private:
 
 	// the number of indicator variables in the ILP
 	unsigned int _numIndicatorVars;
+
+	// indicators for alternative cell labels
+	std::vector<unsigned int> _alternativeIndicators;
 
 	// the ILP variables for the number of splits and merges
 	unsigned int _splits;

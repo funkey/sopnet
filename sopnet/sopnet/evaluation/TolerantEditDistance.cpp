@@ -90,7 +90,9 @@ TolerantEditDistance::clear() {
 	_toleranceFunction->clear();
 	_indicatorVarsByRecLabel.clear();
 	_indicatorVarsByGtToRecLabel.clear();
+	_matchVars.clear();
 	_labelingByVar.clear();
+	_alternativeIndicators.clear();
 	_errors->clear();
 	_correctedReconstruction->clear();
 	_splitLocations->clear();
@@ -134,13 +136,13 @@ TolerantEditDistance::extractCells() {
 
 	// find connected components in gt and rec image
 	cellIds = 0;
-	unsigned int numCells = vigra::labelMultiArray(gtAndRec, cellIds);
+	_numCells = vigra::labelMultiArray(gtAndRec, cellIds);
 
-	LOG_DEBUG(tedlog) << "found " << numCells << " cells" << std::endl;
+	LOG_DEBUG(tedlog) << "found " << _numCells << " cells" << std::endl;
 
 	// let tolerance function extract cells from that
 	_toleranceFunction->extractCells(
-			numCells,
+			_numCells,
 			cellIds,
 			*_reconstruction,
 			*_groundTruth);
@@ -175,8 +177,13 @@ TolerantEditDistance::findBestCellLabels() {
 		// one variable for the default label
 		assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), cell.getReconstructionLabel());
 
-		foreach (float l, cell.getAlternativeLabels())
-			assignIndicatorVariable(var++, cellIndex, cell.getGroundTruthLabel(), l);
+		// one variable for each alternative
+		foreach (float l, cell.getAlternativeLabels()) {
+
+			unsigned int ind = var++;
+			_alternativeIndicators.push_back(ind);
+			assignIndicatorVariable(ind, cellIndex, cell.getGroundTruthLabel(), l);
+		}
 
 		// last +1 indicator variable for this cell
 		unsigned int end = var;
@@ -322,8 +329,15 @@ TolerantEditDistance::findBestCellLabels() {
 
 	pipeline::Value<LinearObjective> objective(var);
 
+	// we want to minimize the number of split and merges
 	objective->setCoefficient(_splits, 1);
 	objective->setCoefficient(_merges, 1);
+	// however, if there are multiple equal solutions, we prefer the ones with 
+	// the least changes -- therefore, we add a small value for each of those 
+	// variables that can not sum up to one and therefor does not change the 
+	// number of splits and merges
+	foreach (unsigned int ind, _alternativeIndicators)
+		objective->setCoefficient(ind, 1.0/(_numCells + 1));
 	objective->setSense(Minimize);
 
 	// solve
