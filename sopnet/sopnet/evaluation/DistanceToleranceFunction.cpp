@@ -196,15 +196,23 @@ DistanceToleranceFunction::getAlternativeLabels(
 		const std::vector<cell_t::Location>& neighborhood,
 		const ImageStack& recLabels) {
 
-	std::set<float> alternativeLabels;
-
 	float cellLabel = cell.getReconstructionLabel();
+
+	// counts for each neighbor label, how often it was found while iterating 
+	// over the cells locations
+	std::map<float, unsigned int> counts;
+
+	// the number of cell locations visited so far
+	unsigned int numVisited = 0;
 
 	// for each location i in that cell
 	foreach (const cell_t::Location& i, cell) {
 
 		// all the labels in the neighborhood of i
 		std::set<float> neighborhoodLabels;
+
+		// the maximal number of times we have seen any neighbor label
+		unsigned int maxObservations = 0;
 
 		// for all locations within the neighborhood, get alternative labels
 		foreach (const cell_t::Location& n, neighborhood) {
@@ -222,31 +230,33 @@ DistanceToleranceFunction::getAlternativeLabels(
 			// now we have found a boundary pixel within our neighborhood
 			float label = (*(recLabels)[j.z])(j.x, j.y);
 
-			// collect all alternative labels
-			if (label != cellLabel)
-				neighborhoodLabels.insert(label);
+			// count how often we see a neighbor label the first time
+			if (label != cellLabel) {
+
+				bool firstTime = neighborhoodLabels.insert(label).second;
+				if (firstTime)
+					maxObservations = std::max(++counts[label], maxObservations);
+			}
 		}
 
-		if (alternativeLabels.size() != 0) {
+		numVisited++;
 
-			// intersect new alternative labels with current alternative 
-			// labels
-			std::set<float> intersection;
-			std::insert_iterator<std::set<float> > inserter(intersection, intersection.begin());
-			std::set_intersection(alternativeLabels.begin(), alternativeLabels.end(), neighborhoodLabels.begin(), neighborhoodLabels.end(), inserter);
-			std::swap(intersection, alternativeLabels);
-
-			// if empty, break
-			if (alternativeLabels.size() == 0)
-				break;
-
-		} else {
-
-			// this must be the first location we test, simply accept new 
-			// alternative labels
-			alternativeLabels = neighborhoodLabels;
-		}
+		// if none of the neighbor labels has been seen at least as 
+		// often as we visited cell locations, there are none that cover 
+		// the whole cell
+		if (maxObservations < numVisited)
+			break;
 	}
+
+	std::set<float> alternativeLabels;
+
+	// collect all neighbor labels that we have seen for every location of the 
+	// cell
+	float label;
+	unsigned int count;
+	foreach (boost::tie(label, count), counts)
+		if (count == cell.size())
+			alternativeLabels.insert(label);
 
 	return alternativeLabels;
 }
