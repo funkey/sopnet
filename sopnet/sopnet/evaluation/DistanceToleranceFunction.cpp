@@ -314,8 +314,5 @@ DistanceToleranceFunction::getAlternativeLabels(
 		if (count == cell.size())
 			alternativeLabels.insert(label);
 
-	if (alternativeLabels.size() != maxAlternativeLabels)
-		LOG_ERROR(distancetolerancelog) << "MAX ALTERNATIVE LABELS DOES NOT MATCH NUMBER OF LABELS FOUND!" << std::endl;
-
 	return alternativeLabels;
 }
