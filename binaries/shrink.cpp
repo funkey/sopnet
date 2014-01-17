@@ -5,6 +5,7 @@
  */
 
 #include <iostream>
+#include <vigra/multi_distance.hxx>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/NamedView.h>
@@ -30,6 +31,11 @@ util::ProgramOption optionDistance(
 		util::_description_text = "The amount in nm by which to shrink.",
 		util::_default_value    = 50);
 
+util::ProgramOption optionKeep(
+		util::_long_name        = "keep",
+		util::_description_text = "The minimal size of each region to keep while shrinking.",
+		util::_default_value    = 10);
+
 util::ProgramOption optionHeadless(
 		util::_long_name        = "headless",
 		util::_description_text = "Don't show the gui.");
@@ -52,7 +58,8 @@ private:
 		float resY = 4.0;
 		float resZ = 40.0;
 
-		float distance = optionDistance;
+		float shrinkDistance2 = optionDistance.as<float>()*optionDistance.as<float>();
+		float keepDistance = optionKeep;
 
 		int depth = _stack->size();
 		if (depth == 0)
@@ -60,56 +67,65 @@ private:
 		int width  = (*_stack)[0]->width();
 		int height = (*_stack)[0]->height();
 
-		int distanceX = (int)optionDistance/resX;
-		int distanceY = (int)optionDistance/resY;
-		int distanceZ = (int)optionDistance/resZ;
+		vigra::MultiArray<3, float> boundaryDistance2(vigra::Shape3(width, height, depth));
+		boundaryDistance2 = 0;
 
+		for (int z = 0; z < depth; z++)
+			for (int y = 0; y < height; y++)
+				for (int x = 0; x < width; x++)
+					if ((*(*_stack)[z])(x, y) == 0)
+						boundaryDistance2(x, y, z) = 1.0;
+
+
+		float pitch[3];
+		pitch[0] = resX;
+		pitch[1] = resY;
+		pitch[2] = resZ;
+
+		// compute l2 distance for each pixel to boundary
+		vigra::separableMultiDistSquared(
+				boundaryDistance2,
+				boundaryDistance2,
+				true /* background */,
+				pitch);
+
+		// for each region, get maximal boundary distance
+		std::map<float, float> maxDistances2;
+		for (int z = 0; z < depth; z++)
+			for (int y = 0; y < height; y++)
+				for (int x = 0; x < width; x++) {
+
+					float label = (*(*_stack)[z])(x, y);
+					maxDistances2[label] = std::max(boundaryDistance2(x, y, z), maxDistances2[label]);
+				}
+
+		// prepare output stack
 		_shrunken->clear();
 		for (int i = 0; i < depth; i++) {
 			boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(width*height, 0.5);
 			_shrunken->add(boost::make_shared<Image>(width, height, data));
 		}
 
+		// shrink
 		for (int z = 0; z < depth; z++)
 			for (int y = 0; y < height; y++)
 				for (int x = 0; x < width; x++) {
 
-					bool done = false;
+					float label = (*(*_stack)[z])(x, y);
 
-					for (int dz = -distanceZ; dz <= distanceZ; dz++) {
-						for (int dy = -distanceY; dy < distanceY; dy++) {
-							for (int dx = -distanceX; dx < distanceY; dx++) {
+					if (label == 0) {
 
-								// on sphere?
-								if (dx*dx*resX*resX + dy*dy*resY*resY + dz*dz*resZ*resZ <= distance*distance)
-									continue;
-
-								int tx = x + dx;
-								int ty = y + dy;
-								int tz = z + dz;
-
-								// in volume
-								if (tx < 0 || tx >= width || ty < 0 || ty >= height || tz < 0 || tz >= depth)
-									continue;
-
-								if ((*(*_stack)[tz])(tx, ty) == 0) {
-
-									(*(*_shrunken)[z])(x, y) = 0;
-									done = true;
-									break;
-								}
-							}
-
-							if (done)
-								break;
-						}
-
-						if (done)
-							break;
+						(*(*_shrunken)[z])(x, y) = 0;
+						continue;
 					}
 
-					if (!done)
-						(*(*_shrunken)[z])(x, y) = (*(*_stack)[z])(x, y);
+					float maxDistance2 = maxDistances2[label];
+					float distance2 = boundaryDistance2(x, y, z);
+
+					if (distance2 <= shrinkDistance2 && (sqrt(maxDistance2) - sqrt(distance2)) > keepDistance)
+						(*(*_shrunken)[z])(x, y) = 0;
+					else
+						(*(*_shrunken)[z])(x, y) = label;
 				}
 	}
 
