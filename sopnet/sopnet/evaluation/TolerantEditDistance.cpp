@@ -62,7 +62,7 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerOutput(_fnLocations, "false negatives");
 	registerOutput(_errors, "errors");
 
-	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>());
+	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
 }
 
 TolerantEditDistance::~TolerantEditDistance() {
@@ -338,6 +338,12 @@ TolerantEditDistance::findBestCellLabels() {
 	// number of splits and merges
 	foreach (unsigned int ind, _alternativeIndicators)
 		objective->setCoefficient(ind, 1.0/(_numCells + 1));
+	// if we have to change a label, slightly prefer the background -- this 
+	// makes merges with background and false positives look nicer
+	if (_haveBackgroundLabel) {
+		foreach (unsigned int ind, getIndicatorsByRec(_recBackgroundLabel))
+			objective->setCoefficient(ind, -0.5/(_numCells + 1));
+	}
 	objective->setSense(Minimize);
 
 	// solve
