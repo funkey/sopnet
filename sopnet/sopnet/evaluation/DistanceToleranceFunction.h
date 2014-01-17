@@ -7,7 +7,10 @@ class DistanceToleranceFunction : public LocalToleranceFunction {
 
 public:
 
-	DistanceToleranceFunction(float distanceThreshold);
+	DistanceToleranceFunction(
+			float distanceThreshold,
+			bool haveBackgroundLabel,
+			float backgroundLabel = 0.0);
 
 	void extractCells(
 			unsigned int numCells,
@@ -42,6 +45,9 @@ private:
 
 	// the distance threshold in nm
 	float _maxDistanceThreshold;
+
+	bool _haveBackgroundLabel;
+	float _backgroundLabel;
 
 	// the size of one voxel
 	float _resolutionX;

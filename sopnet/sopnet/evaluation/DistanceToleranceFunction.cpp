@@ -6,8 +6,13 @@
 
 logger::LogChannel distancetolerancelog("distancetolerancelog", "[DistanceToleranceFunction] ");
 
-DistanceToleranceFunction::DistanceToleranceFunction(float distanceThreshold) :
-	_maxDistanceThreshold(distanceThreshold) {
+DistanceToleranceFunction::DistanceToleranceFunction(
+		float distanceThreshold,
+		bool haveBackgroundLabel,
+		float backgroundLabel) :
+	_maxDistanceThreshold(distanceThreshold),
+	_haveBackgroundLabel(haveBackgroundLabel),
+	_backgroundLabel(backgroundLabel) {
 
 	_resolutionX = 4.0;
 	_resolutionY = 4.0;
@@ -130,9 +135,14 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 
 		cell_t& cell = (*_cells)[index];
 
-		LOG_ALL(distancetolerancelog) << "processing cell " << index << std::flush;
+		LOG_ALL(distancetolerancelog) << "processing cell " << index << " (label " << cell.getReconstructionLabel() << ")" << std::flush;
 
 		std::set<float> alternativeLabels = getAlternativeLabels(cell, neighborhood, recLabels);
+
+		// every cell that is small enough to be relabelled is allowed to change
+		// to background label
+		if (_haveBackgroundLabel)
+			alternativeLabels.insert(_backgroundLabel);
 
 		LOG_ALL(distancetolerancelog) << "; can map to ";
 

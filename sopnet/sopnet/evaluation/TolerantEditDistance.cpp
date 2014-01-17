@@ -62,7 +62,7 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerOutput(_fnLocations, "false negatives");
 	registerOutput(_errors, "errors");
 
-	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>());
+	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
 }
 
 TolerantEditDistance::~TolerantEditDistance() {
