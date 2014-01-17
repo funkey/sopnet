@@ -205,14 +205,21 @@ DistanceToleranceFunction::getAlternativeLabels(
 	// the number of cell locations visited so far
 	unsigned int numVisited = 0;
 
+	// the maximal number of alternative labels, starts with number of labels 
+	// found at first location and decreases whenever one label was not found
+	unsigned int maxAlternativeLabels = 0;
+
 	// for each location i in that cell
 	foreach (const cell_t::Location& i, cell) {
 
 		// all the labels in the neighborhood of i
 		std::set<float> neighborhoodLabels;
 
-		// the maximal number of times we have seen any neighbor label
-		unsigned int maxObservations = 0;
+		numVisited++;
+
+		// the number of complete neighbor labels that have been seen at the 
+		// current location
+		unsigned int numComplete = 0;
 
 		// for all locations within the neighborhood, get alternative labels
 		foreach (const cell_t::Location& n, neighborhood) {
@@ -234,17 +241,30 @@ DistanceToleranceFunction::getAlternativeLabels(
 			if (label != cellLabel) {
 
 				bool firstTime = neighborhoodLabels.insert(label).second;
+
+				// seen the first time for the current location i
 				if (firstTime)
-					maxObservations = std::max(++counts[label], maxObservations);
+					// is a potential alternative label (covers all visited 
+					// locations so far)
+					if (++counts[label] == numVisited) {
+
+						numComplete++;
+
+						// if we have seen all the possible complete labels 
+						// already, there is no need to search further for the 
+						// current location i
+						if (numComplete == maxAlternativeLabels)
+							break;
+					}
 			}
 		}
 
-		numVisited++;
+		// the number of labels that we have seen for each location visited so 
+		// far is the maximal possible number of alternative labels
+		maxAlternativeLabels = numComplete;
 
-		// if none of the neighbor labels has been seen at least as 
-		// often as we visited cell locations, there are none that cover 
-		// the whole cell
-		if (maxObservations < numVisited)
+		// none of the neighbor labels covers the cell
+		if (maxAlternativeLabels == 0)
 			break;
 	}
 
@@ -257,6 +277,9 @@ DistanceToleranceFunction::getAlternativeLabels(
 	foreach (boost::tie(label, count), counts)
 		if (count == cell.size())
 			alternativeLabels.insert(label);
+
+	if (alternativeLabels.size() != maxAlternativeLabels)
+		LOG_ERROR(distancetolerancelog) << "MAX ALTERNATIVE LABELS DOES NOT MATCH NUMBER OF LABELS FOUND!" << std::endl;
 
 	return alternativeLabels;
 }
