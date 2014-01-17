@@ -177,15 +177,41 @@ DistanceToleranceFunction::createNeighborhood() {
 
 	std::vector<cell_t::Location> thresholdOffsets;
 
+	// quick check first: test on all three axes -- if they contain all covering
+	// labels already, we can abort iterating earlier in getAlternativeLabels()
+
+	for (int z = 1; z <= _maxDistanceThresholdZ; z++) {
+
+		thresholdOffsets.push_back(cell_t::Location(0, 0,  z));
+		thresholdOffsets.push_back(cell_t::Location(0, 0, -z));
+	}
+	for (int y = 1; y <= _maxDistanceThresholdY; y++) {
+
+		thresholdOffsets.push_back(cell_t::Location(0,  y, 0));
+		thresholdOffsets.push_back(cell_t::Location(0, -y, 0));
+	}
+	for (int x = 1; x <= _maxDistanceThresholdX; x++) {
+
+		thresholdOffsets.push_back(cell_t::Location( x, 0, 0));
+		thresholdOffsets.push_back(cell_t::Location(-x, 0, 0));
+	}
+
 	for (int z = -_maxDistanceThresholdZ; z <= _maxDistanceThresholdZ; z++)
 		for (int y = -_maxDistanceThresholdY; y <= _maxDistanceThresholdY; y++)
-			for (int x = -_maxDistanceThresholdX; x <= _maxDistanceThresholdX; x++)
+			for (int x = -_maxDistanceThresholdX; x <= _maxDistanceThresholdX; x++) {
+
+				// axis locations have been added already, center is not needed
+				if ((x == 0 && y == 0) || (x == 0 && z == 0) || (y == 0 && z == 0))
+					continue;
+
+				// is it within threshold distance?
 				if (
 						x*_resolutionX*x*_resolutionX +
 						y*_resolutionY*y*_resolutionY +
 						z*_resolutionZ*z*_resolutionZ <= _maxDistanceThreshold*_maxDistanceThreshold)
 
 					thresholdOffsets.push_back(cell_t::Location(x, y, z));
+			}
 
 	return thresholdOffsets;
 }
