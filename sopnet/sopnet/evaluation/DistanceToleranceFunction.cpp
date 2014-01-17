@@ -167,17 +167,24 @@ DistanceToleranceFunction::isBoundaryVoxel(int x, int y, int z, const ImageStack
 
 	float center = (*stack[z])(x, y);
 
-	for (int dz = -1; dz <= 1; dz++)
-		for (int dy = -1; dy <= 1; dy++)
-			for (int dx = -1; dx <= 1; dx++)
-				if (
-						!(dx == 0 && dy == 0 && dz == 0) &&
-						(x + dx) >= 0 && (x + dx) < (int)_width  &&
-						(y + dy) >= 0 && (y + dy) < (int)_height &&
-						(z + dz) >= 0 && (z + dz) < (int)_depth)
-
-					if ((*stack[z + dz])(x + dx, y + dy) != center)
-						return true;
+	if (x > 0)
+		if ((*stack[z])(x - 1, y) != center)
+			return true;
+	if (x < (int)_width - 1)
+		if ((*stack[z])(x + 1, y) != center)
+			return true;
+	if (y > 0)
+		if ((*stack[z])(x, y - 1) != center)
+			return true;
+	if (y < (int)_height - 1)
+		if ((*stack[z])(x, y + 1) != center)
+			return true;
+	if (z > 0)
+		if ((*stack[z - 1])(x, y) != center)
+			return true;
+	if (z < (int)_depth - 1)
+		if ((*stack[z + 1])(x, y) != center)
+			return true;
 
 	return false;
 }
