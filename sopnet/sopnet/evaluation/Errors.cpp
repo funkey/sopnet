@@ -46,7 +46,7 @@ void
 Errors::addMapping(unsigned int cellIndex, float recLabel) {
 
 	if (!_cells)
-		BOOST_THROW_EXCEPTION(UsageError() << error_message("cells need to be set before using addMapping()"));
+		BOOST_THROW_EXCEPTION(UsageError() << error_message("cells need to be set before using addMapping()") << STACK_TRACE);
 
 	float gtLabel = (*_cells)[cellIndex].getGroundTruthLabel();
 
@@ -82,7 +82,7 @@ unsigned int
 Errors::getOverlap(float gtLabel, float recLabel) {
 
 	if (!_cells)
-		BOOST_THROW_EXCEPTION(UsageError() << error_message("cells need to be set before using getOverlap()"));
+		BOOST_THROW_EXCEPTION(UsageError() << error_message("cells need to be set before using getOverlap()") << STACK_TRACE);
 
 	if (_cellsByGtToRecLabel.count(gtLabel) == 0 || _cellsByGtToRecLabel[gtLabel].count(recLabel) == 0)
 		return 0;

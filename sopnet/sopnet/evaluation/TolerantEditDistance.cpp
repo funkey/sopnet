@@ -103,10 +103,10 @@ void
 TolerantEditDistance::extractCells() {
 
 	if (_groundTruth->size() != _reconstruction->size())
-		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size"));
+		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size") << STACK_TRACE);
 
 	if (_groundTruth->height() != _reconstruction->height() || _groundTruth->width() != _reconstruction->width())
-		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size"));
+		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size") << STACK_TRACE);
 
 	_depth  = _groundTruth->size();
 	_width  = _groundTruth->width();

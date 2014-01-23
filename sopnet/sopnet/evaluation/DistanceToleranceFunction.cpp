@@ -1,5 +1,5 @@
 #include <vigra/multi_distance.hxx>
-#include <vigra/impex.hxx>
+//#include <vigra/multi_impex.hxx>
 
 #include <util/Logger.h>
 #include "DistanceToleranceFunction.h"
@@ -32,6 +32,10 @@ DistanceToleranceFunction::extractCells(
 
 	createBoundaryMap(recLabels);
 	createBoundaryDistanceMap();
+
+	//vigra::exportVolume(cellLabels, vigra::VolumeExportInfo("cell_labels/cell_labels", ".tif").setPixelType("FLOAT"));
+	//vigra::exportVolume(_boundaryMap, vigra::VolumeExportInfo("boundaries/boundaries", ".tif").setPixelType("FLOAT"));
+	//vigra::exportVolume(_boundaryDistance2, vigra::VolumeExportInfo("distances/boundary_distance2", ".tif").setPixelType("FLOAT"));
 
 	// create a cell for each found connected component in cellLabels
 	_cells->resize(numCells);

@@ -6,6 +6,7 @@
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/NamedView.h>
+#include <gui/NumberView.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <imageprocessing/gui/ImageStackView.h>
@@ -14,6 +15,8 @@
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
+#include <sopnet/evaluation/VariationOfInformation.h>
+#include <sopnet/evaluation/RandIndex.h>
 #include <util/ProgramOptions.h>
 #include <util/Logger.h>
 
@@ -32,6 +35,14 @@ util::ProgramOption optionReconstruction(
 util::ProgramOption optionHeadless(
 		util::_long_name        = "headless",
 		util::_description_text = "Don't show the gui.");
+
+util::ProgramOption optionVoi(
+		util::_long_name        = "voi",
+		util::_description_text = "Compute the variation of information as well.");
+
+util::ProgramOption optionRand(
+		util::_long_name        = "rand",
+		util::_description_text = "Compute the Rand index as well.");
 
 int main(int optionc, char** optionv) {
 
@@ -62,10 +73,27 @@ int main(int optionc, char** optionv) {
 
 		pipeline::Process<TolerantEditDistance> editDistance;
 
+		// setup comparison measures
+
+		pipeline::Process<VariationOfInformation> voi;
+		pipeline::Process<RandIndex>              rand;
+
 		// connect
 
 		editDistance->setInput("ground truth", groundTruthReader->getOutput());
 		editDistance->setInput("reconstruction", reconstructionReader->getOutput());
+
+		if (optionVoi) {
+
+			voi->setInput("stack 1", groundTruthReader->getOutput());
+			voi->setInput("stack 2", reconstructionReader->getOutput());
+		}
+
+		if (optionRand) {
+
+			rand->setInput("stack 1", groundTruthReader->getOutput());
+			rand->setInput("stack 2", reconstructionReader->getOutput());
+		}
 
 		if (!optionHeadless) {
 
@@ -115,6 +143,26 @@ int main(int optionc, char** optionv) {
 			container->addInput(mergesNamedView->getOutput());
 			container->addInput(fpNamedView->getOutput());
 			container->addInput(fnNamedView->getOutput());
+
+			if (optionVoi) {
+
+				pipeline::Process<gui::NamedView> voiNamedView("VOI");
+				pipeline::Process<gui::NumberView<double> > voiView;
+
+				voiView->setInput(voi->getOutput());
+				voiNamedView->setInput(voiView->getOutput());
+				container->addInput(voiNamedView->getOutput());
+			}
+
+			if (optionRand) {
+
+				pipeline::Process<gui::NamedView> randNamedView("RAND");
+				pipeline::Process<gui::NumberView<double> > randView;
+
+				randView->setInput(rand->getOutput());
+				randNamedView->setInput(randView->getOutput());
+				container->addInput(randNamedView->getOutput());
+			}
 
 			zoomView->setInput(container->getOutput());
 			window->setInput(zoomView->getOutput());
