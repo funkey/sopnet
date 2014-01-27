@@ -207,8 +207,12 @@ SplitMerge::mergeSlices(unsigned int interval, std::vector<Link>& links) {
 	std::sort(links.begin(), links.end());
 
 	std::map<boost::shared_ptr<Slice>, std::set<boost::shared_ptr<Slice> > > partners;
+
+	// process links from closest to furthest to identify partner sets, stop as 
+	// soon as all slices are in one set
 	foreach (Link& link, links) {
 
+		// if we found partners for each slice
 		if (partners.size() == numSlices)
 			break;
 
@@ -241,66 +245,62 @@ SplitMerge::mergeSlices(unsigned int interval, std::vector<Link>& links) {
 	std::set<boost::shared_ptr<Slice> > ps;
 	foreach (boost::tie(s, ps), partners) {
 
+		// all slices have been linked by segments
 		if (linkedSlices.size() == numSlices)
 			break;
 
+		// this slice has been linked already
 		if (linkedSlices.count(s))
 			continue;
+
+		// now we connect s to all its partners ps with segments
 
 		// remember all slices that have been handled so far
 		foreach (boost::shared_ptr<Slice> p, ps)
 			linkedSlices.insert(p);
 
-		typename std::set<boost::shared_ptr<Slice> >::iterator i = ps.begin();
+		// if there is only one partner, it's the slice itself, so this has to 
+		// become an end
+		if (ps.size() == 0) {
 
-		if (ps.size() == 2) {
-
-			boost::shared_ptr<Slice> left = *i;
-			i++;
-			boost::shared_ptr<Slice> right = *i;
-
-			if (left->getSection() > right->getSection())
-				std::swap(left, right);
-
-			boost::shared_ptr<ContinuationSegment> continuation = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, left, right);
-
-			_segments->add(continuation);
-
-			LOG_DEBUG(splitmergelog) << "added a continuation between slice " << left->getId() << " and " << right->getId() << std::endl;
-
-		} else if (ps.size() == 3) {
-
-			boost::shared_ptr<Slice> s1 = *i; i++;
-			boost::shared_ptr<Slice> s2 = *i; i++;
-			boost::shared_ptr<Slice> s3 = *i;
-
-			double section;
-			double offset;
-			offset = modf((double)(s1->getSection()+s2->getSection()+s3->getSection())/3.0, &section);
-			Direction direction = (offset > 0.5 ? Right : Left);
-
-			boost::shared_ptr<BranchSegment> branch;
-			if (s1->getSection() == s2->getSection())
-				branch = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, s3, s1, s2);
-			else if (s1->getSection() == s3->getSection())
-				branch = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, s2, s1, s3);
+			boost::shared_ptr<Slice> slice = *ps.begin();
+			if (slice->getSection() == interval)
+				_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, slice));
 			else
-				branch = boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), direction, s1, s2, s3);
+				_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, slice));
 
-			_segments->add(branch);
-
-			LOG_USER(splitmergelog) << "added a branch between slices " << s1->getId() << ", " << s2->getId() << ", and " << s3->getId() << std::endl;
-
-		} else {
-
-			LOG_ERROR(splitmergelog) << "something wants to merge " << ps.size() << " slices -- don't know what to do." << std::endl;
-
-			foreach (boost::shared_ptr<Slice> slice, ps)
-				if (slice->getSection() == interval)
-					_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Left, slice));
-				else
-					_segments->add(boost::make_shared<EndSegment>(Segment::getNextSegmentId(), Right, slice));
+			continue;
 		}
+
+		// for each pair of partners, introduce a continuation segment
+		typename std::set<boost::shared_ptr<Slice> >::iterator i, j;
+		for (i = ps.begin(); i != ps.end(); i++)
+			for (j = i; j != ps.end(); j++) {
+
+				// if both are in the same section
+				if ((*i)->getSection() == (*j)->getSection())
+					continue;
+
+				boost::shared_ptr<Slice> left;
+				boost::shared_ptr<Slice> right;
+
+				if ((*i)->getSection() < (*j)->getSection()) {
+
+					left  = *i;
+					right = *j;
+
+				} else {
+
+					left  = *j;
+					right = *i;
+				}
+
+				boost::shared_ptr<ContinuationSegment> continuation = boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, left, right);
+
+				_segments->add(continuation);
+
+				LOG_DEBUG(splitmergelog) << "added a continuation between slice " << left->getId() << " and " << right->getId() << std::endl;
+			}
 	}
 }
 
@@ -330,11 +330,9 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 
 			std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(signal.position, *_section, 1000000);
 			std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(signal.position, *_section, 1000000);
-			std::vector<boost::shared_ptr<BranchSegment> >       branches      = _segments->findBranches(signal.position, *_section, 1000000);
 
 			std::copy(ends.begin(),          ends.end(),          std::back_inserter(closestSegments));
 			std::copy(continuations.begin(), continuations.end(), std::back_inserter(closestSegments));
-			std::copy(branches.begin(),      branches.end(),      std::back_inserter(closestSegments));
 		}
 
 		// get all the slices that are in the current section
