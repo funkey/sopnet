@@ -36,7 +36,7 @@ SegmentTrees::updateSectionNums() {
 				fit(endSegment->getSlice()->getSection());
 			foreach (boost::shared_ptr<ContinuationSegment> continuationSegment, neuron->getContinuations()) {
 				fit(continuationSegment->getSourceSlice()->getSection());
-				fit(continuationSegment->getSourceSlice()->getSection());
+				fit(continuationSegment->getTargetSlice()->getSection());
 			}
 			foreach (boost::shared_ptr<BranchSegment> branchSegment, neuron->getBranches()) {
 				fit(branchSegment->getSourceSlice()->getSection());
