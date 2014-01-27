@@ -68,7 +68,6 @@ GroundTruthSegmentExtractor::updateOutputs() {
 
 		// a list of all possible non-end segments between the ground truth slices
 		std::vector<std::pair<double, boost::shared_ptr<ContinuationSegment> > > continuationSegments;
-		std::vector<std::pair<double, boost::shared_ptr<BranchSegment> > >       branchSegments;
 
 		// add all possible continuations
 		foreach (boost::shared_ptr<Slice> prevSlice, prevSlices)
@@ -78,32 +77,10 @@ GroundTruthSegmentExtractor::updateOutputs() {
 								distance(*prevSlice, *nextSlice),
 								boost::make_shared<ContinuationSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice)));
 
-		// add all possible branches to the next slice
-		foreach (boost::shared_ptr<Slice> prevSlice, prevSlices)
-			foreach (boost::shared_ptr<Slice> nextSlice1, nextSlices)
-				foreach (boost::shared_ptr<Slice> nextSlice2, nextSlices)
-					if (nextSlice1->getId() < nextSlice2->getId())
-						branchSegments.push_back(
-								std::make_pair(
-										distance(*prevSlice, *nextSlice1) + distance(*prevSlice, *nextSlice2),
-										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Right, prevSlice, nextSlice1, nextSlice2)));
-
-		// add all possible branches to the previous slice
-		foreach (boost::shared_ptr<Slice> nextSlice, nextSlices)
-			foreach (boost::shared_ptr<Slice> prevSlice1, prevSlices)
-				foreach (boost::shared_ptr<Slice> prevSlice2, prevSlices)
-					if (prevSlice1->getId() < prevSlice2->getId())
-						branchSegments.push_back(
-								std::make_pair(
-										distance(*nextSlice, *prevSlice1) + distance(*nextSlice, *prevSlice2),
-										boost::make_shared<BranchSegment>(Segment::getNextSegmentId(), Left, nextSlice, prevSlice1, prevSlice2)));
-
 		LOG_ALL(groundtruthsegmentextractorlog) << "considering " << continuationSegments.size() << " possible continuation segments" << std::endl;
-		LOG_ALL(groundtruthsegmentextractorlog) << "considering " << branchSegments.size() << " possible branch segments" << std::endl;
 
 		// sort segments based on their set difference ratio
 		std::sort(continuationSegments.begin(), continuationSegments.end());
-		std::sort(branchSegments.begin(), branchSegments.end());
 
 		// create sets of remaining slices
 		_remainingPrevSlices.clear();
@@ -111,14 +88,10 @@ GroundTruthSegmentExtractor::updateOutputs() {
 		std::copy(prevSlices.begin(), prevSlices.end(), std::inserter(_remainingPrevSlices, _remainingPrevSlices.begin()));
 		std::copy(nextSlices.begin(), nextSlices.end(), std::inserter(_remainingNextSlices, _remainingNextSlices.begin()));
 
-		// accept all branches that have spatial overlap
+		// accept all possible continuations
 		double distance;
-		boost::shared_ptr<BranchSegment> branch;
-		foreach (boost::tie(distance, branch), branchSegments)
-			probeBranch(branch);
-
-		// accept all remaining possible continuations
 		boost::shared_ptr<ContinuationSegment> continuation;
+
 		foreach (boost::tie(distance, continuation), continuationSegments)
 			probeContinuation(continuation);
 
@@ -147,93 +120,31 @@ GroundTruthSegmentExtractor::probeContinuation(boost::shared_ptr<ContinuationSeg
 
 	if (continuation->getDirection() == Left) {
 
-		if (_remainingPrevSlices.count(continuation->getTargetSlice()) == 0)
-			return;
-
-		if (_remainingNextSlices.count(continuation->getSourceSlice()) == 0)
+		// if both involved slices are explained already
+		if (
+				_remainingPrevSlices.count(continuation->getTargetSlice()) == 0 &&
+				_remainingNextSlices.count(continuation->getSourceSlice()) == 0)
 			return;
 
 		_segments->add(continuation);
 
+		// remove explained slices
 		_remainingPrevSlices.erase(continuation->getTargetSlice());
 		_remainingNextSlices.erase(continuation->getSourceSlice());
 
 	} else {
 
-		if (_remainingNextSlices.count(continuation->getTargetSlice()) == 0)
-			return;
-
-		if (_remainingPrevSlices.count(continuation->getSourceSlice()) == 0)
+		// if both involved slices are explained already
+		if (
+				_remainingNextSlices.count(continuation->getTargetSlice()) == 0 &&
+				_remainingPrevSlices.count(continuation->getSourceSlice()) == 0)
 			return;
 
 		_segments->add(continuation);
 
+		// remove explained slices
 		_remainingPrevSlices.erase(continuation->getSourceSlice());
 		_remainingNextSlices.erase(continuation->getTargetSlice());
-	}
-}
-
-void
-GroundTruthSegmentExtractor::probeBranch(boost::shared_ptr<BranchSegment> branch) {
-
-	// be picky about branches:
-
-	LOG_ALL(groundtruthsegmentextractorlog)
-			<< "value is " << branch->getSourceSlice()->getComponent()->getValue() << ", "
-			<< "evaluating branch from " << std::endl
-			<< branch->getSourceSlice()->getComponent()->getCenter() << " to "
-			<< branch->getTargetSlice1()->getComponent()->getCenter() << " and "
-			<< branch->getTargetSlice2()->getComponent()->getCenter() << std::endl;
-
-	LOG_ALL(groundtruthsegmentextractorlog)
-		<< normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice1()) << " "
-		<< normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice2()) << std::endl;
-
-	// there has to be overlap between source and both targets
-	if (normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice1()) > 0.9)
-		return;
-	if (normalizedSetDifference(*branch->getSourceSlice(), *branch->getTargetSlice2()) > 0.9)
-		return;
-
-	// targets shouldn't move too much
-	if (distance(*branch->getSourceSlice(), *branch->getTargetSlice1()) > _maxSegmentDistance)
-		return;
-	if (distance(*branch->getSourceSlice(), *branch->getTargetSlice2()) > _maxSegmentDistance)
-		return;
-
-	if (branch->getDirection() == Left) {
-
-		if (_remainingPrevSlices.count(branch->getTargetSlice1()) == 0)
-			return;
-
-		if (_remainingPrevSlices.count(branch->getTargetSlice2()) == 0)
-			return;
-
-		if (_remainingNextSlices.count(branch->getSourceSlice()) == 0)
-			return;
-
-		_segments->add(branch);
-
-		_remainingPrevSlices.erase(branch->getTargetSlice1());
-		_remainingPrevSlices.erase(branch->getTargetSlice2());
-		_remainingNextSlices.erase(branch->getSourceSlice());
-
-	} else {
-
-		if (_remainingNextSlices.count(branch->getTargetSlice1()) == 0)
-			return;
-
-		if (_remainingNextSlices.count(branch->getTargetSlice2()) == 0)
-			return;
-
-		if (_remainingPrevSlices.count(branch->getSourceSlice()) == 0)
-			return;
-
-		_segments->add(branch);
-
-		_remainingNextSlices.erase(branch->getTargetSlice1());
-		_remainingNextSlices.erase(branch->getTargetSlice2());
-		_remainingPrevSlices.erase(branch->getSourceSlice());
 	}
 }
 

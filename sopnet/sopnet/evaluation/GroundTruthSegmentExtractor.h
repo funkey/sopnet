@@ -23,12 +23,6 @@ private:
 	void probeContinuation(boost::shared_ptr<ContinuationSegment> continuation);
 
 	/**
-	 * Checks, whether the given segment is consistent with the currently found
-	 * ones and adds it to the output, if this is the case.
-	 */
-	void probeBranch(boost::shared_ptr<BranchSegment> branch);
-
-	/**
 	 * Get the distance between two slices.
 	 */
 	double distance(const Slice& slice1, const Slice& slice2);
