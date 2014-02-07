@@ -234,18 +234,6 @@ int main(int optionc, char** optionv) {
 		resultContainer->addInput(segmentsContainer->getOutput());
 		resultZoomView->setInput(resultContainer->getOutput());
 
-		// create basic views
-		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
-		boost::shared_ptr<ImageStackView> membranesView   = boost::make_shared<ImageStackView>();
-		boost::shared_ptr<ImageStackView> slicesView      = boost::make_shared<ImageStackView>();
-		boost::shared_ptr<ImageStackView> groundTruthView = boost::make_shared<ImageStackView>();
-
-		// fill first row
-		imageStackContainer->addInput(rawSectionsView->getOutput());
-		imageStackContainer->addInput(membranesView->getOutput());
-		imageStackContainer->addInput(slicesView->getOutput());
-		imageStackContainer->addInput(groundTruthView->getOutput());
-
 		// create section readers
 		boost::shared_ptr<pipeline::ProcessNode> rawSectionsReader;
 		boost::shared_ptr<pipeline::ProcessNode> membranesReader;
@@ -274,7 +262,11 @@ int main(int optionc, char** optionv) {
 				LOG_USER(out) << "found a synapse directory" << std::endl;
 				synapseReader = boost::make_shared<ImageStackDirectoryReader>(synDir.string());
 			}
-			groundTruthReader = boost::make_shared<ImageStackDirectoryReader>("./groundtruth/");
+			boost::filesystem::path gtDir("./groundtruth/");
+			if (boost::filesystem::is_directory(gtDir)) {
+				LOG_USER(out) << "found a ground-truth directory" << std::endl;
+				groundTruthReader = boost::make_shared<ImageStackDirectoryReader>(gtDir.string());
+			}
 
 			// list all directories under ./slices for the image stack option
 			boost::filesystem::path dir("./slices/");
@@ -329,7 +321,8 @@ int main(int optionc, char** optionv) {
 				mitochondriaSelector->setInput(mitochondriaReader->getOutput());
 			if (synapseReader)
 				synapseSelector->setInput(synapseReader->getOutput());
-			groundTruthSelector->setInput(groundTruthReader->getOutput());
+			if (groundTruthReader)
+				groundTruthSelector->setInput(groundTruthReader->getOutput());
 
 			// sneakily pretend the selectors are the readers
 			rawSectionsReader = rawSelector;
@@ -338,7 +331,8 @@ int main(int optionc, char** optionv) {
 				mitochondriaReader = mitochondriaSelector;
 			if (synapseReader)
 				synapseReader = synapseSelector;
-			groundTruthReader = groundTruthSelector;
+			if (groundTruthReader)
+				groundTruthReader = groundTruthSelector;
 
 			// special case: select a subset of the slice hypotheses
 			if (optionSlicesFromStacks) {
@@ -365,11 +359,25 @@ int main(int optionc, char** optionv) {
 			}
 		}
 
+		// create basic views
+		boost::shared_ptr<ImageStackView> rawSectionsView = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> membranesView   = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> slicesView      = boost::make_shared<ImageStackView>();
+		boost::shared_ptr<ImageStackView> groundTruthView = boost::make_shared<ImageStackView>();
+
+		// fill first row
+		imageStackContainer->addInput(rawSectionsView->getOutput());
+		imageStackContainer->addInput(membranesView->getOutput());
+		imageStackContainer->addInput(slicesView->getOutput());
+		if (groundTruthReader)
+			imageStackContainer->addInput(groundTruthView->getOutput());
+
 		// set input for image stack views
 		rawSectionsView->setInput(rawSectionsReader->getOutput());
 		membranesView->setInput(membranesReader->getOutput());
 		slicesView->setInput(slicesReader->getOutput());
-		groundTruthView->setInput(groundTruthReader->getOutput());
+		if (groundTruthReader)
+			groundTruthView->setInput(groundTruthReader->getOutput());
 
 		// create sopnet pipeline
 		boost::shared_ptr<Sopnet> sopnet = boost::make_shared<Sopnet>("projects dir not yet implemented");
@@ -385,7 +393,18 @@ int main(int optionc, char** optionv) {
 			sopnet->setInput("mitochondria slices", mitochondriaReader->getOutput());
 		if (synapseReader)
 			sopnet->setInput("synapse slices", synapseReader->getOutput());
-		sopnet->setInput("ground truth", groundTruthReader->getOutput());
+		if (optionTraining) {
+
+			if (!groundTruthReader) {
+
+				LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
+				return -1;
+
+			} else {
+
+				sopnet->setInput("ground truth", groundTruthReader->getOutput());
+			}
+		}
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
 		sopnet->setInput("force explanation", sopnetDialog->getOutput("force explanation"));
@@ -550,7 +569,7 @@ int main(int optionc, char** optionv) {
 				resultView->setInput("current neuron", neuronsView->getOutput("current neuron"));
 		}
 
-		if (optionShowErrors) {
+		if (optionShowErrors && groundTruthReader) {
 
 			boost::shared_ptr<ErrorsView> errorsView = boost::make_shared<ErrorsView>();
 			boost::shared_ptr<NamedView>  namedView  = boost::make_shared<NamedView>("Errors:");
