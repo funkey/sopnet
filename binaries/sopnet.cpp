@@ -634,7 +634,11 @@ int main(int optionc, char** optionv) {
 
 				LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
 
-				boost::shared_ptr<NeuronsImageWriter> resultWriter = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory, optionSaveResultBasename);
+				boost::shared_ptr<NeuronsImageWriter> resultWriter =
+						boost::make_shared<NeuronsImageWriter>(
+								optionSaveResultDirectory,
+								optionSaveResultBasename,
+								optionFirstSection);
 
 				resultWriter->setInput(resultIdMapCreator->getOutput("id map"));
 				resultWriter->write();

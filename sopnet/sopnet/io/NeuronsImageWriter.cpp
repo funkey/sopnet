@@ -6,9 +6,13 @@
 
 #include "NeuronsImageWriter.h"
 
-NeuronsImageWriter::NeuronsImageWriter(std::string directory, std::string basename) :
+NeuronsImageWriter::NeuronsImageWriter(
+		std::string  directory,
+		std::string  basename,
+		unsigned int firstSection) :
 		_directory(directory),
-		_basename(basename) {
+		_basename(basename),
+		_firstSection(firstSection) {
 
 	registerInput(_idMap, "id map");
 	registerInput(_annotation, "annotation", pipeline::Optional);
@@ -44,7 +48,7 @@ NeuronsImageWriter::write() {
 
 		std::stringstream filename;
 
-		filename << _directory << "/" << _basename << std::setw(4) << std::setfill('0') << i << ".tiff";
+		filename << _directory << "/" << _basename << std::setw(4) << std::setfill('0') << (i + _firstSection) << ".tiff";
 
 		vigra::exportImage(srcImageRange(*(*_idMap)[i]), vigra::ImageExportInfo(filename.str().c_str()));
 	}

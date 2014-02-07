@@ -15,7 +15,14 @@ class NeuronsImageWriter : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	NeuronsImageWriter(std::string directory, std::string basename);
+	/**
+	 * Create a neuron image writer for the given directory and basename, 
+	 * starting counting the produced image files at firstSection.
+	 */
+	NeuronsImageWriter(
+			std::string directory,
+			std::string basename, 
+			unsigned int firstSection = 0);
 
 	void write();
 
@@ -26,8 +33,9 @@ private:
 	pipeline::Input<ImageStack> _idMap;
 	pipeline::Input<double>     _annotation;
 
-	std::string _directory;
-	std::string _basename;
+	std::string  _directory;
+	std::string  _basename;
+	unsigned int _firstSection;
 };
 
 #endif // SOPNET_IO_NEURONS_IMAGE_WRITER_H__
