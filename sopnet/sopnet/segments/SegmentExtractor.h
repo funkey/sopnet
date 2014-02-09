@@ -5,6 +5,7 @@
 
 #include <pipeline/all.h>
 #include <inference/LinearConstraints.h>
+#include <sopnet/slices/ConflictSets.h>
 #include <sopnet/features/Overlap.h>
 #include <sopnet/features/Distance.h>
 #include <sopnet/slices/Slices.h>
@@ -20,7 +21,7 @@ private:
 
 	void onSlicesModified(const pipeline::Modified& signal);
 
-	void onLinearConstraintsModified(const pipeline::Modified& signal);
+	void onConflictSetsModified(const pipeline::Modified& signal);
 
 	void updateOutputs();
 
@@ -46,15 +47,18 @@ private:
 
 	void assembleLinearConstraints();
 
-	void assembleLinearConstraint(const LinearConstraint& sliceConstraint);
+	void assembleLinearConstraint(const ConflictSet& conflictSet);
 
 	// the slices
 	pipeline::Input<Slices> _prevSlices;
 	pipeline::Input<Slices> _nextSlices;
 
-	// the linear constraints on the slices
-	pipeline::Input<LinearConstraints> _prevLinearConstraints;
-	pipeline::Input<LinearConstraints> _nextLinearConstraints;
+	// the conflict sets on the slices
+	pipeline::Input<ConflictSets> _prevConflictSets;
+	pipeline::Input<ConflictSets> _nextConflictSets;
+
+	// force exactly one segment per slice conflict set
+	pipeline::Input<bool> _forceExplanation;
 
 	// the extracted segments and the linear constraints on them
 	pipeline::Output<Segments>          _segments;
@@ -91,7 +95,7 @@ private:
 
 	bool _slicesChanged;
 
-	bool _linearCosntraintsChanged;
+	bool _conflictSetsChanged;
 };
 
 #endif // CELLTRACKER_TRACKLET_EXTRACTOR_H__

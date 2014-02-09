@@ -27,22 +27,6 @@ public:
 
 private:
 
-	// modifies the linear constraints according to the parameter 'force explanation'
-	class LinearConstraintsFilter : public pipeline::SimpleProcessNode<> {
-
-	public:
-
-		LinearConstraintsFilter();
-
-	private:
-
-		void updateOutputs();
-
-		pipeline::Input<LinearConstraints>  _linearConstraints;
-		pipeline::Input<bool>               _forceExplanation;
-		pipeline::Output<LinearConstraints> _filtered;
-	};
-
 	void onInputSet(const pipeline::InputSetBase& signal);
 
 	// optional mser parameters to override the program options
@@ -55,7 +39,6 @@ private:
 	boost::shared_ptr<ComponentTreeDownSampler> _downSampler;
 	boost::shared_ptr<ComponentTreePruner>      _pruner;
 	boost::shared_ptr<ComponentTreeConverter>   _converter;
-	boost::shared_ptr<LinearConstraintsFilter>  _filter;
 };
 
 #endif // SOPNET_SLICE_EXTRACTOR_H__

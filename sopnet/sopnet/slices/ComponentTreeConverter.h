@@ -8,12 +8,12 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ComponentTree.h>
-#include <inference/LinearConstraints.h>
+#include "ConflictSets.h"
 #include "Slices.h"
 
 /**
- * Converts a component tree into a set of Slices and creates linear consistency
- * constraints for conflicting slices.
+ * Converts a component tree into a set of Slices and creates conflict sets for 
+ * conflicting slices.
  *
  * Input:
  *
@@ -34,10 +34,10 @@
  *   <td>All slices found in the component tree.</td>
  * </tr>
  * <tr>
- *   <td>"linear constraints"</td>
- *   <td>(LinearConstraints)</td>
- *   <td>Linear constraints preventing conflicting slices to be picked at the
- *   same time. Variable numbers match slice ids.</td>
+ *   <td>"conflict sets"</td>
+ *   <td>(ConflictSets)</td>
+ *   <td>Conflict sets preventing conflicting slices to be picked at the
+ *   same time.</td>
  * </tr>
  * </table>
  */
@@ -53,7 +53,7 @@ public:
 
 private:
 
-	void addLinearConstraint();
+	void addConflictSet();
 
 	static unsigned int getNextSliceId();
 
@@ -65,9 +65,9 @@ private:
 
 	void convert();
 
-	pipeline::Input<ComponentTree>      _componentTree;
-	pipeline::Output<Slices>            _slices;
-	pipeline::Output<LinearConstraints> _linearConstraints;
+	pipeline::Input<ComponentTree> _componentTree;
+	pipeline::Output<Slices>       _slices;
+	pipeline::Output<ConflictSets> _conflictSets;
 
 	// the path to the currently visited component
 	std::deque<unsigned int> _path;

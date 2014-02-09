@@ -57,20 +57,21 @@ SegmentExtractor::SegmentExtractor() :
 	_branchSizeRatioThreshold(optionBranchSizeRatioThreshold.as<double>()),
 	_sliceDistanceThreshold(optionSliceDistanceThreshold.as<double>()),
 	_slicesChanged(true),
-	_linearCosntraintsChanged(true) {
+	_conflictSetsChanged(true) {
 
 	registerInput(_prevSlices, "previous slices");
 	registerInput(_nextSlices, "next slices");
-	registerInput(_prevLinearConstraints, "previous linear constraints");
-	registerInput(_nextLinearConstraints, "next linear constraints", pipeline::Optional);
+	registerInput(_prevConflictSets, "previous conflict sets");
+	registerInput(_nextConflictSets, "next conflict sets", pipeline::Optional);
+	registerInput(_forceExplanation, "force explanation", pipeline::Optional);
 
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
 
 	_prevSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
 	_nextSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
-	_prevLinearConstraints.registerBackwardCallback(&SegmentExtractor::onLinearConstraintsModified, this);
-	_nextLinearConstraints.registerBackwardCallback(&SegmentExtractor::onLinearConstraintsModified, this);
+	_prevConflictSets.registerBackwardCallback(&SegmentExtractor::onConflictSetsModified, this);
+	_nextConflictSets.registerBackwardCallback(&SegmentExtractor::onConflictSetsModified, this);
 }
 
 void
@@ -80,9 +81,9 @@ SegmentExtractor::onSlicesModified(const pipeline::Modified&) {
 }
 
 void
-SegmentExtractor::onLinearConstraintsModified(const pipeline::Modified&) {
+SegmentExtractor::onConflictSetsModified(const pipeline::Modified&) {
 
-	_linearCosntraintsChanged = true;
+	_conflictSetsChanged = true;
 }
 
 void
@@ -94,10 +95,10 @@ SegmentExtractor::updateOutputs() {
 		_slicesChanged = false;
 	}
 
-	if (_linearCosntraintsChanged) {
+	if (_conflictSetsChanged) {
 
 		assembleLinearConstraints();
-		_linearCosntraintsChanged = false;
+		_conflictSetsChanged = false;
 	}
 
 	_distance.clearCache();
@@ -129,7 +130,7 @@ SegmentExtractor::extractSegments() {
 	oldSize = _segments->size();
 
 	// end segments for every next slice, if we are the last segment extractor
-	if (_nextLinearConstraints) {
+	if (_nextConflictSets) {
 
 		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
 
@@ -430,37 +431,35 @@ SegmentExtractor::assembleLinearConstraints() {
 
 	_linearConstraints->clear();
 
-	/* For each linear constraint on the slices, create a corresponding linear
+	/* For each conflict set on the slices, create a corresponding linear
 	 * constraint on the segments by replacing every sliceId by all segmentIds
 	 * that are using this sliceId on the left side.
 	 */
-	foreach (const LinearConstraint& sliceConstraint, *_prevLinearConstraints)
-		assembleLinearConstraint(sliceConstraint);
+	foreach (const ConflictSet& conflictSet, *_prevConflictSets)
+		assembleLinearConstraint(conflictSet);
 
 	/* If linear constraints were also given for the next slice, consider them
 	 * as well.
 	 */
-	if (_nextLinearConstraints) {
+	if (_nextConflictSets) {
 
-		LOG_DEBUG(segmentextractorlog) << "using linear constraints of next slice" << std::endl;
+		LOG_DEBUG(segmentextractorlog) << "using conflict sets of next slice" << std::endl;
 
-		foreach (const LinearConstraint& sliceConstraint, *_nextLinearConstraints)
-			assembleLinearConstraint(sliceConstraint);
+		foreach (const ConflictSet& conflictSet, *_nextConflictSets)
+			assembleLinearConstraint(conflictSet);
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "assembled " << _linearConstraints->size() << " linear constraints" << std::endl;
 }
 
 void
-SegmentExtractor::assembleLinearConstraint(const LinearConstraint& sliceConstraint) {
+SegmentExtractor::assembleLinearConstraint(const ConflictSet& conflictSet) {
 
 	LinearConstraint constraint;
 
 	// for each slice in the constraint
 	typedef std::map<unsigned int, double>::value_type pair_t;
-	foreach (const pair_t& pair, sliceConstraint.getCoefficients()) {
-
-		unsigned int sliceId = pair.first;
+	foreach (unsigned int sliceId, conflictSet.getSlices()) {
 
 		// for all the segments that involve this slice
 		const std::vector<unsigned int> segmentIds = _sliceSegments[sliceId];
@@ -469,12 +468,14 @@ SegmentExtractor::assembleLinearConstraint(const LinearConstraint& sliceConstrai
 			constraint.setCoefficient(segmentId, 1.0);
 	}
 
-	constraint.setRelation(sliceConstraint.getRelation());
+	if (*_forceExplanation)
+		constraint.setRelation(Equal);
+	else
+		constraint.setRelation(LessEqual);
 
 	constraint.setValue(1);
 
 	LOG_ALL(segmentextractorlog) << "created constraint " << constraint << std::endl;
-	LOG_ALL(segmentextractorlog) << "from               " << sliceConstraint << std::endl;
 
 	_linearConstraints->add(constraint);
 }

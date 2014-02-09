@@ -105,8 +105,6 @@ SegmentExtractionPipeline::create() {
 			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));
 		}
 
-		sliceExtractor->setInput("force explanation", _forceExplanation);
-
 		// store it in the list of all slice extractors
 		_sliceExtractors.push_back(sliceExtractor);
 
@@ -122,9 +120,10 @@ SegmentExtractionPipeline::create() {
 		// connect current and previous slices to that
 		segmentExtractor->setInput("previous slices", prevSliceExtractor->getOutput("slices"));
 		segmentExtractor->setInput("next slices", sliceExtractor->getOutput("slices"));
-		segmentExtractor->setInput("previous linear constraints", prevSliceExtractor->getOutput("linear constraints"));
+		segmentExtractor->setInput("previous conflict sets", prevSliceExtractor->getOutput("conflict sets"));
+		segmentExtractor->setInput("force explanation", _forceExplanation);
 		if (section == numSections - 1 && _finishLastInterval) // only for the last pair of slices and only if we are not dumping the problem
-			segmentExtractor->setInput("next linear constraints", sliceExtractor->getOutput("linear constraints"));
+			segmentExtractor->setInput("next conflict sets", sliceExtractor->getOutput("conflict sets"));
 
 		_segmentExtractors.push_back(segmentExtractor);
 	}

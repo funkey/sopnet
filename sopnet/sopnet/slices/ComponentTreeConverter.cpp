@@ -3,12 +3,11 @@
 static logger::LogChannel componenttreeconverterlog("componenttreeconverterlog", "[ComponentTreeConverter] ");
 
 ComponentTreeConverter::ComponentTreeConverter(unsigned int section) :
-	_linearConstraints(boost::make_shared<LinearConstraints>()),
 	_section(section) {
 
 	registerInput(_componentTree, "component tree");
 	registerOutput(_slices, "slices");
-	registerOutput(_linearConstraints, "linear constraints");
+	registerOutput(_conflictSets, "conflict sets");
 }
 
 unsigned int
@@ -40,7 +39,7 @@ ComponentTreeConverter::convert() {
 
 	_slices->clear();
 
-	_linearConstraints->clear();
+	_conflictSets->clear();
 
 	// skip the fake root
 	foreach (boost::shared_ptr<ComponentTree::Node> node, _componentTree->getRoot()->getChildren())
@@ -64,7 +63,7 @@ ComponentTreeConverter::visitNode(boost::shared_ptr<ComponentTree::Node> node) {
 
 	// for leafs
 	if (node->getChildren().size() == 0)
-		addLinearConstraint();
+		addConflictSet();
 }
 
 void
@@ -74,22 +73,16 @@ ComponentTreeConverter::leaveNode(boost::shared_ptr<ComponentTree::Node>) {
 }
 
 void
-ComponentTreeConverter::addLinearConstraint() {
+ComponentTreeConverter::addConflictSet() {
 
-	LOG_ALL(componenttreeconverterlog) << "found a leaf node, creating a linear constraint for it" << std::endl;
+	LOG_ALL(componenttreeconverterlog) << "found a leaf node, creating a conflict set for it" << std::endl;
 
-	LinearConstraint constraint;
+	ConflictSet conflictSet;
 
 	foreach (unsigned int sliceId, _path)
-		constraint.setCoefficient(sliceId, 1);
+		conflictSet.addSlice(sliceId);
 
-	constraint.setValue(1);
-
-	// the relation will be set later
-
-	LOG_ALL(componenttreeconverterlog) << "add constraint " << constraint << std::endl;
-
-	_linearConstraints->add(constraint);
+	_conflictSets->add(conflictSet);
 
 	_slices->addConflicts(_path);
 }

@@ -39,14 +39,12 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_pruner(boost::make_shared<ComponentTreePruner>()),
-	_converter(boost::make_shared<ComponentTreeConverter>(section)),
-	_filter(boost::make_shared<LinearConstraintsFilter>()) {
+	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
 
 	registerInput(_mser->getInput("image"), "membrane");
 	registerInput(_mserParameters, "mser parameters");
-	registerInput(_filter->getInput("force explanation"), "force explanation");
 	registerOutput(_converter->getOutput("slices"), "slices");
-	registerOutput(_filter->getOutput("linear constraints"), "linear constraints");
+	registerOutput(_converter->getOutput("conflict sets"), "conflict sets");
 
 	_mserParameters.registerBackwardCallback(&SliceExtractor<Precision>::onInputSet, this);
 
@@ -68,7 +66,6 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 	_pruner->setInput("component tree", _downSampler->getOutput());
 	_pruner->setInput("max height", pipeline::Value<int>(optionMaxSliceMerges.as<int>()));
 	_converter->setInput(_pruner->getOutput());
-	_filter->setInput("linear constraints", _converter->getOutput("linear constraints"));
 }
 
 template <typename Precision>
@@ -79,29 +76,6 @@ SliceExtractor<Precision>::onInputSet(const pipeline::InputSetBase&) {
 
 	// don't use the default
 	_mser->setInput("parameters", _mserParameters);
-}
-
-template <typename Precision>
-SliceExtractor<Precision>::LinearConstraintsFilter::LinearConstraintsFilter() {
-
-	registerInput(_linearConstraints, "linear constraints");
-	registerInput(_forceExplanation, "force explanation");
-	registerOutput(_filtered, "linear constraints");
-}
-
-template <typename Precision>
-void
-SliceExtractor<Precision>::LinearConstraintsFilter::updateOutputs() {
-
-	*_filtered = *_linearConstraints;
-
-	foreach (LinearConstraint& linearConstraint, *_filtered) {
-
-		if (_forceExplanation && *_forceExplanation)
-			linearConstraint.setRelation(Equal);
-		else
-			linearConstraint.setRelation(LessEqual);
-	}
 }
 
 // explicit template instantiations
