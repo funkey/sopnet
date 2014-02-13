@@ -41,6 +41,8 @@
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
+#include <config.h>
+
 using std::cout;
 using std::endl;
 using namespace gui;
@@ -294,6 +296,8 @@ int main(int optionc, char** optionv) {
 
 		} else {
 
+#ifdef HAVE_HDF5
+
 			// get the project filename
 			std::string projectFilename = optionProjectName;
 
@@ -302,6 +306,12 @@ int main(int optionc, char** optionv) {
 			membranesReader   = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
 			slicesReader      = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
 			groundTruthReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 256, 256);
+
+#else
+
+			LOG_ERROR(out) << "HDF5 not supported -- please recompile with HDF5 enabled" << std::endl;
+
+#endif
 		}
 
 		// select a substack, if options are set
