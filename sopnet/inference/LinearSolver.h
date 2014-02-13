@@ -43,7 +43,7 @@ public:
 
 	LinearSolver(const LinearSolverBackendFactory& backendFactory = DefaultFactory());
 
-	~LinearSolver();
+	virtual ~LinearSolver();
 
 private:
 

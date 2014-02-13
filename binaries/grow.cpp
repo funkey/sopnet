@@ -66,8 +66,7 @@ private:
 
 		_grown->clear();
 		for (int i = 0; i < depth; i++) {
-			boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(width*height, 0.5);
-			_grown->add(boost::make_shared<Image>(width, height, data));
+			_grown->add(boost::make_shared<Image>(width, height, 0.5));
 		}
 
 		for (int z = 0; z < depth; z++)

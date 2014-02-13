@@ -160,6 +160,7 @@ int main(int optionc, char** optionv) {
 
 		} else {
 
+#ifdef HAVE_HDF5
 			// get the project filename
 			std::string projectFilename = optionProjectName;
 
@@ -167,6 +168,9 @@ int main(int optionc, char** optionv) {
 			membranesReader = boost::make_shared<ImageStackHdf5Reader>(projectFilename, "0", "data", firstSection, lastSection, 0, 0, 0, 0);
 			// contrast image not yet supported
 			contrastReader = membranesReader;
+#else
+			LOG_ERROR(out) << "[main] HDF5 not supported -- please recompile with HDF5 enabled" << std::endl;
+#endif
 		}
 
 		// select a substack, if options are set

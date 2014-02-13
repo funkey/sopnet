@@ -102,8 +102,7 @@ private:
 		// prepare output stack
 		_shrunken->clear();
 		for (int i = 0; i < depth; i++) {
-			boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(width*height, 0.5);
-			_shrunken->add(boost::make_shared<Image>(width, height, data));
+			_shrunken->add(boost::make_shared<Image>(width, height, 0.5));
 		}
 
 		// shrink

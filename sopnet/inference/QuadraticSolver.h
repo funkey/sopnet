@@ -33,7 +33,7 @@ public:
 
 	QuadraticSolver(const QuadraticSolverBackendFactory& backendFactory = DefaultFactory());
 
-	~QuadraticSolver();
+	virtual ~QuadraticSolver();
 
 private:
 

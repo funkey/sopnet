@@ -10,6 +10,8 @@ class LinearSolverBackend {
 
 public:
 
+	virtual ~LinearSolverBackend() {}
+
 	/**
 	 * Initialise the linear solver for the given type of variables.
 	 *

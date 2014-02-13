@@ -53,8 +53,7 @@ private:
 	void updateOutputs() {
 
 		// adjust the size of the segmentation output to match the input image
-		_watershedData.reshape(_image->shape());
-		*_watersheds = _watershedData;
+		_watersheds->reshape(_image->shape());
 
 		unsigned int labels = vigra::watershedsMultiArray(
 				*_image, *_watersheds,
@@ -73,9 +72,6 @@ private:
 	pipeline::Input<Image>  _image;
 	pipeline::Input<float>  _threshold;
 	pipeline::Output<Image> _watersheds;
-
-	// watershed data
-	vigra::MultiArray<2, float> _watershedData;
 };
 
 int main(int optionc, char** optionv) {

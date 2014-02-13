@@ -8,6 +8,8 @@ class QuadraticSolverBackend : public LinearSolverBackend {
 
 public:
 
+	virtual ~QuadraticSolverBackend() {}
+
 	/**
 	 * Set the objective.
 	 *

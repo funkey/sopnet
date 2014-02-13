@@ -21,11 +21,8 @@ IdMapCreator::updateOutputs() {
 
 	std::vector<boost::shared_ptr<Image> > idImages;
 	
-	for (unsigned int i = 0; i < numSections; i++) {
-
-		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(width*height, 0.0);
-		idImages.push_back(boost::make_shared<Image>(width, height, data));
-	}
+	for (unsigned int i = 0; i < numSections; i++)
+		idImages.push_back(boost::make_shared<Image>(width, height, 0.0));
 
 	// draw each neuron to output images
 

@@ -364,14 +364,10 @@ TolerantEditDistance::findErrors() {
 
 	for (unsigned int i = 0; i < _depth; i++) {
 
-		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
-		_splitLocations->add(boost::make_shared<Image>(_width, _height, data));
-		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
-		_mergeLocations->add(boost::make_shared<Image>(_width, _height, data));
-		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
-		_fpLocations->add(boost::make_shared<Image>(_width, _height, data));
-		data = boost::make_shared<std::vector<float> >(_width*_height, 0.5);
-		_fnLocations->add(boost::make_shared<Image>(_width, _height, data));
+		_splitLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
+		_mergeLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
+		_fpLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
+		_fnLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
 	}
 
 	// prepare error data structure
@@ -445,8 +441,7 @@ TolerantEditDistance::correctReconstruction() {
 
 	for (unsigned int i = 0; i < _depth; i++) {
 
-		boost::shared_ptr<std::vector<float> > data = boost::make_shared<std::vector<float> >(_width*_height, 0.0);
-		_correctedReconstruction->add(boost::make_shared<Image>(_width, _height, data));
+		_correctedReconstruction->add(boost::make_shared<Image>(_width, _height, 0.0));
 	}
 
 	// read solution
