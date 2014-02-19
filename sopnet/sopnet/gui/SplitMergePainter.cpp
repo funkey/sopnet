@@ -4,7 +4,10 @@
 logger::LogChannel splitmergepainterlog("splitmergepainterlog", "[SplitMergePainter] ");
 
 SplitMergePainter::SplitMergePainter() :
-		_section(0) {}
+		_section(0) {
+
+	updateSize();
+}
 
 bool
 SplitMergePainter::draw(
@@ -23,14 +26,17 @@ SplitMergePainter::draw(
 void
 SplitMergePainter::updateSize() {
 
-	util::rect<double> bb;
+	util::rect<double> bb(0, 0, 0, 0);
 
-	foreach (boost::shared_ptr<Slice> slice, *_selection) {
+	if (_selection) {
 
-		if (bb.isZero())
-			bb = slice->getComponent()->getBoundingBox();
-		else
-			bb.fit(slice->getComponent()->getBoundingBox());
+		foreach (boost::shared_ptr<Slice> slice, *_selection) {
+
+			if (bb.isZero())
+				bb = slice->getComponent()->getBoundingBox();
+			else
+				bb.fit(slice->getComponent()->getBoundingBox());
+		}
 	}
 
 	setSize(bb);

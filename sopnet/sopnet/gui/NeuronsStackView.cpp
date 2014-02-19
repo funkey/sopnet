@@ -37,14 +37,14 @@ NeuronsStackView::onCurrentNeuronModified(const pipeline::Modified&) {
 void
 NeuronsStackView::updateOutputs() {
 
-	util::rect<double> oldSize = _painter->getSize();
-
 	if (_neuronsModified) {
 
 		_painter->setNeurons(_neurons);
 
 		_neuronsModified = false;
 	}
+
+	util::rect<double> oldSize = _painter->getSize();
 
 	if (_currentNeuronModified) {
 
