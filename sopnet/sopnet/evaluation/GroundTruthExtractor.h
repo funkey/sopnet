@@ -3,18 +3,13 @@
 
 #include <vector>
 
-#include <boost/shared_ptr.hpp>
-
-#include <pipeline/all.h>
+#include <pipeline/SimpleProcessNode.h>
 #include <imageprocessing/ImageStack.h>
+#include <sopnet/slices/Slices.h>
 #include <sopnet/segments/Segments.h>
+#include <sopnet/features/Overlap.h>
 
-// forward declarations
-class ImageExtractor;
-template <typename Precision> class SliceExtractor;
-class GroundTruthSegmentExtractor;
-
-class GroundTruthExtractor : public pipeline::ProcessNode {
+class GroundTruthExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -33,45 +28,40 @@ public:
 
 private:
 
-	class SegmentsAssembler : public pipeline::SimpleProcessNode<> {
+	/**
+	 * Sorts continuations by source-target overlap descending.
+	 */
+	struct ContinuationComparator {
 
-	public:
+		ContinuationComparator() :
+			overlap(false, false) {}
 
-		SegmentsAssembler();
+		bool operator()(const ContinuationSegment& a, const ContinuationSegment& b) {
 
-	private:
+			return overlap(*a.getSourceSlice(), *a.getTargetSlice()) > overlap(*b.getSourceSlice(), *b.getTargetSlice());
+		}
 
-		void updateOutputs();
-
-		pipeline::Inputs<Segments> _segments;
-
-		pipeline::Output<Segments> _allSegments;
+		Overlap overlap;
 	};
 
-	void onInputSet(const pipeline::InputSet<ImageStack>& signal);
+	void updateOutputs();
 
-	void createPipeline();
+	// extract all slices of each ground-truth section
+	std::vector<Slices> extractSlices(int firstSection, int lastSection);
+
+	std::map<float, std::vector<ContinuationSegment> > extractContinuations(const std::vector<Slices>& slices);
+
+	// find a minimal spanning segment tree for each set of slices with the same 
+	// id
+	Segments findMinimalTrees(const std::vector<Slices>& slices);
 
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruthSections;
 
-	// update signal slot to explicitly update inputs
-	signals::Slot<pipeline::Update> _update;
-
-	// ground truth sections to image converter
-	boost::shared_ptr<ImageExtractor> _sectionExtractor;
-
-	// slice extractors to get the slices per section
-	std::vector<boost::shared_ptr<SliceExtractor<unsigned short> > > _sliceExtractors;
-
-	// extract segments from the components found by the sliceExtractors
-	std::vector<boost::shared_ptr<GroundTruthSegmentExtractor> > _segmentExtractors;
-
-	// collects all segments
-	boost::shared_ptr<SegmentsAssembler> _segmentsAssembler;
+	// continuation and end segments of the ground-truth
+	pipeline::Output<Segments> _groundTruthSegments;
 
 	int _firstSection;
-
 	int _lastSection;
 
 	bool _addIntensityBoundaries;
