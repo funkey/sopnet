@@ -34,7 +34,7 @@ util::ProgramOption optionMaxSliceMerges(
 		util::_default_value    = 3);
 
 template <typename Precision>
-SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
+SliceExtractor<Precision>::SliceExtractor(unsigned int section, bool downsample) :
 	_mser(boost::make_shared<Mser<Precision> >()),
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
@@ -62,8 +62,16 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section) :
 
 	// setup internal pipeline
 	_mser->setInput("parameters", _defaultMserParameters);
-	_downSampler->setInput(_mser->getOutput());
-	_pruner->setInput("component tree", _downSampler->getOutput());
+
+	if (downsample) {
+
+		_downSampler->setInput(_mser->getOutput());
+		_pruner->setInput("component tree", _downSampler->getOutput());
+
+	} else {
+
+		_pruner->setInput("component tree", _mser->getOutput());
+	}
 	_pruner->setInput("max height", pipeline::Value<int>(optionMaxSliceMerges.as<int>()));
 	_converter->setInput(_pruner->getOutput());
 }

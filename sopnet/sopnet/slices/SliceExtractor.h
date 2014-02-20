@@ -23,7 +23,17 @@ class SliceExtractor : public pipeline::ProcessNode {
 
 public:
 
-	SliceExtractor(unsigned int section);
+	/**
+	 * Create a new slice extractor for the given section.
+	 *
+	 * @param section
+	 *              The section number that the extracted slices will have.
+	 *
+	 * @param downsample
+	 *              Do not extract slices that are single children of their 
+	 *              parents in the component tree.
+	 */
+	SliceExtractor(unsigned int section, bool downsample);
 
 private:
 

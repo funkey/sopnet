@@ -58,7 +58,7 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 		LOG_DEBUG(groundtruthextractorlog) << "extracting slices in section " << section << std::endl;
 
 		// create a SliceExtractor
-		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section);
+		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, false /* don't downsample */);
 
 		// give it the section it has to process and our mser parameters
 		sliceExtractor->setInput("membrane", sectionExtractor->getOutput(section));
