@@ -577,15 +577,15 @@ NeuronsStackPainter::drawSlice(
 
 	glBegin(GL_QUADS);
 
-	const util::rect<double>& bb = slice.getComponent()->getBoundingBox();
-
-	double offset = 0;
+	util::rect<double> bb = slice.getComponent()->getBoundingBox();
+	bb.maxX += 2;
+	bb.maxY += 2;
 
 	// right side
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY + offset, 0);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY + offset, 0);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY + offset, 0);
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, 0);
+	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY, 0);
+	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY, 0);
+	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY, 0);
+	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY, 0);
 
 	glCheck(glEnd());
 
@@ -596,11 +596,12 @@ NeuronsStackPainter::drawSlice(
 		idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
 
 		double x = slice.getComponent()->getCenter().x;
-		double y = slice.getComponent()->getCenter().y + offset;
+		double y = slice.getComponent()->getCenter().y;
 
+		glPushMatrix();
 		glTranslatef(x, y, 0);
 		idPainter.draw(roi - util::point<double>(x, y), resolution);
-		glTranslatef(-x, -y, 0);
+		glPopMatrix();
 	}
 }
 
