@@ -160,6 +160,8 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 				// put new slice into connected slices
 				connectedSlices.insert(target);
 				connectedSlices.insert(source);
+
+				break;
 			}
 
 			if (!foundOpenEdge && foundDisconnectedSlices) {
