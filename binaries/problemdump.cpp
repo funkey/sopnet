@@ -211,6 +211,8 @@ int main(int optionc, char** optionv) {
 
 	} else {
 
+#ifdef HAVE_HDF5
+
 		// get the project filename
 		std::string dataRawFilename = optionDataRawName;
 		std::string dataMembraneFilename = optionDataMembraneName;
@@ -264,6 +266,8 @@ int main(int optionc, char** optionv) {
 					optionMinYROI,
 					optionMaxYROI);
 		}
+
+#endif // HAVE_HDF5
 
 	}
 
