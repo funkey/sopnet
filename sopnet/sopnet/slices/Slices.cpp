@@ -124,3 +124,12 @@ Slices::find(const util::point<double>& center, double distance) {
 
 	return found;
 }
+
+void
+Slices::translate(const util::point<int>& offset) {
+
+	foreach (boost::shared_ptr<Slice> slice, _slices)
+		slice->translate(offset);
+
+	_kdTreeDirty = true;
+}

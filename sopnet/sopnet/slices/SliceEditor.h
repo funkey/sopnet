@@ -51,7 +51,7 @@ private:
 	void drawSlice(boost::shared_ptr<Slice> slice);
 
 	// the slices to start with
-	std::vector<boost::shared_ptr<Slice> > _initialSlices;
+	std::set<boost::shared_ptr<Slice> > _initialSlices;
 
 	// section number for new slices
 	unsigned int _section;

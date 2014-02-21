@@ -177,6 +177,11 @@ public:
 	 */
 	std::vector<boost::shared_ptr<Slice> > find(const util::point<double>& center, double distance);
 
+	/**
+	 * Move all slices in 2D.
+	 */
+	void translate(const util::point<int>& offset);
+
 private:
 
 	// the slices
