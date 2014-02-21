@@ -7,7 +7,8 @@ SplitMerge::SplitMerge() :
 	_segments(boost::make_shared<Segments>()),
 	_painter(boost::make_shared<SplitMergePainter>()),
 	_selection(boost::make_shared<std::set<boost::shared_ptr<Slice> > >()),
-	_initialSegmentsProcessed(false) {
+	_initialSegmentsProcessed(false),
+	_drawing(0) {
 
 	registerInput(_initialSegments, "initial segments");
 	registerInput(_section, "section");
@@ -18,12 +19,16 @@ SplitMerge::SplitMerge() :
 
 	_initialSegments.registerBackwardCallback(&SplitMerge::onInputSet, this);
 	_painter.registerForwardCallback(&SplitMerge::onMouseDown, this);
+	_painter.registerForwardCallback(&SplitMerge::onMouseMove, this);
+	_painter.registerForwardCallback(&SplitMerge::onMouseUp, this);
 	_painter.registerForwardCallback(&SplitMerge::onKeyDown, this);
 	_painter->setSelection(_selection);
 }
 
 void
 SplitMerge::updateOutputs() {
+
+	LOG_ALL(splitmergelog) << "updating outputs" << std::endl;
 
 	if (!_initialSegmentsProcessed) {
 
@@ -55,7 +60,15 @@ SplitMerge::updateOutputs() {
 		_initialSegmentsProcessed = true;
 	}
 
-	_painter->setSection(*_section);
+	if (_sliceEditor) {
+
+		_painter->reloadSliceImage();
+
+	} else {
+
+		_painter->setSection(*_section);
+	}
+
 	_painter->updateSize();
 }
 
@@ -68,7 +81,19 @@ SplitMerge::onInputSet(const pipeline::InputSetBase& /*signal*/) {
 }
 
 void
-SplitMerge::onKeyDown(const gui::KeyDown& signal) {
+SplitMerge::onKeyDown(gui::KeyDown& signal) {
+
+	if (signal.key == gui::keys::E) {
+
+		if (!_sliceEditor)
+			startSliceEditor();
+		else
+			stopSliceEditor();
+
+		signal.processed = true;
+
+		return;
+	}
 
 	if (signal.key == gui::keys::M || signal.key == gui::keys::S) {
 
@@ -324,29 +349,18 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 
 	if (signal.button == gui::buttons::Left) {
 
-		// find closest segments in intersection interval to the left and right
-		std::vector<boost::shared_ptr<Segment> > closestSegments;
-		for (int section = *_section; section <= *_section + 1; section++) {
+		if (_sliceEditor) {
 
-			std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(signal.position, *_section, 1000000);
-			std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(signal.position, *_section, 1000000);
+			LOG_ALL(splitmergelog) << "drawing at " << signal.position << std::endl;
 
-			std::copy(ends.begin(),          ends.end(),          std::back_inserter(closestSegments));
-			std::copy(continuations.begin(), continuations.end(), std::back_inserter(closestSegments));
+			_sliceEditor->draw(signal.position, 3, true /* foreground */);
+			_drawing = 1;
+			setDirty(_painter);
+
+			return;
 		}
 
-		// get all the slices that are in the current section
-		std::vector<boost::shared_ptr<Slice> > closestSlices;
-
-		foreach (boost::shared_ptr<Segment> segment, closestSegments) {
-
-			foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
-				if (slice->getSection() == (unsigned int)*_section)
-					closestSlices.push_back(slice);
-			foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
-				if (slice->getSection() == (unsigned int)*_section)
-					closestSlices.push_back(slice);
-		}
+		std::vector<boost::shared_ptr<Slice> > closestSlices = getCurrentSlices(signal.position);
 
 		if (closestSlices.size() == 0) {
 
@@ -387,8 +401,103 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 
 	if (signal.button == gui::buttons::Right) {
 
+		if (_sliceEditor) {
+
+			_sliceEditor->draw(signal.position, 3, false /* background */);
+			_drawing = 2;
+			setDirty(_painter);
+
+			return;
+		}
+
 		_selection->clear();
 		setDirty(_painter);
 	}
 }
 
+void
+SplitMerge::onMouseMove(const gui::MouseMove& signal) {
+
+	if (!_sliceEditor || !_drawing)
+		return;
+
+	_sliceEditor->draw(signal.position, 3, (_drawing == 1 ? true /* foreground */ : false /* background */));
+	setDirty(_painter);
+}
+
+void
+SplitMerge::onMouseUp(const gui::MouseUp& /*signal*/) {
+
+	_drawing = 0;
+}
+
+std::vector<boost::shared_ptr<Slice> >
+SplitMerge::getCurrentSlices(const util::point<double>& position) {
+
+	// find closest segments in intersection interval to the left and right
+	std::vector<boost::shared_ptr<Segment> > closestSegments;
+	for (int section = *_section; section <= *_section + 1; section++) {
+
+		std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(position, *_section, 1000000);
+		std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(position, *_section, 1000000);
+
+		std::copy(ends.begin(),          ends.end(),          std::back_inserter(closestSegments));
+		std::copy(continuations.begin(), continuations.end(), std::back_inserter(closestSegments));
+	}
+
+	// get all the slices that are in the current section
+	std::vector<boost::shared_ptr<Slice> > closestSlices;
+
+	foreach (boost::shared_ptr<Segment> segment, closestSegments) {
+
+		foreach (boost::shared_ptr<Slice> slice, segment->getSourceSlices())
+			if (slice->getSection() == (unsigned int)*_section)
+				closestSlices.push_back(slice);
+		foreach (boost::shared_ptr<Slice> slice, segment->getTargetSlices())
+			if (slice->getSection() == (unsigned int)*_section)
+				closestSlices.push_back(slice);
+	}
+
+	return closestSlices;
+}
+
+void
+SplitMerge::startSliceEditor() {
+
+	LOG_DEBUG(splitmergelog) << "starting slice editor" << std::endl;
+
+	// get all slices in current section
+	std::vector<boost::shared_ptr<Slice> > currentSlices = getCurrentSlices();
+
+	// get their bounding box
+	util::rect<int> bb(0, 0, 0, 0);
+	foreach (boost::shared_ptr<Slice> slice, currentSlices)
+		if (bb.isZero())
+			bb = slice->getComponent()->getBoundingBox();
+		else
+			bb.fit(slice->getComponent()->getBoundingBox());
+
+	// create slice editor
+	_sliceEditor = boost::make_shared<SliceEditor>(currentSlices, *_section, bb);
+
+	// show slice image
+	_painter->setSliceImage(_sliceEditor->getSliceImage(), bb.upperLeft());
+
+	setDirty(_painter);
+}
+
+void
+SplitMerge::stopSliceEditor() {
+
+	LOG_DEBUG(splitmergelog) << "stopping slice editor" << std::endl;
+
+	SliceEdits edits = _sliceEditor->finish();
+
+	// destruct slice editor
+	_sliceEditor.reset();
+
+	// unset slice image
+	_painter->unsetSliceImage();
+
+	setDirty(_painter);
+}

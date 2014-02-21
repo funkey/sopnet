@@ -72,6 +72,9 @@ NeuronsStackView::updateOutputs() {
 void
 NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 
+	if (signal.processed)
+		return;
+
 	LOG_ALL(neuronsstackviewlog) << "got a key down event" << std::endl;
 
 	if (signal.key == gui::keys::A) {

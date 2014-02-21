@@ -6,6 +6,7 @@
 #include <pipeline/SimpleProcessNode.h>
 
 #include <sopnet/gui/SplitMergePainter.h>
+#include <sopnet/slices/SliceEditor.h>
 
 class SplitMerge : public pipeline::SimpleProcessNode<> {
 
@@ -39,12 +40,19 @@ private:
 
 	void onInputSet(const pipeline::InputSetBase& signal);
 
-	void onKeyDown(const gui::KeyDown& signal);
+	void onKeyDown(gui::KeyDown& signal);
 	void onMouseDown(const gui::MouseDown& signal);
+	void onMouseMove(const gui::MouseMove& signal);
+	void onMouseUp(const gui::MouseUp& signal);
+
+	std::vector<boost::shared_ptr<Slice> > getCurrentSlices(const util::point<double>& position = util::point<double>(0, 0));
 
 	void removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval, std::vector<Link>& oldLinks);
 	void mergeSlices(unsigned int interval, std::vector<Link>& oldLinks);
 	void endSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices);
+
+	void startSliceEditor();
+	void stopSliceEditor();
 
 	pipeline::Input<Segments>           _initialSegments;
 	pipeline::Input<int>                _section;
@@ -54,6 +62,9 @@ private:
 	boost::shared_ptr<std::set<boost::shared_ptr<Slice> > > _selection;
 
 	bool _initialSegmentsProcessed;
+
+	boost::shared_ptr<SliceEditor> _sliceEditor;
+	int _drawing;
 };
 
 #endif // SOPNET_SEGMENTS_SPLIT_MERGE_H__

@@ -9,10 +9,42 @@ SplitMergePainter::SplitMergePainter() :
 	updateSize();
 }
 
+void
+SplitMergePainter::setSliceImage(boost::shared_ptr<Image> sliceImage, const util::point<int>& offset) {
+
+	_sliceImagePainter = boost::make_shared<gui::ImagePainter<Image> >();
+	_sliceImagePainter->setImage(sliceImage);
+	_sliceImageOffset = offset;
+}
+
+void
+SplitMergePainter::reloadSliceImage() {
+
+	_sliceImagePainter->reload();
+}
+
+void
+SplitMergePainter::unsetSliceImage() {
+
+	_sliceImagePainter.reset();
+}
+
 bool
 SplitMergePainter::draw(
-		const util::rect<double>&  /*roi*/,
-		const util::point<double>& /*resolution*/) {
+		const util::rect<double>&  roi,
+		const util::point<double>& resolution) {
+
+	if (_sliceImagePainter) {
+
+		LOG_ALL(splitmergepainterlog) << "drawing slice image for section " << _section << std::endl;
+
+		glPushMatrix();
+		glTranslatef(_sliceImageOffset.x, _sliceImageOffset.y, 0);
+		_sliceImagePainter->draw(roi - _sliceImageOffset, resolution);
+		glPopMatrix();
+
+		return false;
+	}
 
 	LOG_ALL(splitmergepainterlog) << "drawing selection for section " << _section << std::endl;
 
@@ -27,6 +59,11 @@ void
 SplitMergePainter::updateSize() {
 
 	util::rect<double> bb(0, 0, 0, 0);
+
+	if (_sliceImagePainter) {
+
+		bb = _sliceImagePainter->getSize() + _sliceImageOffset;
+	}
 
 	if (_selection) {
 
