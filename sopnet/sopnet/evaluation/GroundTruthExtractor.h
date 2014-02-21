@@ -23,8 +23,11 @@ public:
 	 * @param addIntensityBoundaries
 	 *              Seperate regions of different intensities such that they end 
 	 *              up in different slices.
+	 * @param endSegmentsOnly
+	 *              Extract only end segments, no continuations. Each slice will 
+	 *              be a "neuron".
 	 */
-	GroundTruthExtractor(int firstSection = -1, int lastSection = -1, bool addIntensityBoundaries = true);
+	GroundTruthExtractor(int firstSection = -1, int lastSection = -1, bool addIntensityBoundaries = true, bool endSegmentsOnly = false);
 
 private:
 
@@ -55,6 +58,14 @@ private:
 	// id
 	Segments findMinimalTrees(const std::vector<Slices>& slices);
 
+	// find on tree of segments per connected component of label
+	void findLabelTree(
+			float label,
+			std::vector<ContinuationSegment>& continuations,
+			std::map<unsigned int, unsigned int>& linksLeft,
+			std::map<unsigned int, unsigned int>& linksRight,
+			Segments& segments);
+
 	// the ground truth images
 	pipeline::Input<ImageStack> _groundTruthSections;
 
@@ -65,6 +76,8 @@ private:
 	int _lastSection;
 
 	bool _addIntensityBoundaries;
+
+	bool _endSegmentsOnly;
 };
 
 #endif // SOPNET_GROUND_TRUTH_EXTRACTOR_H__

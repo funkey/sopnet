@@ -43,6 +43,10 @@ util::ProgramOption optionInitialNeurons(
 		_description_text = "The name of the directory containing the initial neuron ids.",
 		_default_value    = "groundtruth");
 
+util::ProgramOption optionStartFromScratch(
+		_long_name        = "startFromScratch",
+		_description_text = "Start with non-connected slices.");
+
 util::ProgramOption optionSaveResultDirectory(
 		_long_name        = "saveResultDirectory",
 		_description_text = "The name of the directory to save the resulting id map to.",
@@ -82,7 +86,7 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// create ground-truth extractor
-		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(-1, -1, false);
+		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(-1, -1, false, optionStartFromScratch);
 		groundTruthExtractor->setInput(groundTruthReader->getOutput());
 
 		// create split-merge tool

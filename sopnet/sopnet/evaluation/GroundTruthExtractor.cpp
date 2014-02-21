@@ -6,10 +6,11 @@
 
 logger::LogChannel groundtruthextractorlog("groundtruthextractorlog", "[GroundTruthExtractor] ");
 
-GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bool addIntensityBoundaries) :
+GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bool addIntensityBoundaries, bool endSegmentsOnly) :
 	_firstSection(firstSection),
 	_lastSection(lastSection),
-	_addIntensityBoundaries(addIntensityBoundaries) {
+	_addIntensityBoundaries(addIntensityBoundaries),
+	_endSegmentsOnly(endSegmentsOnly) {
 
 	registerInput(_groundTruthSections, "ground truth sections");
 	registerOutput(_groundTruthSegments, "ground truth segments");
@@ -91,106 +92,20 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 	links = extractContinuations(slices);
 
 	// for each neuron label
-	typedef std::map<float, std::vector<ContinuationSegment> >::value_type pair_t;
-	foreach (pair_t& pair, links) {
+	if (!_endSegmentsOnly) {
 
-		float label = pair.first;
-		std::vector<ContinuationSegment>& continuations = pair.second;
+		typedef std::map<float, std::vector<ContinuationSegment> >::value_type pair_t;
+		foreach (pair_t& pair, links) {
 
-		LOG_ALL(groundtruthextractorlog) << "processing neuron label " << label << std::endl;
+			float label = pair.first;
+			std::vector<ContinuationSegment>& continuations = pair.second;
 
-		// all currently connected slices
-		std::set<unsigned int> connectedSlices;
-
-		// sort continuations by overlap
-		std::sort(continuations.begin(), continuations.end(), ContinuationComparator());
-
-		// pick initial slice, put into connected slices
-		unsigned int initialSlice = continuations.begin()->getSourceSlice()->getId();
-		connectedSlices.insert(initialSlice);
-
-		LOG_ALL(groundtruthextractorlog) << "initial slice is " << initialSlice << std::endl;
-
-		// iterate
-		bool allConnected = false;
-		while (!allConnected) {
-
-			bool foundOpenEdge = false;
-			bool foundDisconnectedSlices = false;
-
-			// find cheapest continuation for any connected slice to any not 
-			// connected slice
-			for (std::vector<ContinuationSegment>::const_iterator i = continuations.begin(); i != continuations.end(); i++) {
-
-				unsigned int source = i->getSourceSlice()->getId();
-				unsigned int target = i->getTargetSlice()->getId();
-
-				int sourceTargetCount = connectedSlices.count(source) + connectedSlices.count(target);
-
-				if (sourceTargetCount != 1) {
-
-					if (sourceTargetCount == 0)
-						foundDisconnectedSlices = true;
-
-					continue;
-				}
-
-				LOG_ALL(groundtruthextractorlog)
-						<< "next best continuation from connected to not-connected slice is "
-						<< source << " -> "
-						<< target << std::endl;
-
-				foundOpenEdge = true;
-
-				// put continuation in segments
-				segments.add(boost::make_shared<ContinuationSegment>(*i));
-
-				// count number of usages of involved slices
-				if (i->getDirection() == Right) {
-
-					linksLeft[target]++;
-					linksRight[source]++;
-
-				} else {
-
-					linksRight[target]++;
-					linksLeft[source]++;
-				}
-
-				// put new slice into connected slices
-				connectedSlices.insert(target);
-				connectedSlices.insert(source);
-
-				break;
-			}
-
-			if (!foundOpenEdge && foundDisconnectedSlices) {
-
-				LOG_USER(groundtruthextractorlog) << "Warning: ground-truth contains disconnected neuron with same label: " << label << std::endl;
-
-				// add a new disconnected slice to the set of connected slices 
-				// to continue growing the tree
-				for (std::vector<ContinuationSegment>::const_iterator i = continuations.begin(); i != continuations.end(); i++) {
-
-					if (connectedSlices.count(i->getSourceSlice()->getId()) == 0) {
-
-						connectedSlices.insert(i->getSourceSlice()->getId());
-						break;
-					}
-
-					if (connectedSlices.count(i->getTargetSlice()->getId()) == 0) {
-
-						connectedSlices.insert(i->getTargetSlice()->getId());
-						break;
-					}
-				}
-
-				continue;
-			}
-
-			if (!foundOpenEdge)
-				allConnected = true;
+			findLabelTree(label, continuations, linksLeft, linksRight, segments);
 		}
+
+	} else {
+
+		LOG_USER(groundtruthextractorlog) << "skipping extraction of continuation segments" << std::endl;
 	}
 
 	// postprocessing, for each slice
@@ -205,6 +120,110 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 		}
 
 	return segments;
+}
+
+void
+GroundTruthExtractor::findLabelTree(
+		float label,
+		std::vector<ContinuationSegment>& continuations,
+		std::map<unsigned int, unsigned int>& linksLeft,
+		std::map<unsigned int, unsigned int>& linksRight,
+		Segments& segments) {
+
+	LOG_ALL(groundtruthextractorlog) << "processing neuron label " << label << std::endl;
+
+	// all currently connected slices
+	std::set<unsigned int> connectedSlices;
+
+	// sort continuations by overlap
+	std::sort(continuations.begin(), continuations.end(), ContinuationComparator());
+
+	// pick initial slice, put into connected slices
+	unsigned int initialSlice = continuations.begin()->getSourceSlice()->getId();
+	connectedSlices.insert(initialSlice);
+
+	LOG_ALL(groundtruthextractorlog) << "initial slice is " << initialSlice << std::endl;
+
+	// iterate
+	bool allConnected = false;
+	while (!allConnected) {
+
+		bool foundOpenEdge = false;
+		bool foundDisconnectedSlices = false;
+
+		// find cheapest continuation for any connected slice to any not 
+		// connected slice
+		for (std::vector<ContinuationSegment>::const_iterator i = continuations.begin(); i != continuations.end(); i++) {
+
+			unsigned int source = i->getSourceSlice()->getId();
+			unsigned int target = i->getTargetSlice()->getId();
+
+			int sourceTargetCount = connectedSlices.count(source) + connectedSlices.count(target);
+
+			if (sourceTargetCount != 1) {
+
+				if (sourceTargetCount == 0)
+					foundDisconnectedSlices = true;
+
+				continue;
+			}
+
+			LOG_ALL(groundtruthextractorlog)
+					<< "next best continuation from connected to not-connected slice is "
+					<< source << " -> "
+					<< target << std::endl;
+
+			foundOpenEdge = true;
+
+			// put continuation in segments
+			segments.add(boost::make_shared<ContinuationSegment>(*i));
+
+			// count number of usages of involved slices
+			if (i->getDirection() == Right) {
+
+				linksLeft[target]++;
+				linksRight[source]++;
+
+			} else {
+
+				linksRight[target]++;
+				linksLeft[source]++;
+			}
+
+			// put new slice into connected slices
+			connectedSlices.insert(target);
+			connectedSlices.insert(source);
+
+			break;
+		}
+
+		if (!foundOpenEdge && foundDisconnectedSlices) {
+
+			LOG_USER(groundtruthextractorlog) << "Warning: ground-truth contains disconnected neuron with same label: " << label << std::endl;
+
+			// add a new disconnected slice to the set of connected slices 
+			// to continue growing the tree
+			for (std::vector<ContinuationSegment>::const_iterator i = continuations.begin(); i != continuations.end(); i++) {
+
+				if (connectedSlices.count(i->getSourceSlice()->getId()) == 0) {
+
+					connectedSlices.insert(i->getSourceSlice()->getId());
+					break;
+				}
+
+				if (connectedSlices.count(i->getTargetSlice()->getId()) == 0) {
+
+					connectedSlices.insert(i->getTargetSlice()->getId());
+					break;
+				}
+			}
+
+			continue;
+		}
+
+		if (!foundOpenEdge)
+			allConnected = true;
+	}
 }
 
 std::map<float, std::vector<ContinuationSegment> >
