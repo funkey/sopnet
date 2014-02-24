@@ -40,7 +40,7 @@ SliceEditor::draw(const util::point<double>& position, double radius, bool foreg
 			if (dx*dx + dy*dy <= radius*radius)
 				if (p.x + dx >= 0 && p.x + dx < _sliceImage->width()
 				&&  p.y + dy >= 0 && p.y + dy < _sliceImage->height())
-					(*_sliceImage)(p.x + dx, p.y + dy) = (foreground ? 1.0 : 0.0);
+					(*_sliceImage)(p.x + dx, p.y + dy) = (foreground ? 0.8 : 0.0);
 }
 
 SliceEdits
@@ -194,5 +194,5 @@ void
 SliceEditor::drawSlice(boost::shared_ptr<Slice> slice) {
 
 	foreach (const util::point<int>& p, slice->getComponent()->getPixels())
-		(*_sliceImage)(p.x - _region.minX, p.y - _region.minY) = 1.0;
+		(*_sliceImage)(p.x - _region.minX, p.y - _region.minY) = 0.8;
 }

@@ -14,6 +14,8 @@ SplitMergePainter::setSliceImage(boost::shared_ptr<Image> sliceImage, const util
 
 	_sliceImagePainter = boost::make_shared<gui::ImagePainter<Image> >();
 	_sliceImagePainter->setImage(sliceImage);
+	_sliceImagePainter->setTransparent(true);
+	_sliceImagePainter->setColor(1.0, 0.5, 0.4);
 	_sliceImageOffset = offset;
 }
 

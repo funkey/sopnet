@@ -68,6 +68,8 @@ private:
 
 	boost::shared_ptr<SliceEditor> _sliceEditor;
 	int _drawing;
+
+	util::point<double> _lastMousePosition;
 };
 
 #endif // SOPNET_SEGMENTS_SPLIT_MERGE_H__

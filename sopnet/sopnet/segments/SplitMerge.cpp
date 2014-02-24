@@ -8,7 +8,8 @@ SplitMerge::SplitMerge() :
 	_painter(boost::make_shared<SplitMergePainter>()),
 	_selection(boost::make_shared<std::set<boost::shared_ptr<Slice> > >()),
 	_initialSegmentsProcessed(false),
-	_drawing(0) {
+	_drawing(0),
+	_lastMousePosition(0, 0) {
 
 	registerInput(_initialSegments, "initial segments");
 	registerInput(_section, "section");
@@ -477,6 +478,8 @@ SplitMerge::onMouseDown(const gui::MouseDown& signal) {
 void
 SplitMerge::onMouseMove(const gui::MouseMove& signal) {
 
+	_lastMousePosition = signal.position;
+
 	if (!_sliceEditor || !_drawing)
 		return;
 
@@ -526,7 +529,7 @@ SplitMerge::startSliceEditor() {
 	LOG_DEBUG(splitmergelog) << "starting slice editor" << std::endl;
 
 	// get all slices in current section
-	std::vector<boost::shared_ptr<Slice> > currentSlices = getCurrentSlices();
+	std::vector<boost::shared_ptr<Slice> > currentSlices = getCurrentSlices(_lastMousePosition);
 
 	// get their bounding box
 	util::rect<int> bb(0, 0, 0, 0);
