@@ -15,8 +15,7 @@ logger::LogChannel geometryfeatureextractorlog("geometryfeatureextractorlog", "[
 util::ProgramOption optionDisableSliceDistanceFeature(
 		util::_module           = "sopnet.features",
 		util::_long_name        = "disableSliceDistanceFeature",
-		util::_description_text = "Disable the use of slice distance features.",
-		util::_default_value    = 50);
+		util::_description_text = "Disable the use of slice distance features.");
 
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
 	_features(boost::make_shared<Features>()),
