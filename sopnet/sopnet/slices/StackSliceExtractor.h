@@ -7,11 +7,11 @@
 #include <boost/thread.hpp>
 
 #include <pipeline/all.h>
-#include <inference/LinearConstraints.h>
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/ImageStack.h>
 #include <imageprocessing/ComponentTree.h>
 #include <imageprocessing/MserParameters.h>
+#include "ConflictSets.h"
 #include "Slices.h"
 
 // forward declaration
@@ -49,9 +49,9 @@ class MserParameters;
  *   <td>All slices extracted from the input image stack.</td>
  * </td>
  * <tr>
- *   <td>"linear constraints"</td>
- *   <td>(LinearConstraints)</td>
- *   <td>Linear consistency constraints on the extracted slices. Variable
+ *   <td>"conflict sets"</td>
+ *   <td>(ConflictSets)</td>
+ *   <td>Conflict sets on the extracted slices. Variable
  *   numbers match slice ids.</td>
  * </tr>
  */
@@ -64,8 +64,8 @@ public:
 private:
 
 	/**
-	 * Collects slices from a number of slice sets and establishes linear
-	 * consistency constraints for them.
+	 * Collects slices from a number of slice sets and establishes conflict sets 
+	 * for them.
 	 */
 	class SliceCollector : public pipeline::SimpleProcessNode<> {
 
@@ -91,7 +91,7 @@ private:
 
 		pipeline::Output<Slices> _allSlices;
 
-		pipeline::Output<LinearConstraints> _linearConstraints;
+		pipeline::Output<ConflictSets> _conflictSets;
 	};
 
 	void onInputSet(const pipeline::InputSet<ImageStack>& signal);
@@ -105,14 +105,8 @@ private:
 	// whether to force explanation of every part of the image
 	pipeline::Input<bool>               _forceExplanation;
 
-	// all slices extracted from the slice image stack
-	pipeline::Output<Slices>            _slices;
-
-	// linear consistency constraints on the slices
-	pipeline::Output<LinearConstraints> _linearConstraints;
-
 	// extractor to get the images in the input stack
-	boost::shared_ptr<ImageExtractor>           _sliceImageExtractor;
+	boost::shared_ptr<ImageExtractor>   _sliceImageExtractor;
 
 	// one mser per slice image
 	std::vector<boost::shared_ptr<Mser<unsigned char> > > _msers;
