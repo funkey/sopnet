@@ -15,12 +15,12 @@ public:
 		_oldSlices(oldSlices),
 		_newSlices(newSlices) {}
 
-	const std::vector<boost::shared_ptr<Slice> >& getOldSlices() {
+	const std::vector<boost::shared_ptr<Slice> >& getOldSlices() const {
 
 		return _oldSlices;
 	}
 
-	const std::vector<boost::shared_ptr<Slice> >& getNewSlices() {
+	const std::vector<boost::shared_ptr<Slice> >& getNewSlices() const {
 
 		return _newSlices;
 	}

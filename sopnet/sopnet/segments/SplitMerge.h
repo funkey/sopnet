@@ -47,12 +47,15 @@ private:
 
 	std::vector<boost::shared_ptr<Slice> > getCurrentSlices(const util::point<double>& position = util::point<double>(0, 0));
 
-	void removeSegments(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval, std::vector<Link>& oldLinks);
+	void removeSegments(const std::vector<boost::shared_ptr<Slice> >& slices, Direction direction, unsigned int interval, std::vector<Link>& oldLinks);
 	void mergeSlices(unsigned int interval, std::vector<Link>& oldLinks);
-	void endSlices(std::vector<boost::shared_ptr<Slice> >& prevSlices, std::vector<boost::shared_ptr<Slice> >& currSlices);
+	void endSlices(std::vector<boost::shared_ptr<Slice> >& slices, Direction direction);
+	void endSlice(boost::shared_ptr<Slice> slice, Direction direction);
 
 	void startSliceEditor();
 	void stopSliceEditor();
+
+	void processSliceReplacements(const SliceReplacements& replacements);
 
 	pipeline::Input<Segments>           _initialSegments;
 	pipeline::Input<int>                _section;
