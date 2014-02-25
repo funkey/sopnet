@@ -182,7 +182,6 @@ Sopnet::createPipeline() {
 	}
 
 	createBasicPipeline();
-
 	createInferencePipeline();
 	if (_groundTruth)
 		createTrainingPipeline();
@@ -239,6 +238,9 @@ Sopnet::createBasicPipeline() {
 			_problemAssembler->addInput("synapse linear constraints", _synapseSegmentExtractorPipeline->getConstraints(i));
 		}
 	}
+
+	if (_groundTruth)
+		_groundTruthExtractor->setInput(_groundTruth);
 }
 
 void
@@ -349,7 +351,6 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
-	_groundTruthExtractor->setInput(_groundTruth.getAssignedOutput());
 
 	_segmentRfTrainer->setInput("ground truth", _groundTruthExtractor->getOutput());
 	_segmentRfTrainer->setInput("all segments", _problemAssembler->getOutput("segments"));

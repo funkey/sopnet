@@ -315,7 +315,7 @@ int main(int optionc, char** optionv) {
 		}
 
 		// select a substack, if options are set
-		if (optionFirstSection || optionLastSection) {
+		if (firstSection != 0 || lastSection != -1) {
 
 			// create section selectors
 			boost::shared_ptr<SubStackSelector> rawSelector          = boost::make_shared<SubStackSelector>(firstSection, lastSection);
@@ -403,17 +403,12 @@ int main(int optionc, char** optionv) {
 			sopnet->setInput("mitochondria slices", mitochondriaReader->getOutput());
 		if (synapseReader)
 			sopnet->setInput("synapse slices", synapseReader->getOutput());
-		if (optionTraining) {
+		if (groundTruthReader)
+			sopnet->setInput("ground truth", groundTruthReader->getOutput());
+		else if (optionTraining) {
 
-			if (!groundTruthReader) {
-
-				LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
-				return -1;
-
-			} else {
-
-				sopnet->setInput("ground truth", groundTruthReader->getOutput());
-			}
+			LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
+			return -1;
 		}
 		sopnet->setInput("segmentation cost parameters", sopnetDialog->getOutput("segmentation cost parameters"));
 		sopnet->setInput("prior cost parameters", sopnetDialog->getOutput("prior cost parameters"));
