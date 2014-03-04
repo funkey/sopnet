@@ -26,6 +26,7 @@ class SegmentExtractor;
 class SegmentFeaturesExtractor;
 class SegmentRandomForestTrainer;
 class SegmentationCostFunction;
+class StructuredProblemWriter;
 template <typename Precision> class SliceExtractor;
 
 class Sopnet : public pipeline::SimpleProcessNode<> {
@@ -40,6 +41,8 @@ public:
 	 */
 	Sopnet(const std::string& projectDirectory, boost::shared_ptr<ProcessNode> problemWriter = boost::shared_ptr<ProcessNode>());
 
+	void writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints);
+
 private:
 
 	void updateOutputs();
@@ -51,6 +54,8 @@ private:
 	void createInferencePipeline();
 
 	void createTrainingPipeline();
+
+	void createStructuredProblemPipeline();
 
 	/**********
 	 * INPUTS *
@@ -100,44 +105,44 @@ private:
 	 * basic part
 	 */
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _neuronSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_neuronSegmentExtractorPipeline;
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _mitochondriaSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_mitochondriaSegmentExtractorPipeline;
 
-	boost::shared_ptr<SegmentExtractionPipeline>      _synapseSegmentExtractorPipeline;
+	boost::shared_ptr<SegmentExtractionPipeline>      	_synapseSegmentExtractorPipeline;
 
 	// the problem assembler that collects all segments and linear constraints
-	boost::shared_ptr<ProblemAssembler>               _problemAssembler;
+	boost::shared_ptr<ProblemAssembler>               	_problemAssembler;
 
 	/*
 	 * inference part
 	 */
 
 	// a feature extractor computing features for each segment
-	boost::shared_ptr<SegmentFeaturesExtractor>       _segmentFeaturesExtractor;
+	boost::shared_ptr<SegmentFeaturesExtractor>       	_segmentFeaturesExtractor;
 
 	// a random forest file reader
-	boost::shared_ptr<RandomForestHdf5Reader>         _randomForestReader;
+	boost::shared_ptr<RandomForestHdf5Reader>         	_randomForestReader;
 
 	// a segment evaluator that provides a cost function for segment types
-	boost::shared_ptr<PriorCostFunction>              _priorCostFunction;
+	boost::shared_ptr<PriorCostFunction>              	_priorCostFunction;
 
 	// the objective generator that computes the costs for each segment
-	boost::shared_ptr<ObjectiveGenerator>             _objectiveGenerator;
+	boost::shared_ptr<ObjectiveGenerator>             	_objectiveGenerator;
 
 	// the linear solver
-	boost::shared_ptr<LinearSolver>                   _linearSolver;
+	boost::shared_ptr<LinearSolver>                   	_linearSolver;
 
 	// the last proess node in the internal pipeline, providing the final
 	// solution
-	boost::shared_ptr<Reconstructor>                  _reconstructor;
+	boost::shared_ptr<Reconstructor>                  	_reconstructor;
 
 	/*
 	 * training part
 	 */
 
 	// the ground truth extractor, gives segments from ground truth images
-	boost::shared_ptr<GroundTruthExtractor>           _groundTruthExtractor;
+	boost::shared_ptr<GroundTruthExtractor>           	_groundTruthExtractor;
 
 	// the gold standard extractor, gives the closest candidate solution to the 
 	// groundtruth
@@ -145,6 +150,9 @@ private:
 
 	// the training node, trains a random forest classifier on the gold standard
 	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
+
+	// a writer provider to provide a structured problem writer to produce output for structured learning
+	boost::shared_ptr<StructuredProblemWriter>		_spWriter;
 
 	/**************************
 	 * PROJECT INFRASTRUCTURE *

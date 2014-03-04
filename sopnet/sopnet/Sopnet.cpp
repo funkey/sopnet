@@ -24,6 +24,7 @@
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/SegmentRandomForestTrainer.h>
+#include <sopnet/training/io/StructuredProblemWriter.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -76,6 +77,7 @@ Sopnet::Sopnet(
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
 	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
 	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
+	_spWriter(boost::make_shared<StructuredProblemWriter>()),
 	_projectDirectory(projectDirectory),
 	_problemWriter(problemWriter),
 	_pipelineCreated(false) {
@@ -125,8 +127,11 @@ Sopnet::createPipeline() {
 
 	createBasicPipeline();
 	createInferencePipeline();
-	if (_groundTruth.isSet())
+	if (_groundTruth.isSet()) {
+
 		createTrainingPipeline();
+		createStructuredProblemPipeline();
+	}
 
 	_pipelineCreated = true;
 }
@@ -309,4 +314,27 @@ Sopnet::createTrainingPipeline() {
 	_segmentRfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
 	_segmentRfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
 	_segmentRfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+}
+
+void
+Sopnet::createStructuredProblemPipeline() {
+
+	LOG_DEBUG(sopnetlog) << "re-creating structured problem part..." << std::endl;
+
+	// TODO: Complete!
+	// Set input to structured problem writer.
+	
+	_spWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+	_spWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+	_spWriter->setInput("ground truth segments", _groundTruthExtractor->getOutput("ground truth segments"));
+	_spWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));
+}
+
+void
+Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints) {
+
+	_spWriter->write(filename_labels, filename_features, filename_constraints);
+	
 }
