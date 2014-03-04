@@ -67,6 +67,20 @@ ProblemConfiguration::getVariables(unsigned int minInterSectionInterval, unsigne
 	return variables;
 }
 
+std::set<unsigned int>
+ProblemConfiguration::getVariables() {
+
+	unsigned int variable;
+	unsigned int segmentId;
+
+	std::set<unsigned int> variables;
+
+	foreach (boost::tie(variable, segmentId), _segmentIds)
+		variables.insert(variable);
+
+	return variables;
+}
+
 void
 ProblemConfiguration::clear() {
 

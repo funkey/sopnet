@@ -54,6 +54,11 @@ public:
 	std::vector<unsigned int> getVariables(unsigned int minInterSectionInterval, unsigned int maxInterSectionInterval);
 
 	/**
+	 * Get all variables that have been assigned to segments.
+	 */
+	std::set<unsigned int> getVariables();
+
+	/**
 	 * Clear the mapping.
 	 */
 	void clear();
@@ -62,7 +67,7 @@ private:
 
 	void fit(const Segment& segment);
 
-	// mapping of segment ids to a continous range of variable numbers
+	// mapping of segment ids to variable numbers
 	std::map<unsigned int, unsigned int> _variables;
 
 	// reverse mapping
