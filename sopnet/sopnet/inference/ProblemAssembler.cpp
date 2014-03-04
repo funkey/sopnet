@@ -242,6 +242,9 @@ ProblemAssembler::addSynapseConstraints() {
 
 		LOG_ALL(problemassemblerlog) << "synapse segment has " << n << " enclosing neuron segments" << std::endl;
 
+		if (n == 0)
+			continue;
+
 		constraint->setValue(n);
 		constraint->setRelation(LessEqual);
 
