@@ -2,6 +2,7 @@
 #define SOPNET_GUI_NEURONS_VIEW_H__
 
 #include <pipeline/all.h>
+#include <pipeline/Process.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/GuiSignals.h>
@@ -49,7 +50,7 @@ private:
 	pipeline::Input<SliceErrors>   _sliceErrors;
 	pipeline::Output<unsigned int> _currentNeuron;
 
-	boost::shared_ptr<gui::ContainerView<gui::HorizontalPlacing> > _container;
+	pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > _container;
 
 	bool _neuronsChanged;
 };

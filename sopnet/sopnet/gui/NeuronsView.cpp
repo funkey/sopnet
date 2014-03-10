@@ -7,12 +7,12 @@
 logger::LogChannel neuronsviewlog("neuronsviewlog", "[NeuronsView] ");
 
 NeuronsView::NeuronsView() :
-		_container(boost::make_shared<gui::ContainerView<gui::HorizontalPlacing> > ("neurons")),
+		_container("neurons"),
 		_neuronsChanged(true) {
 
 	registerInput(_neurons, "neurons");
 	registerInput(_sliceErrors, "slice errors", pipeline::Optional);
-	registerOutput(_container->getOutput(), "painter");
+	registerOutput(_container->getOutput("container"), "container");
 	registerOutput(_currentNeuron, "current neuron");
 
 	_neurons.registerBackwardCallback(&NeuronsView::onNeuronsModified, this);

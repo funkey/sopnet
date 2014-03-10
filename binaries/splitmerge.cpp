@@ -21,6 +21,7 @@
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/gui/NeuronsStackView.h>
+#include <sopnet/gui/NeuronsView.h>
 #include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/neurons/NeuronExtractor.h>
@@ -57,8 +58,14 @@ util::ProgramOption optionSaveResultBasename(
 		_description_text = "The basenames of the images files created in the result directory. The default is \"result_\".",
 		_default_value    = "result_");
 
+util::ProgramOption optionShowNeurons(
+		_long_name        = "showNeurons",
+		_description_text = "Show a 3D view for each neuron.");
+
 int main(int optionc, char** optionv) {
 
+	// create a window
+	pipeline::Process<gui::Window> window("splitmerge");
 
 	try {
 
@@ -113,20 +120,34 @@ int main(int optionc, char** optionv) {
 		rawView->setInput(rawReader->getOutput());
 		splitMerge->setInput("section", rawView->getOutput("section"));
 
-		// create overlay container for these views
-		pipeline::Process<ContainerView<OverlayPlacing> > container;
-		container->addInput(splitMerge->getOutput("painter"));
-		container->addInput(groundTruthView->getOutput());
-		container->addInput(rawView->getOutput());
+		// create overlay overlay for these views
+		pipeline::Process<ContainerView<OverlayPlacing> > overlay;
+		overlay->addInput(splitMerge->getOutput("painter"));
+		overlay->addInput(groundTruthView->getOutput());
+		overlay->addInput(rawView->getOutput());
+
+		// create a horizontal overlay
+		pipeline::Process<ContainerView<HorizontalPlacing> > horizontalContainer;
+		horizontalContainer->addInput(overlay->getOutput());
+
+		boost::shared_ptr<pipeline::ProcessNode> neuronsView;
+		if (optionShowNeurons) {
+
+			neuronsView = boost::make_shared<NeuronsView>();
+			boost::shared_ptr<NamedView>   namedView   = boost::make_shared<NamedView>("Whole Neurons:");
+
+			neuronsView->setInput(neuronsExtractor->getOutput());
+			namedView->setInput(neuronsView->getOutput("container"));
+
+			horizontalContainer->addInput(namedView->getOutput());
+		}
 
 		// create a zoom view
 		pipeline::Process<gui::ZoomView> zoomView(true);
-		zoomView->setInput(container->getOutput());
+		zoomView->setInput(horizontalContainer->getOutput());
 
-		// create a window
-		pipeline::Process<gui::Window> window("splitmerge");
+		// show window
 		window->setInput(zoomView->getOutput());
-
 		window->processEvents();
 
 		LOG_USER(out) << "[main] saving reconstruction" << std::endl;
