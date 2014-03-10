@@ -41,7 +41,21 @@ private:
 
 		bool operator()(const ContinuationSegment& a, const ContinuationSegment& b) {
 
-			return overlap(*a.getSourceSlice(), *a.getTargetSlice()) > overlap(*b.getSourceSlice(), *b.getTargetSlice());
+			double overlapA = overlap(*a.getSourceSlice(), *a.getTargetSlice());
+			double overlapB = overlap(*b.getSourceSlice(), *b.getTargetSlice());
+
+			// larger overlap goes to front
+			if (overlapA != overlapB)
+				return overlapA > overlapB;
+
+			util::point<double> diffA = a.getTargetSlice()->getComponent()->getCenter() - a.getSourceSlice()->getComponent()->getCenter();
+			util::point<double> diffB = b.getTargetSlice()->getComponent()->getCenter() - b.getSourceSlice()->getComponent()->getCenter();
+
+			double distanceA = diffA.x*diffA.x + diffA.y*diffA.y;
+			double distanceB = diffB.x*diffB.x + diffB.y*diffB.y;
+
+			// smaller displacement goes to front
+			return distanceA < distanceB;
 		}
 
 		Overlap overlap;
