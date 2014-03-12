@@ -125,7 +125,7 @@ Sopnet::createPipeline() {
 
 	createBasicPipeline();
 	createInferencePipeline();
-	if (_groundTruth)
+	if (_groundTruth.isSet())
 		createTrainingPipeline();
 
 	_pipelineCreated = true;
@@ -144,25 +144,32 @@ Sopnet::createBasicPipeline() {
 	_problemAssembler->clearInputs("synapse segments");
 	_problemAssembler->clearInputs("synapse linear constraints");
 
-	// make sure relevant input information is available
-	_update();
+	bool finishLastSection = !_problemWriter;
 
-	if (_neuronSliceStackDirectories)
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories.getSharedPointer(), !_problemWriter);
+	LOG_DEBUG(sopnetlog) << "creating neuron segment part..." << std::endl;
+
+	if (_neuronSliceStackDirectories.isSet())
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories.getSharedPointer(), finishLastSection);
 	else
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices.getSharedPointer(), _forceExplanation, !_problemWriter);
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices.getSharedPointer(), _forceExplanation, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "creating mitochondria segment part..." << std::endl;
 
 	_mitochondriaSegmentExtractorPipeline.reset();
-	if (_mitochondriaSliceStackDirectories)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories.getSharedPointer(), !_problemWriter);
-	else if (_mitochondriaSlices)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices.getSharedPointer(), false, !_problemWriter);
+	if (_mitochondriaSliceStackDirectories.isSet())
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories.getSharedPointer(), finishLastSection);
+	else if (_mitochondriaSlices.isSet())
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices.getSharedPointer(), false, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "creating synapse segment part..." << std::endl;
 
 	_synapseSegmentExtractorPipeline.reset();
-	if (_synapseSliceStackDirectories)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories.getSharedPointer(), !_problemWriter);
-	else if (_synapseSlices)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices.getSharedPointer(), false, !_problemWriter);
+	if (_synapseSliceStackDirectories.isSet())
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories.getSharedPointer(), finishLastSection);
+	else if (_synapseSlices.isSet())
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices.getSharedPointer(), false, finishLastSection);
+
+	LOG_DEBUG(sopnetlog) << "feeding output into problem assembler..." << std::endl;
 
 	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 
@@ -183,7 +190,7 @@ Sopnet::createBasicPipeline() {
 		}
 	}
 
-	if (_groundTruth)
+	if (_groundTruth.isSet())
 		_groundTruthExtractor->setInput(_groundTruth);
 }
 

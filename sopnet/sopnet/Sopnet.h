@@ -91,12 +91,6 @@ private:
 	// force the explanation of every component tree
 	pipeline::Input<bool> _forceExplanation;
 
-	/***********
-	 * SIGNALS *
-	 ***********/
-
-	signals::Slot<pipeline::Update> _update;
-
 	/*********************
 	 * INTERNAL PIPELINE *
 	 *********************/
