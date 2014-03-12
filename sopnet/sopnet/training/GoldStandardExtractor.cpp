@@ -17,8 +17,9 @@ util::ProgramOption optionMaxGoldStandardDistance(
 		util::_default_value    = 100);
 
 GoldStandardExtractor::GoldStandardExtractor() :
-	_goldStandard(boost::make_shared<Segments>()),
-	_negativeSamples(boost::make_shared<Segments>()),
+	_goldStandard(new Segments()),
+	_negativeSamples(new Segments()),
+	_groundTruthScore(new std::map<unsigned int, double>()),
 	_overlap(false, false) {
 
 	_maxEndDistance          = optionMaxGoldStandardDistance;

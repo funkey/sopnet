@@ -76,40 +76,22 @@ Sopnet::Sopnet(
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
 	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
 	_projectDirectory(projectDirectory),
-	_problemWriter(problemWriter) {
+	_problemWriter(problemWriter),
+	_pipelineCreated(false) {
 
 	// tell the outside world what we need
 	registerInput(_rawSections, "raw sections");
 	registerInput(_membranes, "membranes");
-	registerInput(_neuronSlices, "neuron slices");
-	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories");
-	registerInput(_mitochondriaSlices, "mitochondria slices");
-	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories");
-	registerInput(_synapseSlices, "synapse slices");
-	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories");
-	registerInput(_groundTruth, "ground truth");
+	registerInput(_neuronSlices, "neuron slices", pipeline::Optional);
+	registerInput(_neuronSliceStackDirectories, "neuron slice stack directories", pipeline::Optional);
+	registerInput(_mitochondriaSlices, "mitochondria slices", pipeline::Optional);
+	registerInput(_mitochondriaSliceStackDirectories, "mitochondria slice stack directories", pipeline::Optional);
+	registerInput(_synapseSlices, "synapse slices", pipeline::Optional);
+	registerInput(_synapseSliceStackDirectories, "synapse slice stack directories", pipeline::Optional);
+	registerInput(_groundTruth, "ground truth", pipeline::Optional);
 	registerInput(_segmentationCostFunctionParameters, "segmentation cost parameters");
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
-
-	_membranes.registerBackwardCallback(&Sopnet::onMembranesSet, this);
-	_neuronSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_neuronSlices.registerBackwardSlot(_update);
-	_neuronSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_neuronSliceStackDirectories.registerBackwardSlot(_update);
-	_mitochondriaSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_mitochondriaSlices.registerBackwardSlot(_update);
-	_mitochondriaSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_mitochondriaSliceStackDirectories.registerBackwardSlot(_update);
-	_synapseSlices.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_synapseSlices.registerBackwardSlot(_update);
-	_synapseSliceStackDirectories.registerBackwardCallback(&Sopnet::onSlicesSet, this);
-	_synapseSliceStackDirectories.registerBackwardSlot(_update);
-	_rawSections.registerBackwardCallback(&Sopnet::onRawSectionsSet, this);
-	_groundTruth.registerBackwardCallback(&Sopnet::onGroundTruthSet, this);
-	_segmentationCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
-	_priorCostFunctionParameters.registerBackwardCallback(&Sopnet::onParametersSet, this);
-	_forceExplanation.registerBackwardCallback(&Sopnet::onParametersSet, this);
 
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
@@ -125,66 +107,28 @@ Sopnet::Sopnet(
 }
 
 void
-Sopnet::onMembranesSet(const pipeline::InputSet<ImageStack>&) {
+Sopnet::updateOutputs() {
 
-	LOG_DEBUG(sopnetlog) << "membranes set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onSlicesSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "slices set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onRawSectionsSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "raw sections set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onGroundTruthSet(const pipeline::InputSet<ImageStack>&) {
-
-	LOG_DEBUG(sopnetlog) << "ground-truth set" << std::endl;
-
-	createPipeline();
-}
-
-void
-Sopnet::onParametersSet(const pipeline::InputSetBase&) {
-
-	LOG_DEBUG(sopnetlog) << "parameters set" << std::endl;
-
-	createPipeline();
+	if (!_pipelineCreated)
+		createPipeline();
 }
 
 void
 Sopnet::createPipeline() {
 
-	LOG_DEBUG(sopnetlog) << "re-creating pipeline" << std::endl;
+	LOG_DEBUG(sopnetlog) << "creating pipeline" << std::endl;
 
-	if (
-			!_membranes ||
-			!(_neuronSlices || _neuronSliceStackDirectories) ||
-			!_rawSections ||
-			!_segmentationCostFunctionParameters ||
-			!_priorCostFunctionParameters ||
-			!_forceExplanation) {
-
-		LOG_DEBUG(sopnetlog) << "not all inputs present -- skip pipeline creation" << std::endl;
-		return;
-	}
+	if (!_neuronSlices.isSet() && !_neuronSliceStackDirectories.isSet())
+		UTIL_THROW_EXCEPTION(
+				UsageError,
+				"either an image stack of slices or a list of directory names has to be set as 'neuron slices' or 'neuron slice stack directories'");
 
 	createBasicPipeline();
 	createInferencePipeline();
 	if (_groundTruth)
 		createTrainingPipeline();
+
+	_pipelineCreated = true;
 }
 
 void
@@ -204,21 +148,21 @@ Sopnet::createBasicPipeline() {
 	_update();
 
 	if (_neuronSliceStackDirectories)
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories, !_problemWriter);
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSliceStackDirectories.getSharedPointer(), !_problemWriter);
 	else
-		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices, _forceExplanation, !_problemWriter);
+		_neuronSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_neuronSlices.getSharedPointer(), _forceExplanation, !_problemWriter);
 
 	_mitochondriaSegmentExtractorPipeline.reset();
 	if (_mitochondriaSliceStackDirectories)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories, !_problemWriter);
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSliceStackDirectories.getSharedPointer(), !_problemWriter);
 	else if (_mitochondriaSlices)
-		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices, false, !_problemWriter);
+		_mitochondriaSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_mitochondriaSlices.getSharedPointer(), false, !_problemWriter);
 
 	_synapseSegmentExtractorPipeline.reset();
 	if (_synapseSliceStackDirectories)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories, !_problemWriter);
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSliceStackDirectories.getSharedPointer(), !_problemWriter);
 	else if (_synapseSlices)
-		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices, false, !_problemWriter);
+		_synapseSegmentExtractorPipeline = boost::make_shared<SegmentExtractionPipeline>(_synapseSlices.getSharedPointer(), false, !_problemWriter);
 
 	for (unsigned int i = 0; i < _neuronSegmentExtractorPipeline->numIntervals(); i++) {
 

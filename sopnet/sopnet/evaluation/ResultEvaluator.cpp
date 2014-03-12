@@ -11,6 +11,7 @@ util::ProgramOption optionEvaluatinMinOverlap(
 		util::_description_text = "The minimal normalized overlap between a result and ground-truth slice to consider them as a match.");
 
 ResultEvaluator::ResultEvaluator(double minOverlap) :
+	_sliceErrors(new SliceErrors()),
 	_overlap(true /* normalize */, false /* don't align */),
 	_minOverlap(optionEvaluatinMinOverlap ? optionEvaluatinMinOverlap : minOverlap) {
 
@@ -27,6 +28,9 @@ ResultEvaluator::updateOutputs() {
 	_numSections = std::max((int)_result->getNumInterSectionIntervals(), (int)_groundTruth->getNumInterSectionIntervals());
 
 	LOG_DEBUG(resultevaluatorlog) << "compute slice errors for " << _numSections << " sections" << std::endl;
+
+	if (_numSections == 0)
+		return;
 
 	// First, find all slices in the result and ground-truth.
 	findAllSlicesAndLinks();

@@ -26,9 +26,9 @@ RandomForestTrainer::RandomForestTrainer() :
 	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
 	registerOutput(_goldStandardExtractor->getOutput("ground truth score"), "ground truth score");
 
-	_groundTruth.registerBackwardCallback(&RandomForestTrainer::onGroundTruthSet, this);
-	_allSegments.registerBackwardCallback(&RandomForestTrainer::onSegmentsSet, this);
-	_rawSections.registerBackwardCallback(&RandomForestTrainer::onRawSectionsSet, this);
+	_groundTruth.registerCallback(&RandomForestTrainer::onGroundTruthSet, this);
+	_allSegments.registerCallback(&RandomForestTrainer::onSegmentsSet, this);
+	_rawSections.registerCallback(&RandomForestTrainer::onRawSectionsSet, this);
 }
 
 void

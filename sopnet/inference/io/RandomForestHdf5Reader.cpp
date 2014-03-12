@@ -9,5 +9,6 @@ RandomForestHdf5Reader::RandomForestHdf5Reader(std::string filename) :
 void
 RandomForestHdf5Reader::updateOutputs() {
 
+	_randomForest = new RandomForest();
 	_randomForest->read(_filename);
 }

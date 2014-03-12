@@ -4,8 +4,8 @@
 logger::LogChannel splitmergelog("splitmergelog", "[SplitMerge] ");
 
 SplitMerge::SplitMerge() :
-	_segments(boost::make_shared<Segments>()),
-	_painter(boost::make_shared<SplitMergePainter>()),
+	_segments(new Segments()),
+	_painter(new SplitMergePainter()),
 	_selection(boost::make_shared<std::set<boost::shared_ptr<Slice> > >()),
 	_initialSegmentsProcessed(false),
 	_drawing(0),
@@ -18,11 +18,11 @@ SplitMerge::SplitMerge() :
 
 	setDependency(_section, _painter);
 
-	_initialSegments.registerBackwardCallback(&SplitMerge::onInputSet, this);
-	_painter.registerForwardCallback(&SplitMerge::onMouseDown, this);
-	_painter.registerForwardCallback(&SplitMerge::onMouseMove, this);
-	_painter.registerForwardCallback(&SplitMerge::onMouseUp, this);
-	_painter.registerForwardCallback(&SplitMerge::onKeyDown, this);
+	_initialSegments.registerCallback(&SplitMerge::onInputSet, this);
+	_painter.registerCallback(&SplitMerge::onMouseDown, this);
+	_painter.registerCallback(&SplitMerge::onMouseMove, this);
+	_painter.registerCallback(&SplitMerge::onMouseUp, this);
+	_painter.registerCallback(&SplitMerge::onKeyDown, this);
 	_painter->setSelection(_selection);
 }
 

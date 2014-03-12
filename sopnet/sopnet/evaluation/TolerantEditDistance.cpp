@@ -44,7 +44,12 @@ TolerantEditDistance::TolerantEditDistance() :
 	_haveBackgroundLabel(optionHaveBackgroundLabel),
 	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
 	_recBackgroundLabel(optionReconstructionBackgroundLabel),
-	_errors(_haveBackgroundLabel ? boost::make_shared<Errors>(_gtBackgroundLabel, _recBackgroundLabel) : boost::make_shared<Errors>()) {
+	_correctedReconstruction(new ImageStack()),
+	_splitLocations(new ImageStack()),
+	_mergeLocations(new ImageStack()),
+	_fpLocations(new ImageStack()),
+	_fnLocations(new ImageStack()),
+	_errors(_haveBackgroundLabel ? new Errors(_gtBackgroundLabel, _recBackgroundLabel) : new Errors()) {
 
 	if (optionHaveBackgroundLabel) {
 		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;

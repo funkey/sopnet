@@ -11,13 +11,14 @@ class ErrorsView : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	ErrorsView() {
+	ErrorsView() :
+		_painter(new gui::TextPainter()) {
 
 		registerInput(_sliceErrors, "slice errors");
 		registerInput(_variationOfInformation, "variation of information");
 		registerOutput(_painter, "painter");
 
-		_painter.registerForwardSlot(_sizeChanged);
+		_painter.registerSlot(_sizeChanged);
 	}
 
 private:

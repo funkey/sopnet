@@ -4,7 +4,8 @@
 static logger::LogChannel segmentsstackviewlog("segmentsstackviewlog", "[SegmentsStackView] ");
 
 SegmentsStackView::SegmentsStackView(double gap) :
-	_painter(boost::make_shared<SegmentsStackPainter>(gap)),
+	_painter(new SegmentsStackPainter(gap)),
+	_visibleSegments(new Segments()),
 	_section(0),
 	_segmentsModified(true) {
 
@@ -12,12 +13,12 @@ SegmentsStackView::SegmentsStackView(double gap) :
 	registerOutput(_painter, "painter");
 	registerOutput(_visibleSegments, "visible segments");
 
-	_segments.registerBackwardCallback(&SegmentsStackView::onSegmentsModified, this);
+	_segments.registerCallback(&SegmentsStackView::onSegmentsModified, this);
 
-	_painter.registerForwardSlot(_sizeChanged);
-	_painter.registerForwardSlot(_contentChanged);
-	_painter.registerForwardCallback(&SegmentsStackView::onKeyDown, this);
-	_painter.registerForwardCallback(&SegmentsStackView::onMouseDown, this);
+	_painter.registerSlot(_sizeChanged);
+	_painter.registerSlot(_contentChanged);
+	_painter.registerCallback(&SegmentsStackView::onKeyDown, this);
+	_painter.registerCallback(&SegmentsStackView::onMouseDown, this);
 }
 
 void

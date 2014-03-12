@@ -5,7 +5,8 @@
 
 logger::LogChannel typefeatureextractorlog("typefeatureextractorlog", "[TypeFeatureExtractor] ");
 
-TypeFeatureExtractor::TypeFeatureExtractor() {
+TypeFeatureExtractor::TypeFeatureExtractor() :
+	_features(new Features()) {
 
 	registerInput(_segments, "segments");
 	registerOutput(_features, "features");

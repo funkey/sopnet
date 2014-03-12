@@ -3,6 +3,8 @@
 static logger::LogChannel componenttreeconverterlog("componenttreeconverterlog", "[ComponentTreeConverter] ");
 
 ComponentTreeConverter::ComponentTreeConverter(unsigned int section) :
+	_slices(new Slices()),
+	_conflictSets(new ConflictSets()),
 	_section(section) {
 
 	registerInput(_componentTree, "component tree");

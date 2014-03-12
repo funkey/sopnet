@@ -30,7 +30,7 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	registerOutput(_sliceCollector->getOutput("slices"), "slices");
 	registerOutput(_sliceCollector->getOutput("conflict sets"), "conflict sets");
 
-	_sliceImageStack.registerBackwardCallback(&StackSliceExtractor::onInputSet, this);
+	_sliceImageStack.registerCallback(&StackSliceExtractor::onInputSet, this);
 
 	// set default mser parameters from program options
 	_mserParameters->darkToBright = false;

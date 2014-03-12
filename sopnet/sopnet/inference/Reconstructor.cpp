@@ -5,7 +5,7 @@
 static logger::LogChannel reconstructorlog("reconstructorlog", "[Reconstructor] ");
 
 Reconstructor::Reconstructor() :
-	_reconstruction(boost::make_shared<Segments>()) {
+	_reconstruction(new Segments()) {
 
 	registerInput(_solution, "solution");
 	registerInput(_segments, "segments");

@@ -89,7 +89,11 @@ int main(int optionc, char** optionv) {
 		 *********/
 
 		// create section readers
+		std::cout << "##########################################" << std::endl;
+		std::cout << "##########################################" << std::endl;
 		pipeline::Process<ImageStackDirectoryReader> groundTruthReader(optionInitialNeurons.as<std::string>());
+		std::cout << "##########################################" << std::endl;
+		std::cout << "##########################################" << std::endl;
 		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// create ground-truth extractor

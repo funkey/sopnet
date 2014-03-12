@@ -26,5 +26,5 @@ SubproblemsSolver::updateOutputs() {
 	pipeline::Process<SolutionReader> reader(filename);
 	pipeline::Value<Solution> solution = reader->getOutput();
 
-	*_solution = *solution;
+	_solution = solution;
 }

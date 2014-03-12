@@ -6,6 +6,7 @@
 static logger::LogChannel linearsolverlog("linearsolverlog", "[LinearSolver] ");
 
 LinearSolver::LinearSolver(const LinearSolverBackendFactory& backendFactory) :
+	_solution(new Solution()),
 	_objectiveDirty(true),
 	_linearConstraintsDirty(true),
 	_parametersDirty(true) {
@@ -19,9 +20,9 @@ LinearSolver::LinearSolver(const LinearSolverBackendFactory& backendFactory) :
 	_solver = backendFactory.createLinearSolverBackend();
 
 	// register callbacks for input changes
-	_objective.registerBackwardCallback(&LinearSolver::onObjectiveModified, this);
-	_linearConstraints.registerBackwardCallback(&LinearSolver::onLinearConstraintsModified, this);
-	_parameters.registerBackwardCallback(&LinearSolver::onParametersModified, this);
+	_objective.registerCallback(&LinearSolver::onObjectiveModified, this);
+	_linearConstraints.registerCallback(&LinearSolver::onLinearConstraintsModified, this);
+	_parameters.registerCallback(&LinearSolver::onParametersModified, this);
 }
 
 LinearSolver::~LinearSolver() {
@@ -62,7 +63,7 @@ LinearSolver::updateLinearProgram() {
 
 		LOG_DEBUG(linearsolverlog) << "initializing solver" << std::endl;
 
-		if (_parameters)
+		if (_parameters.isSet())
 			_solver->initialize(
 					getNumVariables(),
 					_parameters->getDefaultVariableType(),

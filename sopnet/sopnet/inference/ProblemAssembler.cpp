@@ -32,6 +32,12 @@ util::ProgramOption optionSynapseEnclosingThreshold(
 static logger::LogChannel problemassemblerlog("problemassemblerlog", "[ProblemAssembler] ");
 
 ProblemAssembler::ProblemAssembler() :
+	_allSegments(new Segments()),
+	_allNeuronSegments(new Segments()),
+	_allMitochondriaSegments(new Segments()),
+	_allSynapseSegments(new Segments()),
+	_allLinearConstraints(new LinearConstraints()),
+	_problemConfiguration(new ProblemConfiguration()),
 	_overlap(false, false) {
 
 	registerInputs(_neuronSegments, "neuron segments");

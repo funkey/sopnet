@@ -1,6 +1,7 @@
 #include "IdMapCreator.h"
 
-IdMapCreator::IdMapCreator() {
+IdMapCreator::IdMapCreator() :
+	_idMap(new ImageStack()) {
 
 	registerInput(_neurons, "neurons");
 	registerInput(_reference, "reference");

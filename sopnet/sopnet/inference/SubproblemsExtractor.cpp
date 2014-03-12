@@ -14,7 +14,8 @@ util::ProgramOption optionSubproblemsOverlap(
 
 logger::LogChannel subproblemsextractorlog("subproblemsextractorlog", "[SubproblemsExtractor] ");
 
-SubproblemsExtractor::SubproblemsExtractor() {
+SubproblemsExtractor::SubproblemsExtractor() :
+	_subproblems(new Subproblems()) {
 
 	registerInput(_objective, "objective");
 	registerInput(_constraints, "linear constraints");

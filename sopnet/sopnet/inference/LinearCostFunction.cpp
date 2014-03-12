@@ -10,7 +10,7 @@
 static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[LinearCostFunction] ");
 
 LinearCostFunction::LinearCostFunction() :
-	_costFunction(boost::make_shared<costs_function_type>(boost::bind(&LinearCostFunction::costs, this, _1, _2, _3, _4))) {
+	_costFunction(new costs_function_type(boost::bind(&LinearCostFunction::costs, this, _1, _2, _3, _4))) {
 
 	registerInput(_features, "features");
 	registerInput(_parameters, "parameters");

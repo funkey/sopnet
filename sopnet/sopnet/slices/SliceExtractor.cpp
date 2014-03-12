@@ -46,7 +46,7 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section, bool downsample)
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_converter->getOutput("conflict sets"), "conflict sets");
 
-	_mserParameters.registerBackwardCallback(&SliceExtractor<Precision>::onInputSet, this);
+	_mserParameters.registerCallback(&SliceExtractor<Precision>::onInputSet, this);
 
 	// set default mser parameters from program options
 	_defaultMserParameters->darkToBright =  optionInvertSliceMaps;

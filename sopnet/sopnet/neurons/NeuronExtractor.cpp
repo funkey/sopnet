@@ -12,6 +12,9 @@ NeuronExtractor::NeuronExtractor() {
 void
 NeuronExtractor::updateOutputs() {
 
+	if (!_neurons)
+		_neurons = new SegmentTrees();
+
 	_slices.clear();
 	_neuronIds.clear();
 	_neurons->clear();

@@ -7,6 +7,7 @@
 logger::LogChannel neuronsviewlog("neuronsviewlog", "[NeuronsView] ");
 
 NeuronsView::NeuronsView() :
+		_currentNeuron(new unsigned int(0)),
 		_container("neurons"),
 		_neuronsChanged(true) {
 
@@ -15,7 +16,7 @@ NeuronsView::NeuronsView() :
 	registerOutput(_container->getOutput("container"), "container");
 	registerOutput(_currentNeuron, "current neuron");
 
-	_neurons.registerBackwardCallback(&NeuronsView::onNeuronsModified, this);
+	_neurons.registerCallback(&NeuronsView::onNeuronsModified, this);
 }
 
 void
@@ -38,10 +39,10 @@ NeuronsView::updateOutputs() {
 			boost::shared_ptr<gui::RotateView> rotateView = boost::make_shared<gui::RotateView>();
 
 			boost::function<void(gui::MouseDown&)> callback = boost::bind(&NeuronsView::onMouseDownOnNeuron, this, _1, neuronNum);
-			rotateView->getOutput().registerForwardCallback(callback, this, signals::Transparent);
+			rotateView->getOutput().registerCallback(callback, this, signals::Transparent);
 
 			neuronView->setInput("segments", neuron);
-			if (_sliceErrors)
+			if (_sliceErrors.isSet())
 				neuronView->setInput("slice errors", _sliceErrors);
 			rotateView->setInput(neuronView->getOutput());
 			_container->addInput(rotateView->getOutput());

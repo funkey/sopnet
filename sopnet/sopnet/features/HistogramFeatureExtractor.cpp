@@ -7,7 +7,7 @@
 #include "HistogramFeatureExtractor.h"
 
 HistogramFeatureExtractor::HistogramFeatureExtractor(unsigned int numBins) :
-	_features(boost::make_shared<Features>()),
+	_features(new Features()),
 	_numBins(numBins) {
 
 	registerInput(_segments, "segments");

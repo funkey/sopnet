@@ -9,7 +9,7 @@ util::ProgramOption optionNumTrees(
 		util::_description_text = "The number of trees to use for the random forest.");
 
 SegmentRandomForestTrainer::SegmentRandomForestTrainer() :
-	_randomForest(boost::make_shared<RandomForest>()) {
+	_randomForest(new RandomForest()) {
 
 	registerInput(_positiveSamples, "positive samples");
 	registerInput(_negativeSamples, "negative samples");

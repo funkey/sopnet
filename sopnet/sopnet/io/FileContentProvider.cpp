@@ -12,14 +12,25 @@ FileContentProvider::FileContentProvider(std::string filename) :
 
 FileContentProvider::~FileContentProvider() {
 
+	LOG_DEBUG(filecontentproviderlog) << "destructing, stopping inotify thread..." << std::endl;
 	stopInotifyThread();
+	LOG_DEBUG(filecontentproviderlog) << "done" << std::endl;
 }
 
 void
 FileContentProvider::updateOutputs() {
 
+	if (!_content) {
+
+		LOG_DEBUG(filecontentproviderlog) << "creating new ifstream" << std::endl;
+		_content = new std::ifstream();
+	}
+
 	if (_content->is_open())
 		_content->close();
+
+	LOG_DEBUG(filecontentproviderlog) << "opening file " << _filepath << std::endl;
+
 	_content->open(_filepath.string().c_str());
 }
 

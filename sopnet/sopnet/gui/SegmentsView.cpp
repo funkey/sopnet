@@ -4,7 +4,7 @@
 static logger::LogChannel segmentsviewlog("segmentsviewlog", "[SegmentsView] ");
 
 SegmentsView::SegmentsView(std::string name) :
-		_painter(boost::make_shared<SegmentsPainter>(name)) {
+		_painter(new SegmentsPainter(name)) {
 
 	registerInput(_segments, "segments");
 	registerInput(_rawSections, "raw sections", pipeline::Optional);
@@ -12,8 +12,8 @@ SegmentsView::SegmentsView(std::string name) :
 
 	registerOutput(_painter, "painter");
 
-	_painter.registerForwardSlot(_sizeChanged);
-	_painter.registerForwardCallback(&SegmentsView::onKeyDown, this);
+	_painter.registerSlot(_sizeChanged);
+	_painter.registerCallback(&SegmentsView::onKeyDown, this);
 }
 
 void
@@ -66,10 +66,10 @@ SegmentsView::updateOutputs() {
 
 	LOG_DEBUG(segmentsviewlog) << "setting painter content" << std::endl;
 
-	if (_rawSections)
+	if (_rawSections.isSet())
 		_painter->setImageStack(_rawSections);
 
-	if (_sliceErrors)
+	if (_sliceErrors.isSet())
 		_painter->setSliceErrors(_sliceErrors);
 
 	_painter->setSegments(_segments);

@@ -7,6 +7,7 @@
 logger::LogChannel streamproblemreaderlog("problemsreaderlog", "[ProblemsReader] ");
 
 ProblemsReader::ProblemsReader(const std::string& stream) :
+	_problems(new Problems()),
 	_streamName(stream),
 	_stream(0),
 	_fb(0) {

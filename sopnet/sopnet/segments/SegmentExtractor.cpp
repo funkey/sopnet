@@ -50,6 +50,8 @@ util::ProgramOption optionDisableBranches(
 
 
 SegmentExtractor::SegmentExtractor() :
+	_segments(new Segments()),
+	_linearConstraints(new LinearConstraints()),
 	_overlap(false /* don't normalize */, false /* don't align */),
 	_continuationOverlapThreshold(optionContinuationOverlapThreshold.as<double>()),
 	_branchOverlapThreshold(optionBranchOverlapThreshold.as<double>()),
@@ -68,10 +70,10 @@ SegmentExtractor::SegmentExtractor() :
 	registerOutput(_segments, "segments");
 	registerOutput(_linearConstraints, "linear constraints");
 
-	_prevSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
-	_nextSlices.registerBackwardCallback(&SegmentExtractor::onSlicesModified, this);
-	_prevConflictSets.registerBackwardCallback(&SegmentExtractor::onConflictSetsModified, this);
-	_nextConflictSets.registerBackwardCallback(&SegmentExtractor::onConflictSetsModified, this);
+	_prevSlices.registerCallback(&SegmentExtractor::onSlicesModified, this);
+	_nextSlices.registerCallback(&SegmentExtractor::onSlicesModified, this);
+	_prevConflictSets.registerCallback(&SegmentExtractor::onConflictSetsModified, this);
+	_nextConflictSets.registerCallback(&SegmentExtractor::onConflictSetsModified, this);
 }
 
 void
@@ -130,7 +132,7 @@ SegmentExtractor::extractSegments() {
 	oldSize = _segments->size();
 
 	// end segments for every next slice, if we are the last segment extractor
-	if (_nextConflictSets) {
+	if (_nextConflictSets.isSet()) {
 
 		LOG_DEBUG(segmentextractorlog) << "extracting ends to and from next section..." << std::endl;
 
@@ -441,7 +443,7 @@ SegmentExtractor::assembleLinearConstraints() {
 	/* If linear constraints were also given for the next slice, consider them
 	 * as well.
 	 */
-	if (_nextConflictSets) {
+	if (_nextConflictSets.isSet()) {
 
 		LOG_DEBUG(segmentextractorlog) << "using conflict sets of next slice" << std::endl;
 

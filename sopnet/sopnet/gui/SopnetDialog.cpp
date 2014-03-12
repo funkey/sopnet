@@ -73,7 +73,9 @@ SopnetDialog::SopnetDialog() :
 	_containerView->addInput(_priorBranchSlider->getOutput("painter"));
 }
 
-SopnetDialog::ParameterAssembler::ParameterAssembler() {
+SopnetDialog::ParameterAssembler::ParameterAssembler() :
+	_segmentationCostFunctionParameters(new SegmentationCostFunctionParameters()),
+	_priorCostFunctionParameters(new PriorCostFunctionParameters()) {
 
 	registerInput(_segmentationCostWeight, "segmentation cost weight");
 	registerInput(_segmentationCostPottsWeight, "segmentation cost potts weight");

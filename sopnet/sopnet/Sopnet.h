@@ -27,7 +27,7 @@ class RandomForestCostFunction;
 class RandomForestTrainer;
 template <typename Precision> class SliceExtractor;
 
-class Sopnet : public pipeline::ProcessNode {
+class Sopnet : public pipeline::SimpleProcessNode<> {
 
 public:
 
@@ -41,15 +41,7 @@ public:
 
 private:
 
-	void onMembranesSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onSlicesSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onRawSectionsSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onGroundTruthSet(const pipeline::InputSet<ImageStack>& signal);
-
-	void onParametersSet(const pipeline::InputSetBase& signal);
+	void updateOutputs();
 
 	void createPipeline();
 
@@ -164,7 +156,8 @@ private:
 
 	// a writer to dump a description of the problem
 	boost::shared_ptr<ProcessNode> _problemWriter;
-	
+
+	bool _pipelineCreated;
 };
 
 #endif // CELLTRACKER_CELLTRACKER_H__

@@ -4,7 +4,8 @@
 
 static logger::LogChannel quadraticsolverlog("quadraticsolverlog", "[QuadraticSolver] ");
 
-QuadraticSolver::QuadraticSolver(const QuadraticSolverBackendFactory& factory) {
+QuadraticSolver::QuadraticSolver(const QuadraticSolverBackendFactory& factory) :
+	_solution(new Solution()) {
 
 	registerInput(_objective, "objective");
 	registerInput(_linearConstraints, "linear constraints");
@@ -30,7 +31,7 @@ QuadraticSolver::updateOutputs() {
 void
 QuadraticSolver::updateQuadraticProgram() {
 
-	if (_parameters)
+	if (_parameters.isSet())
 		_solver->initialize(
 				getNumVariables(),
 				_parameters->getDefaultVariableType(),

@@ -7,6 +7,7 @@
 logger::LogChannel groundtruthextractorlog("groundtruthextractorlog", "[GroundTruthExtractor] ");
 
 GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bool addIntensityBoundaries, bool endSegmentsOnly) :
+	_groundTruthSegments(new Segments()),
 	_firstSection(firstSection),
 	_lastSection(lastSection),
 	_addIntensityBoundaries(addIntensityBoundaries),

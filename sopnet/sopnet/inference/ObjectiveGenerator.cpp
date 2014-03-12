@@ -3,7 +3,8 @@
 
 static logger::LogChannel objectivegeneratorlog("objectivegeneratorlog", "[ObjectiveGenerator] ");
 
-ObjectiveGenerator::ObjectiveGenerator() {
+ObjectiveGenerator::ObjectiveGenerator() :
+	_objective(new LinearObjective()) {
 
 	registerInput(_segments, "segments");
 	registerInputs(_costFunctions, "cost functions");

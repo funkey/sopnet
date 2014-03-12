@@ -8,7 +8,7 @@
 logger::LogChannel priorcostfunctionlog("priorcostfunctionlog", "[PriorCostFunction] ");
 
 PriorCostFunction::PriorCostFunction() :
-	_costFunction(boost::make_shared<costs_function_type>(boost::bind(&PriorCostFunction::costs, this, _1, _2, _3, _4))) {
+	_costFunction(new costs_function_type(boost::bind(&PriorCostFunction::costs, this, _1, _2, _3, _4))) {
 
 	registerInput(_parameters, "parameters");
 

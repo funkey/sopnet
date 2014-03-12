@@ -18,7 +18,7 @@ util::ProgramOption optionDisableSliceDistanceFeature(
 		util::_description_text = "Disable the use of slice distance features.");
 
 GeometryFeatureExtractor::GeometryFeatureExtractor() :
-	_features(boost::make_shared<Features>()),
+	_features(new Features()),
 	_overlap(false, false),
 	_alignedOverlap(false, true),
 	_noSliceDistance(optionDisableSliceDistanceFeature) {

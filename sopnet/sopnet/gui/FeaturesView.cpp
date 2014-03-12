@@ -1,7 +1,8 @@
 #include <sstream>
 #include "FeaturesView.h"
 
-FeaturesView::FeaturesView() {
+FeaturesView::FeaturesView() :
+	_painter(new FeaturesPainter()) {
 
 	registerInput(_segments, "segments");
 	registerInput(_features, "features");
@@ -32,7 +33,7 @@ FeaturesView::updateOutputs() {
 	_painter->setFeatures(_features->get(segmentId));
 	_painter->setFeatureNames(_features->getNames());
 	_painter->setSegmentId(segmentId);
-	if (_groundTruthScore)
-		_painter->setGroundTruthScore(_groundTruthScore);
+	if (_groundTruthScore.isSet())
+		_painter->setGroundTruthScore(_groundTruthScore.getSharedPointer());
 }
 

@@ -4,7 +4,8 @@
 
 logger::LogChannel randindexlog("randindexlog", "[ResultEvaluator] ");
 
-RandIndex::RandIndex() {
+RandIndex::RandIndex() :
+	_randIndex(new double(0)) {
 
 	registerInput(_stack1, "stack 1");
 	registerInput(_stack2, "stack 2");

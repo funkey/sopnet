@@ -4,7 +4,8 @@
 
 logger::LogChannel variationofinformationlog("variationofinformationlog", "[ResultEvaluator] ");
 
-VariationOfInformation::VariationOfInformation() {
+VariationOfInformation::VariationOfInformation() :
+	_variationOfInformation(new double(0)) {
 
 	registerInput(_stack1, "stack 1");
 	registerInput(_stack2, "stack 2");

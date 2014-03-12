@@ -2,7 +2,8 @@
 #include <inference/LinearSolver.h>
 #include "ProblemsSolver.h"
 
-ProblemsSolver::ProblemsSolver() {
+ProblemsSolver::ProblemsSolver() :
+	_solutions(new Solutions()) {
 
 	registerInput(_problems, "problems");
 	registerOutput(_solutions, "solutions");
