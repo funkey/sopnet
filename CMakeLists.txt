@@ -22,8 +22,8 @@ configure_file(
 # compiler settings #
 #####################
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -Wextra -fomit-frame-pointer")
-set(CMAKE_CXX_FLAGS_DEBUG   "-g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -fomit-frame-pointer")
+set(CMAKE_CXX_FLAGS_DEBUG   "-g -DDEBUG -Wall -Wextra")
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Release or Debug" FORCE)
 endif()
