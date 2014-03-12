@@ -10,7 +10,6 @@
 #include <boost/make_shared.hpp>
 #include <boost/progress.hpp>
 
-#include <util/exceptions.h>
 #include <inference/io/RandomForestHdf5Writer.h>
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
@@ -26,6 +25,7 @@
 #include <sopnet/inference/GridSearch.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/inference/ProblemGraphWriter.h>
+#include <util/exceptions.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
@@ -127,7 +127,7 @@ int main(int optionc, char** optionv) {
 	boost::shared_ptr<pipeline::ProcessNode> membranesReader;
 	boost::shared_ptr<pipeline::ProcessNode> slicesReader;
 
-	boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > sliceStackDirectories = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+	pipeline::Value<std::vector<std::string> > sliceStackDirectories;
 
 	int firstSection = optionFirstSection;;
 	int lastSection = optionLastSection;
@@ -167,7 +167,7 @@ int main(int optionc, char** optionv) {
 		// for every image directory in the given directory
 		foreach (boost::filesystem::path directory, sorted)
 			if (boost::filesystem::is_directory(directory))
-				sliceStackDirectories->get().push_back(directory.string());
+				sliceStackDirectories->push_back(directory.string());
 
 		// select a substack, if options are set
 		if (optionFirstSection || optionLastSection) {
@@ -187,17 +187,17 @@ int main(int optionc, char** optionv) {
 			// special case: select a subset of the slice hypotheses
 			if (optionSlicesFromStacks) {
 
-				if (firstSection >= (int)sliceStackDirectories->get().size())
+				if (firstSection >= (int)sliceStackDirectories->size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
-				if (lastSection >= (int)sliceStackDirectories->get().size())
+				if (lastSection >= (int)sliceStackDirectories->size())
 					BOOST_THROW_EXCEPTION(IOError() << error_message("not enough slice sections given for desired substack range"));
 
-				boost::shared_ptr<pipeline::Wrap<std::vector<std::string> > > tmp = boost::make_shared<pipeline::Wrap<std::vector<std::string> > >();
+				pipeline::Value<std::vector<std::string> > tmp;
 				std::copy(
-						sliceStackDirectories->get().begin() + firstSection,
-						sliceStackDirectories->get().begin() + lastSection + 1,
-						back_inserter(tmp->get()));
+						sliceStackDirectories->begin() + firstSection,
+						sliceStackDirectories->begin() + lastSection + 1,
+						back_inserter(*tmp));
 				sliceStackDirectories = tmp;
 
 			} else {
