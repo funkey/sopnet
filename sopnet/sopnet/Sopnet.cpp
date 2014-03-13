@@ -23,7 +23,7 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
-#include <sopnet/training/RandomForestTrainer.h>
+#include <sopnet/training/SegmentRandomForestTrainer.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -74,7 +74,8 @@ Sopnet::Sopnet(
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
+	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
+	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
 	_projectDirectory(projectDirectory),
 	_problemWriter(problemWriter),
 	_pipelineCreated(false) {
@@ -99,10 +100,9 @@ Sopnet::Sopnet(
 	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
 	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
-	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
-	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
+	registerOutput(_goldStandardExtractor->getOutput("gold standard"), "gold standard");
+	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
-	registerOutput(_segmentRfTrainer->getOutput("ground truth score"), "ground truth score");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 }
 
@@ -302,8 +302,11 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
+	_goldStandardExtractor->setInput("ground truth", _groundTruthExtractor->getOutput());
+	_goldStandardExtractor->setInput("all segments", _problemAssembler->getOutput("segments"));
+	_goldStandardExtractor->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 
-	_segmentRfTrainer->setInput("ground truth", _groundTruthExtractor->getOutput());
-	_segmentRfTrainer->setInput("all segments", _problemAssembler->getOutput("segments"));
-	_segmentRfTrainer->setInput("raw sections", _rawSections.getAssignedOutput());
+	_segmentRfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
+	_segmentRfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
+	_segmentRfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 }

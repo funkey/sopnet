@@ -25,11 +25,8 @@ private:
 	// the negative segments
 	pipeline::Input<Segments> _negativeSamples;
 
-	// the features of the positive segments
-	pipeline::Input<Features> _positiveFeatures;
-
-	// the features of the negative segments
-	pipeline::Input<Features> _negativeFeatures;
+	// the features of the segments
+	pipeline::Input<Features> _features;
 
 	// the learnt random forest classifier
 	pipeline::Output<RandomForest> _randomForest;

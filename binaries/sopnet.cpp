@@ -448,9 +448,6 @@ int main(int optionc, char** optionv) {
 				featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 				featuresView->setInput("objective", sopnet->getOutput("objective"));
 				container->addInput(featuresView->getOutput());
-
-				if (optionShowGroundTruth)
-					featuresView->setInput("ground truth score", sopnet->getOutput("ground truth score"));
 			}
 			container->addInput(rotateView->getOutput());
 

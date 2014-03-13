@@ -23,6 +23,7 @@ private:
 	pipeline::Input<Solution> _solution;
 	pipeline::Input<Segments> _segments;
 	pipeline::Output<Segments> _reconstruction;
+	pipeline::Output<Segments> _discardedSegments;
 
 	unsigned int _currentSegmentNum;
 };

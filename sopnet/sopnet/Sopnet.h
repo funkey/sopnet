@@ -9,22 +9,23 @@
 #include <sopnet/segments/SegmentExtractionPipeline.h>
 
 // forward declarations
+class GoldStandardExtractor;
 class GroundTruthExtractor;
 class ImageExtractor;
 class ImageStack;
 class LinearSolver;
 class ObjectiveGenerator;
-class ProblemAssembler;
 class PriorCostFunction;
+class ProblemAssembler;
+class RandomForestCostFunction;
 class RandomForestHdf5Reader;
 class Reconstructor;
 class SectionSelector;
-class SegmentationCostFunction;
 class SegmentEvaluator;
 class SegmentExtractor;
 class SegmentFeaturesExtractor;
-class RandomForestCostFunction;
-class RandomForestTrainer;
+class SegmentRandomForestTrainer;
+class SegmentationCostFunction;
 template <typename Precision> class SliceExtractor;
 
 class Sopnet : public pipeline::SimpleProcessNode<> {
@@ -138,8 +139,12 @@ private:
 	// the ground truth extractor, gives segments from ground truth images
 	boost::shared_ptr<GroundTruthExtractor>           _groundTruthExtractor;
 
-	// the training node, trains a random forest classifier on the ground truth
-	boost::shared_ptr<RandomForestTrainer>            _segmentRfTrainer;
+	// the gold standard extractor, gives the closest candidate solution to the 
+	// groundtruth
+	boost::shared_ptr<GoldStandardExtractor>          _goldStandardExtractor;
+
+	// the training node, trains a random forest classifier on the gold standard
+	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
 
 	/**************************
 	 * PROJECT INFRASTRUCTURE *
