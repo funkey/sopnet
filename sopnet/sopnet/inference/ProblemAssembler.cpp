@@ -60,20 +60,17 @@ ProblemAssembler::updateOutputs() {
 
 	collectSegments();
 
-	if (_allLinearConstraints) {
+	// make sure slices are used from both sides
+	addExplanationConstraints();
 
-		// make sure slices are used from both sides
-		addExplanationConstraints();
+	// make sure segments don't overlap
+	addConsistencyConstraints();
 
-		// make sure segments don't overlap
-		addConsistencyConstraints();
+	// make sure mitochondria are enclosed by a single neuron
+	addMitochondriaConstraints();
 
-		// make sure mitochondria are enclosed by a single neuron
-		addMitochondriaConstraints();
-
-		// make sure synapses are enclosed by a single neuron
-		addSynapseConstraints();
-	}
+	// make sure synapses are enclosed by a single neuron
+	addSynapseConstraints();
 }
 
 void
