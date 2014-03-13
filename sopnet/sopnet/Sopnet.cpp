@@ -111,12 +111,16 @@ Sopnet::Sopnet(
 void
 Sopnet::updateOutputs() {
 
-	if (!_pipelineCreated)
-		createPipeline();
+	LOG_DEBUG(sopnetlog) << "update requested" << std::endl;
+
+	createPipeline();
 }
 
 void
 Sopnet::createPipeline() {
+
+	if (_pipelineCreated)
+		return;
 
 	LOG_DEBUG(sopnetlog) << "creating pipeline" << std::endl;
 
@@ -321,9 +325,6 @@ Sopnet::createStructuredProblemPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating structured problem part..." << std::endl;
 
-	// TODO: Complete!
-	// Set input to structured problem writer.
-	
 	_spWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
@@ -335,6 +336,9 @@ Sopnet::createStructuredProblemPipeline() {
 void
 Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints) {
 
+	updateInputs();
+	createPipeline();
+
 	_spWriter->write(filename_labels, filename_features, filename_constraints);
-	
 }
+
