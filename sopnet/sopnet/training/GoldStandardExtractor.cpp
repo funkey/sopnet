@@ -24,13 +24,9 @@ GoldStandardExtractor::updateOutputs() {
 
 	LOG_DEBUG(goldstandardextractorlog) << "searching for best-fitting segments to ground truth" << std::endl;
 
-	pipeline::Process<ProblemAssembler>         problemAssembler;
 	pipeline::Process<GoldStandardCostFunction> goldStandardCostFunction;
 	pipeline::Process<ObjectiveGenerator>       objectiveGenerator;
 	pipeline::Process<LinearSolver>             linearSolver;
-
-	problemAssembler->addInput("neuron segments",           _allSegments);
-	problemAssembler->addInput("neuron linear constraints", _allLinearConstraints);
 
 	goldStandardCostFunction->setInput("ground truth", _groundTruth);
 
@@ -38,10 +34,10 @@ GoldStandardExtractor::updateOutputs() {
 	objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());
 
 	linearSolver->setInput("objective", objectiveGenerator->getOutput());
-	linearSolver->setInput("linear constraints", problemAssembler->getOutput("linear constraints"));
+	linearSolver->setInput("linear constraints", _allLinearConstraints);
 	linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
 
 	_reconstructor->setInput("solution", linearSolver->getOutput("solution"));
-	_reconstructor->setInput("segments", problemAssembler->getOutput("segments"));
+	_reconstructor->setInput("segments", _allSegments);
 }
 
