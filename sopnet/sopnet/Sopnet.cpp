@@ -119,8 +119,11 @@ Sopnet::updateOutputs() {
 void
 Sopnet::createPipeline() {
 
-	if (_pipelineCreated)
+	if (_pipelineCreated) {
+
+		LOG_DEBUG(sopnetlog) << "pipeline has been created already, skipping" << std::endl;
 		return;
+	}
 
 	LOG_DEBUG(sopnetlog) << "creating pipeline" << std::endl;
 
@@ -336,8 +339,15 @@ Sopnet::createStructuredProblemPipeline() {
 void
 Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints) {
 
+	LOG_DEBUG(sopnetlog) << "requested to write structured problem, updating inputs" << std::endl;
+
 	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
 	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing structured learning files" << std::endl;
 
 	_spWriter->write(filename_labels, filename_features, filename_constraints);
 }
