@@ -32,7 +32,7 @@ HistogramFeatureExtractor::updateOutputs() {
 	for (unsigned int i = 0; i < _numBins; i++)
 		_features->addName("c&b normalized histogram " + boost::lexical_cast<std::string>(i));
 
-	_features->resize(_segments->size(), 2*_numBins);
+	_features->resize(_segments->size(), 4*_numBins);
 
 	foreach (boost::shared_ptr<EndSegment> segment, _segments->getEnds())
 		getFeatures(*segment, _features->get(segment->getId()));
