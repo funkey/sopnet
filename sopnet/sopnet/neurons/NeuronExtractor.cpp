@@ -19,13 +19,13 @@ NeuronExtractor::updateOutputs() {
 	_neuronIds.clear();
 	_neurons->clear();
 
-	LOG_DEBUG(neuronextractorlog) << "processing " << _segments->getEnds().size() << " ends" << std::endl;
+	LOG_ALL(neuronextractorlog) << "processing " << _segments->getEnds().size() << " ends" << std::endl;
 
 	// collect all end slices
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
 		addSlice(end->getSlice()->getId());
 
-	LOG_DEBUG(neuronextractorlog) << "processing " << _segments->getContinuations().size() << " continuations" << std::endl;
+	LOG_ALL(neuronextractorlog) << "processing " << _segments->getContinuations().size() << " continuations" << std::endl;
 
 	// identify slices belonging to the same neuron
 	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
@@ -35,7 +35,7 @@ NeuronExtractor::updateOutputs() {
 				continuation->getTargetSlice()->getId());
 	}
 
-	LOG_DEBUG(neuronextractorlog) << "processing " << _segments->getBranches().size() << " branches" << std::endl;
+	LOG_ALL(neuronextractorlog) << "processing " << _segments->getBranches().size() << " branches" << std::endl;
 
 	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
 
@@ -48,7 +48,7 @@ NeuronExtractor::updateOutputs() {
 				branch->getTargetSlice2()->getId());
 	}
 
-	LOG_DEBUG(neuronextractorlog) << "found " << _slices.size() << " slices" << std::endl;
+	LOG_ALL(neuronextractorlog) << "found " << _slices.size() << " slices" << std::endl;
 
 	// assign a neuron id to each slice
 
@@ -114,7 +114,7 @@ NeuronExtractor::updateOutputs() {
 	foreach (boost::shared_ptr<SegmentTree> neuron, neurons)
 		_neurons->add(neuron);
 
-	LOG_DEBUG(neuronextractorlog) << "found " << _neurons->size() << " neurons" << std::endl;
+	LOG_ALL(neuronextractorlog) << "found " << _neurons->size() << " neurons" << std::endl;
 }
 
 void
