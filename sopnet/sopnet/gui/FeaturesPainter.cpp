@@ -76,16 +76,28 @@ FeaturesPainter::updateTextPainters() {
 
 	_textPainters.clear();
 
-	// costs
+	// segment id
 	_textPainters.push_back(
 			std::make_pair(
-					createTextPainter("costs:"),
+					createTextPainter("id:"),
 					util::point<int>(0, 0)
 			));
 	_textPainters.push_back(
 			std::make_pair(
-					createTextPainter(_costs),
+					createTextPainter(_segmentId),
 					util::point<int>(1, 0)
+			));
+
+	// costs
+	_textPainters.push_back(
+			std::make_pair(
+					createTextPainter("costs:"),
+					util::point<int>(0, 1)
+			));
+	_textPainters.push_back(
+			std::make_pair(
+					createTextPainter(_costs),
+					util::point<int>(1, 1)
 			));
 
 	// names
