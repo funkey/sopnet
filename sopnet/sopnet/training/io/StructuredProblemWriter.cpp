@@ -23,20 +23,19 @@ StructuredProblemWriter::write(std::string filename_labels,
 	updateInputs();
 
 	// call write functions for the different files to write.
-	write_labels(filename_labels);
-	write_features(filename_features);
-	write_constraints(filename_constraints);
+	writeLabels(filename_labels);
+	writeFeatures(filename_features);
+	writeConstraints(filename_constraints);
 
 }
 
 void
-StructuredProblemWriter::write_labels(std::string filename_labels) {
+StructuredProblemWriter::writeLabels(std::string filename_labels) {
 	
 	// write only the labels.
 	// How many variables are there?
 	unsigned int maxVariable = 0;
-        foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
-        {
+        foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
                 maxVariable = std::max(maxVariable,_problemConfiguration->getVariable(segment->getId()));
         }
 
@@ -51,26 +50,22 @@ StructuredProblemWriter::write_labels(std::string filename_labels) {
         labelsOutput.open(filename_labels.c_str());
 
 	// For every variable...
-	for (unsigned int i = 0; i <= maxVariable; i++)
-	{
+	for (unsigned int i = 0; i <= maxVariable; i++) {
+		
 		// ...check if the segment that corresponds to that variable is contained in the ground truth.
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
 				
 		bool isContained = false;
-		foreach (boost::shared_ptr<Segment> s, goldStandard)
-		{
-                        if (s->getId() == segmentId)
-			{
+		foreach (boost::shared_ptr<Segment> s, goldStandard) {
+                        if (s->getId() == segmentId) {
                                 isContained = true;
 			}
 		}
 		
-		if (isContained == true)
-		{
+		if (isContained == true) {
 			labelsOutput << 1 << std::endl;
-		}
-		else
-		{
+		} 
+		else {
 			labelsOutput << 0 << std::endl;
 		}
 	}
@@ -79,7 +74,7 @@ StructuredProblemWriter::write_labels(std::string filename_labels) {
 }
 
 void
-StructuredProblemWriter::write_features(std::string filename_features) {
+StructuredProblemWriter::writeFeatures(std::string filename_features) {
 
 	// write only the features.
 
@@ -88,18 +83,16 @@ StructuredProblemWriter::write_features(std::string filename_features) {
 	// the problem assembler. 
 	// Maybe there is a better way to do this?
 	unsigned int maxVariable = 0;
-	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) 
-	{
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
 		maxVariable = std::max(maxVariable,_problemConfiguration->getVariable(segment->getId()));
 	}
 
 	std::ofstream featuresOutput;
 	featuresOutput.open(filename_features.c_str());
-	for (unsigned int i = 0; i <= maxVariable; i++)
-	{
+	for (unsigned int i = 0; i <= maxVariable; i++) {
+
 		const std::vector<double>& features = _features->get(_problemConfiguration->getSegmentId(i));
-		for (unsigned int j = 0; j < features.size(); j++)
-		{
+		for (unsigned int j = 0; j < features.size(); j++) {
 			featuresOutput << features[j] << " ";
 		}	
 		featuresOutput << std::endl;
@@ -109,7 +102,7 @@ StructuredProblemWriter::write_features(std::string filename_features) {
 }
 
 void
-StructuredProblemWriter::write_constraints(std::string filenames_constraints) {
+StructuredProblemWriter::writeConstraints(std::string filenames_constraints) {
 
 	// write only the constraints.
 

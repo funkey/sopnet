@@ -21,9 +21,9 @@ private:
 
 	void updateOutputs() {}
 
-	void write_labels(std::string filename_labels);
-	void write_features(std::string filename_features);
-	void write_constraints(std::string filename_constraints);
+	void writeLabels(std::string filename_labels);
+	void writeFeatures(std::string filename_features);
+	void writeConstraints(std::string filename_constraints);
  
 	pipeline::Input<LinearConstraints> _linearConstraints;
 	pipeline::Input<ProblemConfiguration> _problemConfiguration;
