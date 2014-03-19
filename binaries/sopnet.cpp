@@ -66,7 +66,7 @@ util::ProgramOption optionTraining(
 
 util::ProgramOption optionWriteStructuredProblem(
 		_long_name        = "writeStructuredProblem",
-		_description_text = "Dump the gold standard and all features for structured learning.");
+		_description_text = "Dump the gold standard, all features and constraints for structured learning.");
 
 util::ProgramOption optionFirstSection(
 		_module           = "sopnet",
