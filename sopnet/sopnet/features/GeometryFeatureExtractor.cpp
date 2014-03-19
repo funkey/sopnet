@@ -150,7 +150,7 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 			 continuation.getTargetSlice()->getComponent()->getSize())*0.5;
 	features[7] = overlap;
 	features[8] = overlapRatio;
-	features[0] = alignedOverlap;
+	features[9] = alignedOverlap;
 	features[10] = alignedOverlapRatio;
 
 	if (!_noSliceDistance) {
