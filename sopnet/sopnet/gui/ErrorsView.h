@@ -15,7 +15,7 @@ public:
 		_painter(new gui::TextPainter()) {
 
 		registerInput(_sliceErrors, "slice errors");
-		registerInput(_variationOfInformation, "variation of information");
+		registerInput(_variationOfInformation, "variation of information", pipeline::Optional);
 		registerOutput(_painter, "painter");
 
 		_painter.registerSlot(_sizeChanged);
@@ -31,7 +31,16 @@ private:
 				<< "false positives: " << _sliceErrors->numFalsePositives() << ", "
 				<< "false negatives: " << _sliceErrors->numFalseNegatives() << ", "
 				<< "false splits: " << _sliceErrors->numFalseSplits() << ", "
-				<< "false merges: " << _sliceErrors->numFalseMerges() << " -- "
+				<< "false merges: " << _sliceErrors->numFalseMerges() << "; "
+				<< "total: " <<
+					(_sliceErrors->numFalsePositives() +
+					 _sliceErrors->numFalseNegatives() +
+					 _sliceErrors->numFalseSplits() +
+					 _sliceErrors->numFalseNegatives());
+
+		if (_variationOfInformation.isSet())
+			ss
+				<< " -- "
 				<< "variation of information: " << *_variationOfInformation << std::endl;
 
 		_painter->setText(ss.str());
