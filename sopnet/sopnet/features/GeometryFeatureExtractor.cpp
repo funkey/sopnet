@@ -35,9 +35,9 @@ GeometryFeatureExtractor::updateOutputs() {
 	_features->clear();
 
 	if (_noSliceDistance)
-		_features->resize(_segments->size(), 11);
+		_features->resize(_segments->size(), 12);
 	else
-		_features->resize(_segments->size(), 15);
+		_features->resize(_segments->size(), 16);
 
 	// features for end segments
 	_features->addName("e size");
@@ -118,8 +118,8 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 	const util::point<double>& sourceCenter = continuation.getSourceSlice()->getComponent()->getCenter();
 	const util::point<double>& targetCenter = continuation.getTargetSlice()->getComponent()->getCenter();
 
-	unsigned int sourceSize = continuation.getSourceSlice()->getComponent()->getSize();
-	unsigned int targetSize = continuation.getTargetSlice()->getComponent()->getSize();
+	int sourceSize = continuation.getSourceSlice()->getComponent()->getSize();
+	int targetSize = continuation.getTargetSlice()->getComponent()->getSize();
 
 	util::point<double> difference = sourceCenter - targetCenter;
 
@@ -147,12 +147,8 @@ GeometryFeatureExtractor::computeFeatures(const ContinuationSegment& continuatio
 	features[3] = setDifferenceRatio;
 	features[4] = alignedSetDifference;
 	features[5] = alignedSetDifferenceRatio;
-	features[6] =
-			(continuation.getSourceSlice()->getComponent()->getSize() +
-			 continuation.getTargetSlice()->getComponent()->getSize())*0.5;
-	features[7] = 
-		      abs(continuation.getSourceSlice()->getComponent()->getSize() -
-			  continuation.getTargetSlice()->getComponent()->getSize());
+	features[6] = 0.5*(sourceSize + targetSize);
+	features[7] = abs(sourceSize - targetSize);
 	features[8] = overlap;
 	features[9] = overlapRatio;
 	features[10] = alignedOverlap;
@@ -182,10 +178,10 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vect
 	const util::point<double>& targetCenter1 = branch.getTargetSlice1()->getComponent()->getCenter();
 	const util::point<double>& targetCenter2 = branch.getTargetSlice2()->getComponent()->getCenter();
 
-	unsigned int sourceSize  = branch.getSourceSlice()->getComponent()->getSize();
-	unsigned int targetSize1 = branch.getTargetSlice1()->getComponent()->getSize();
-	unsigned int targetSize2 = branch.getTargetSlice2()->getComponent()->getSize();
-	unsigned int targetSize  = targetSize1 + targetSize2;
+	int sourceSize  = branch.getSourceSlice()->getComponent()->getSize();
+	int targetSize1 = branch.getTargetSlice1()->getComponent()->getSize();
+	int targetSize2 = branch.getTargetSlice2()->getComponent()->getSize();
+	int targetSize  = targetSize1 + targetSize2;
 
 	util::point<double> difference = sourceCenter - (targetCenter1*targetSize1 + targetCenter2*targetSize2)/((double)(targetSize));
 
@@ -214,14 +210,8 @@ GeometryFeatureExtractor::computeFeatures(const BranchSegment& branch, std::vect
 	features[3] = setDifferenceRatio;
 	features[4] = alignedSetDifference;
 	features[5] = alignedSetDifferenceRatio;
-	features[6] =
-			(branch.getSourceSlice()->getComponent()->getSize() +
-			 branch.getTargetSlice1()->getComponent()->getSize() +
-			 branch.getTargetSlice2()->getComponent()->getSize())/3.0;
-	features[7] = 
-		      abs(branch.getSourceSlice()->getComponent()->getSize() -
-			  (branch.getTargetSlice1()->getComponent()->getSize() +
-			   branch.getTargetSlice2()->getComponent()->getSize()));
+	features[6] = 1.0/3.0*(sourceSize + targetSize);
+	features[7] = abs(sourceSize - targetSize);
 	features[8] = overlap;
 	features[9] = overlapRatio;
 	features[10] = alignedOverlap;
