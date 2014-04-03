@@ -572,6 +572,19 @@ int main(int optionc, char** optionv) {
 			namedView->setInput(errorsView->getOutput());
 
 			resultContainer->addInput(namedView->getOutput());
+
+			// gold standard error
+			pipeline::Process<NamedView>       goldStandardNamedView("Error bounds with current hypotheses:");
+			pipeline::Process<ResultEvaluator> goldStandardEvaluator;
+			pipeline::Process<ErrorsView>      goldStandardErrorsView;
+
+			goldStandardEvaluator->setInput("result", sopnet->getOutput("gold standard"));
+			goldStandardEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+
+			goldStandardErrorsView->setInput("slice errors", goldStandardEvaluator->getOutput());
+			goldStandardNamedView->setInput(goldStandardErrorsView->getOutput());
+
+			resultContainer->addInput(goldStandardNamedView->getOutput());
 		}
 
 		if (optionTraining) {
