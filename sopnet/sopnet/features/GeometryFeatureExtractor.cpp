@@ -35,9 +35,9 @@ GeometryFeatureExtractor::updateOutputs() {
 	_features->clear();
 
 	if (_noSliceDistance)
-		_features->resize(_segments->size(), 11);
+		_features->resize(_segments->size(), 12);
 	else
-		_features->resize(_segments->size(), 15);
+		_features->resize(_segments->size(), 16);
 
 	// features for end segments
 	_features->addName("e size");
