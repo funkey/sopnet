@@ -352,3 +352,8 @@ Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename
 	_spWriter->write(filename_labels, filename_features, filename_constraints);
 }
 
+void
+Sopnet::writeMinimalImpactTEDCofficients(std::string filename) {
+
+}
+
