@@ -27,6 +27,7 @@ class SegmentFeaturesExtractor;
 class SegmentRandomForestTrainer;
 class SegmentationCostFunction;
 class StructuredProblemWriter;
+class MinimalImpactTEDWriter;
 template <typename Precision> class SliceExtractor;
 
 class Sopnet : public pipeline::SimpleProcessNode<> {
@@ -153,8 +154,11 @@ private:
 	// the training node, trains a random forest classifier on the gold standard
 	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;
 
-	// a writer provider to provide a structured problem writer to produce output for structured learning
+	// a writer to produce output for structured learning
 	boost::shared_ptr<StructuredProblemWriter>		_spWriter;
+
+	// a writer to write the coefficients for minimal imapact TED for structured learning
+	boost::shared_ptr<MinimalImpactTEDWriter>		_mitWriter;
 
 	/**************************
 	 * PROJECT INFRASTRUCTURE *

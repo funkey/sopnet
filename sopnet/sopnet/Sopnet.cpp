@@ -25,6 +25,7 @@
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/SegmentRandomForestTrainer.h>
 #include <sopnet/training/io/StructuredProblemWriter.h>
+#include <sopnet/training/io/MinimalImpactTEDWriter.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -78,6 +79,7 @@ Sopnet::Sopnet(
 	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
 	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
 	_spWriter(boost::make_shared<StructuredProblemWriter>()),
+	_mitWriter(boost::make_shared<MinimalImpactTEDWriter>()),
 	_projectDirectory(projectDirectory),
 	_problemWriter(problemWriter),
 	_pipelineCreated(false) {
