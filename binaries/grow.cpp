@@ -55,7 +55,7 @@ private:
 		float resY = 4.0;
 		float resZ = 40.0;
 
-		float distance = optionDistance;
+		float growRadius = optionDistance;
 
 		int depth = _stack->size();
 		if (depth == 0)
@@ -76,46 +76,62 @@ private:
 			for (int y = 0; y < height; y++)
 				for (int x = 0; x < width; x++) {
 
+					// get the label of the center pixel
 					float k = (*(*_stack)[z])(x, y);
+
+					// forground pixels don't change
 					if (k != 0) {
 
 						(*(*_grown)[z])(x, y) = k;
 						continue;
 					}
 
-					std::map<float, unsigned int> counts;
+					// now we know we process a background pixel
 
+					// find the closest foreground label within grow radius 
+					// sphere
+
+					float closestLabel = 0;
+					float minDistance2 = growRadius*growRadius;
+
+					// for each candidate pixel in the grow radius
 					for (int dz = -distanceZ; dz <= distanceZ; dz++)
-						for (int dy = -distanceY; dy < distanceY; dy++)
-							for (int dx = -distanceX; dx < distanceY; dx++) {
+						for (int dy = -distanceY; dy <= distanceY; dy++)
+							for (int dx = -distanceX; dx <= distanceY; dx++) {
 
-								// on sphere?
-								if (dx*dx*resX*resX + dy*dy*resY*resY + dz*dz*resZ*resZ <= distance*distance)
+								// the squared distance to the background pixel 
+								// in nm
+								float distance2 = resX*resX*dx*dx + resY*resY*dy*dy + resZ*resZ*dz*dz;
+
+								// don't consider pixels outside the grow radius 
+								// sphere
+								if (distance2 > growRadius*growRadius)
 									continue;
 
+								// the pixel coordinates of the candidate pixel
 								int tx = x + dx;
 								int ty = y + dy;
 								int tz = z + dz;
 
-								// in volume
+								// is the candidate still in the volume?
 								if (tx < 0 || tx >= width || ty < 0 || ty >= height || tz < 0 || tz >= depth)
-									// assume background label at outside
-									counts[0]++;
-								else
-									counts[(*(*_stack)[tz])(tx, ty)]++;
+									continue;
+
+								// the label of the candidate pixel
+								float label = (*(*_stack)[tz])(tx, ty);
+
+								// we are only interested in foreground labels
+								if (label == 0)
+									continue;
+
+								if (distance2 <= minDistance2) {
+
+									closestLabel = label;
+									minDistance2 = distance2;
+								}
 							}
 
-					unsigned int maxCount = 0;
-					float maxLabel = 0;
-					unsigned int count;
-					float label;
-					foreach (boost::tie(label, count), counts)
-						if (count > maxCount) {
-							maxCount = count;
-							maxLabel = label;
-						}
-
-					(*(*_grown)[z])(x, y) = maxLabel;
+					(*(*_grown)[z])(x, y) = closestLabel;
 				}
 	}
 
