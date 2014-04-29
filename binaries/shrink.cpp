@@ -54,6 +54,9 @@ private:
 
 	void updateOutputs() {
 
+		if (!_shrunken)
+			_shrunken = new ImageStack();
+
 		float resX = 4.0;
 		float resY = 4.0;
 		float resZ = 40.0;
