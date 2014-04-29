@@ -10,11 +10,10 @@
  */
 class Problems : public pipeline::Data {
 
+public:
 	typedef std::vector<boost::shared_ptr<Problem> > problems_type;
 	typedef problems_type::iterator                  iterator;
 	typedef problems_type::const_iterator            const_iterator;
-
-public:
 
 	void addProblem(boost::shared_ptr<Problem> problem) {
 
@@ -26,7 +25,7 @@ public:
 		return _problems[i];
 	}
 
-	unsigned int size() {
+	unsigned int size() const {
 
 		return _problems.size();
 	}
