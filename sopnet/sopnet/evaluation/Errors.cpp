@@ -174,7 +174,7 @@ const Errors::cell_map_t::mapped_type&
 Errors::getFalseNegatives() {
 
 	if (!_haveBackgroundLabel)
-		BOOST_THROW_EXCEPTION(UsageError() << error_message("we don't hav a background label -- cannot give false positives"));
+		BOOST_THROW_EXCEPTION(UsageError() << error_message("we don't hav a background label -- cannot give false negatives"));
 
 	updateErrorCounts();
 	return _merges[_recBackgroundLabel];
