@@ -1,18 +1,18 @@
 [submodule "modules/util"]
 	path = modules/util
-	url = git://github.com/funkey/util.git
+	url = https://github.com/funkey/util.git
 [submodule "modules/signals"]
 	path = modules/signals
-	url = git://github.com/funkey/signals.git
+	url = https://github.com/funkey/signals.git
 [submodule "modules/pipeline"]
 	path = modules/pipeline
-	url = git://github.com/funkey/pipeline.git
+	url = https://github.com/funkey/pipeline.git
 [submodule "modules/gui"]
 	path = modules/gui
-	url = git://github.com/funkey/gui.git
+	url = https://github.com/funkey/gui.git
 [submodule "modules/imageprocessing"]
 	path = modules/imageprocessing
-	url = git://github.com/funkey/imageprocessing.git
+	url = https://github.com/funkey/imageprocessing.git
 [submodule "cmake"]
 	path = cmake
-	url = http://github.com/funkey/cmake
+	url = https://github.com/funkey/cmake
