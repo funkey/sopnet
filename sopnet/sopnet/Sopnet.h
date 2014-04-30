@@ -44,7 +44,7 @@ public:
 
 	void writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints);
 
-	void writeMinimalImpactTEDCofficients(std::string filename);
+	void writeMinimalImpactTEDCoefficients(std::string filename);
 
 private:
 
@@ -59,6 +59,8 @@ private:
 	void createTrainingPipeline();
 
 	void createStructuredProblemPipeline();
+
+	void createMinimalImpactTEDPipeline();
 
 	/**********
 	 * INPUTS *

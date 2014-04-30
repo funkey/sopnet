@@ -140,6 +140,7 @@ Sopnet::createPipeline() {
 
 		createTrainingPipeline();
 		createStructuredProblemPipeline();
+		createMinimalImpactTEDPipeline();
 	}
 
 	_pipelineCreated = true;
@@ -355,7 +356,19 @@ Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename
 }
 
 void
-Sopnet::writeMinimalImpactTEDCofficients(std::string filename) {
+Sopnet::createMinimalImpactTEDPipeline() {
 
+	// Set inputs to MinimalImpactTEDWriter
+	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+
+}
+
+void
+Sopnet::writeMinimalImpactTEDCoefficients(std::string filename) {
+
+	updateInputs();
+	createPipeline();
+	_mitWriter->write(filename);
 }
 

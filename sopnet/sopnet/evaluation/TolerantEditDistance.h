@@ -3,6 +3,7 @@
 
 #include <imageprocessing/ImageStack.h>
 #include <pipeline/SimpleProcessNode.h>
+#include <pipeline/Value.h>
 #include <inference/Solution.h>
 #include "LocalToleranceFunction.h"
 #include "Errors.h"
