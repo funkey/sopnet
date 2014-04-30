@@ -369,10 +369,11 @@ TolerantEditDistance::findErrors() {
 
 	for (unsigned int i = 0; i < _depth; i++) {
 
-		_splitLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_mergeLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_fpLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
-		_fnLocations->add(boost::make_shared<Image>(_width, _height, 0.5));
+		// initialize with gray (no cell label)
+		_splitLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_mergeLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_fpLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
+		_fnLocations->add(boost::make_shared<Image>(_width, _height, 0.33));
 	}
 
 	// prepare error data structure
