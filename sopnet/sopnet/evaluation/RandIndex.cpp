@@ -29,58 +29,77 @@ RandIndex::updateOutputs() {
 	unsigned int width  = (*_stack1)[0]->width();
 	unsigned int height = (*_stack1)[0]->height();
 
-	unsigned int numLocations = depth*width*height;
+	size_t numLocations = depth*width*height;
 
-	LOG_DEBUG(randindexlog) << "preparing label vectors for " << numLocations << " locations" << std::endl;
+	if (numLocations == 0) {
 
-	std::vector<float> partition1(numLocations);
-	std::vector<float> partition2(numLocations);
-
-	// count label occurences
-
-	ImageStack::const_iterator s1  = _stack1->begin();
-	ImageStack::const_iterator s2  = _stack2->begin();
-
-	unsigned int n = 0;
-
-	LOG_DEBUG(randindexlog) << "filling label vectors" << std::endl;
-
-	for (; s1 != _stack1->end(); s1++, s2++) {
-
-		if ((*s1)->size() != (*s2)->size())
-			BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("images have different size") << STACK_TRACE);
-
-		Image::iterator j1 = (*s1)->begin();
-		Image::iterator j2 = (*s2)->begin();
-
-		for (; j1 != (*s1)->end(); j1++, j2++) {
-
-			partition1[n] = *j1;
-			partition2[n] = *j2;
-			n++;
-		}
+		*_randIndex = 1.0;
+		return;
 	}
 
-	LOG_DEBUG(randindexlog) << "filled " << n << " entries in label vector" << std::endl;
-
-	LOG_DEBUG(randindexlog) << "counting number of agreeing pairs" << std::endl;
-
-	double numAgree = 0;
-	for (unsigned int i = 0; i < n; i++)
-		for (unsigned int j = i + 1; j < n; j++)
-			if (
-					(partition1[i] == partition1[j] && partition2[i] == partition2[j]) ||
-					(partition1[i] != partition1[j] && partition2[i] != partition2[j]))
-				numAgree++;
-
-	double numPairs = ((double)n*((double)n - 1))/2;
+	size_t numAgree = getNumAgreeingPairs(*_stack1, *_stack2, numLocations);
+	double numPairs = (static_cast<double>(numLocations)/2)*(static_cast<double>(numLocations) - 1);
 
 	LOG_DEBUG(randindexlog) << "number of pairs is          " << numPairs << std::endl;;
 	LOG_DEBUG(randindexlog) << "number of agreeing pairs is " << numAgree << std::endl;;
 
-	*_randIndex = numAgree/numPairs;
+	*_randIndex = static_cast<double>(numAgree)/numPairs;
 
 	// dump to output (useful for redirection into file)
 	LOG_USER(randindexlog) << "# RAND" << std::endl;
 	LOG_USER(randindexlog) << (*_randIndex) << std::endl;
+}
+
+size_t
+RandIndex::getNumAgreeingPairs(const ImageStack& stack1, const ImageStack& stack2, size_t numLocations) {
+
+	// Implementation following algorith by Bjoern Andres:
+	//
+	// https://github.com/bjoern-andres/partition-comparison/blob/master/include/andres/partition-comparison.hxx
+
+	typedef float                       Label;
+	typedef std::pair<Label,    Label>  LabelPair;
+	typedef std::map<LabelPair, size_t> ContingencyMatrix;
+	typedef std::map<Label,     size_t> SumVector;
+
+	ContingencyMatrix c;
+	SumVector         a;
+	SumVector         b;
+
+	ImageStack::const_iterator image1 = stack1.begin();
+	ImageStack::const_iterator image2 = stack2.begin();
+
+	// for each image in the stacks
+	for(; image1 != stack1.end(); image1++, image2++) {
+
+		Image::iterator i1 = (*image1)->begin();
+		Image::iterator i2 = (*image2)->begin();
+
+		for (; i1 != (*image1)->end(); i1++, i2++) {
+
+			c[std::make_pair(*i1, *i2)]++;
+			a[*i1]++;
+			b[*i2]++;
+		}
+	}
+
+	LabelPair labelPair;
+	Label     label;
+	size_t    n;
+
+	size_t A = 0;
+	size_t B = numLocations*numLocations;
+
+	foreach (boost::tie(labelPair, n), c) {
+
+		A += n*(n-1);
+		B += n*n;
+	}
+
+	foreach (boost::tie(label, n), a)
+		B -= n*n;
+	foreach (boost::tie(label, n), b)
+		B -= n*n;
+
+	return (A+B)/2;
 }
