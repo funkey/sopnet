@@ -36,7 +36,7 @@ private:
 					(_sliceErrors->numFalsePositives() +
 					 _sliceErrors->numFalseNegatives() +
 					 _sliceErrors->numFalseSplits() +
-					 _sliceErrors->numFalseNegatives());
+					 _sliceErrors->numFalseMerges());
 
 		if (_variationOfInformation.isSet())
 			ss
