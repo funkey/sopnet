@@ -10,6 +10,9 @@
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/inference/LinearSolver.h>
+#include <sopnet/inference/LinearSolverParameters.h>
+#include <sopnet/inference/ObjectiveGenerator.h>
+#include <sopnet/training/HammingCostFunction.h>
 
 class MinimalImpactTEDWriter : public pipeline::SimpleProcessNode<> {
 
@@ -25,18 +28,24 @@ private:
 
 	void createPipeline();
 
+	void writeToFile(std::string filename);
+
 	/*********
 	* Inputs *
 	*********/
 
 	// The gold standard with respect to which to measure the TED
-	pipeline::Input<Segments> _goldStandard;
+	pipeline::Input<Segments> 			_goldStandard;
 
 	// The linear constraints that describe the relationship among the segments
-	pipeline::Input<LinearConstraints> _linearConstraints;
+	pipeline::Input<LinearConstraints> 		_linearConstraints;
 
 	// The segments that were extracted from the data
-	pipeline::Input<Segments> _segments;
+	pipeline::Input<Segments> 			_segments;
+
+	// The reference that the IdMapCreators need to determin the size of the the output images.
+	// Alternatively the size could be calculated from the segment hypotheses. 
+	pipeline::Input<ImageStack>   			_reference;
 	
 	/********************
 	* Internal pipeline *
@@ -65,6 +74,12 @@ private:
 	// means: if the segment is in the gold standard it is not in the reconstruction,
 	// and if it is not in the gold standard then it is in the reconstruction.
 	boost::shared_ptr<LinearSolver>                 _linearSolver;
+
+	// Objective generator to generate the hamming distance objective
+	boost::shared_ptr<ObjectiveGenerator>       	_objectiveGenerator;
+
+	// Hamming cost function for the objective generator
+	boost::shared_ptr<HammingCostFunction> 		_hammingCostFunction;
 
 };
 

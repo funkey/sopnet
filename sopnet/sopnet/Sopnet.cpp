@@ -358,17 +358,29 @@ Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename
 void
 Sopnet::createMinimalImpactTEDPipeline() {
 
+	LOG_DEBUG(sopnetlog) << "re-creating minimal impact TED part..." << std::endl;
+
 	// Set inputs to MinimalImpactTEDWriter
 	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_mitWriter->setInput("reference", _rawSections);
 
 }
 
 void
 Sopnet::writeMinimalImpactTEDCoefficients(std::string filename) {
 
+	LOG_DEBUG(sopnetlog) << "requested to write minimal impact TED coefficients, updating inputs" << std::endl;
+
 	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
 	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing minimal impact TED coefficient files..." << std::endl;
+
 	_mitWriter->write(filename);
 }
 
