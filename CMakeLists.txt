@@ -9,15 +9,6 @@ project(sopnet)
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
 
-###############
-# config file #
-###############
-
-configure_file(
-  ${PROJECT_SOURCE_DIR}/cmake/config.h.in
-  ${PROJECT_BINARY_DIR}/config.h
-)
-
 #####################
 # compiler settings #
 #####################
@@ -38,3 +29,12 @@ include_directories(${PROJECT_SOURCE_DIR})
 add_subdirectory(modules)
 add_subdirectory(sopnet)
 add_subdirectory(binaries)
+
+###############
+# config file #
+###############
+
+configure_file(
+  ${PROJECT_SOURCE_DIR}/cmake/config.h.in
+  ${PROJECT_BINARY_DIR}/config.h
+)
