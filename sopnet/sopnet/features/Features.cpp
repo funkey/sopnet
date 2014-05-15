@@ -1,7 +1,7 @@
 #include <sopnet/exceptions.h>
 #include "Features.h"
 
-double Features::NoFeatureValue = -100;
+double Features::NoFeatureValue = 0;
 
 Features::Features() :
 	_nextSegmentIndex(0) {}

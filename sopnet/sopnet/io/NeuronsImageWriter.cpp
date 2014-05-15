@@ -26,7 +26,7 @@ NeuronsImageWriter::write() {
 
 	unsigned int numSections = _idMap->size();
 
-	if (_annotation) {
+	if (_annotation.isSet()) {
 
 		_directory += std::string("_") + boost::lexical_cast<std::string>(*_annotation);
 	}

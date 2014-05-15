@@ -64,6 +64,10 @@ util::ProgramOption optionTraining(
 		_short_name       = "t",
 		_description_text = "Train the segment random forest classifier.");
 
+util::ProgramOption optionWriteStructuredProblem(
+		_long_name        = "writeStructuredProblem",
+		_description_text = "Dump the gold standard, all features and constraints for structured learning.");
+
 util::ProgramOption optionFirstSection(
 		_module           = "sopnet",
 		_long_name        = "firstSection",
@@ -386,7 +390,7 @@ int main(int optionc, char** optionv) {
 			sopnet->setInput("synapse slices", synapseReader->getOutput());
 		if (groundTruthReader)
 			sopnet->setInput("ground truth", groundTruthReader->getOutput());
-		else if (optionTraining) {
+		else if (optionTraining || optionWriteStructuredProblem) {
 
 			LOG_ERROR(out) << "trainig requested, but no ground-truth found!" << std::endl;
 			return -1;
@@ -448,9 +452,6 @@ int main(int optionc, char** optionv) {
 				featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 				featuresView->setInput("objective", sopnet->getOutput("objective"));
 				container->addInput(featuresView->getOutput());
-
-				if (optionShowGroundTruth)
-					featuresView->setInput("ground truth score", sopnet->getOutput("ground truth score"));
 			}
 			container->addInput(rotateView->getOutput());
 
@@ -571,6 +572,19 @@ int main(int optionc, char** optionv) {
 			namedView->setInput(errorsView->getOutput());
 
 			resultContainer->addInput(namedView->getOutput());
+
+			// gold standard error
+			pipeline::Process<NamedView>       goldStandardNamedView("Error bounds with current hypotheses:");
+			pipeline::Process<ResultEvaluator> goldStandardEvaluator;
+			pipeline::Process<ErrorsView>      goldStandardErrorsView;
+
+			goldStandardEvaluator->setInput("result", sopnet->getOutput("gold standard"));
+			goldStandardEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+
+			goldStandardErrorsView->setInput("slice errors", goldStandardEvaluator->getOutput());
+			goldStandardNamedView->setInput(goldStandardErrorsView->getOutput());
+
+			resultContainer->addInput(goldStandardNamedView->getOutput());
 		}
 
 		if (optionTraining) {
@@ -581,6 +595,13 @@ int main(int optionc, char** optionv) {
 			rfWriter->write();
 
 			LOG_USER(out) << "[main] training finished!" << std::endl;
+		}
+
+		if (optionWriteStructuredProblem) {
+
+			sopnet->writeStructuredProblem("./labels.txt", "./features.txt", "./constraints.txt");
+
+			LOG_USER(out) << "[main] files for structured learning written!" << std::endl;
 		}
 
 		if (optionSaveResultDirectory) {

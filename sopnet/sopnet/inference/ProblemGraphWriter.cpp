@@ -34,13 +34,13 @@ ProblemGraphWriter::write(
 		int originSlice,
 		int targetSlice) {
 
-	if (!_segments || !_problemConfiguration ) {
+	updateInputs();
+
+	if (!_segments.isSet() || !_problemConfiguration.isSet() ) {
 
 		LOG_DEBUG(problemgraphwriterlog) << "not all required inputs are present -- skip dumping" << std::endl;
 		return;
 	}
-
-	updateInputs();
 
 	LOG_DEBUG(problemgraphwriterlog) << "dumping problem graph..." << originSlice << std::endl;
 

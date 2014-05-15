@@ -68,7 +68,9 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 	LOG_DEBUG(stacksliceextractorlog) << "internal pipeline set up" << std::endl;
 }
 
-StackSliceExtractor::SliceCollector::SliceCollector() {
+StackSliceExtractor::SliceCollector::SliceCollector() :
+	_allSlices(new Slices()),
+	_conflictSets(new ConflictSets()) {
 
 	registerInputs(_slices, "slices");
 	registerOutput(_allSlices, "slices");

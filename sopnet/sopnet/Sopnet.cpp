@@ -23,7 +23,8 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
-#include <sopnet/training/RandomForestTrainer.h>
+#include <sopnet/training/SegmentRandomForestTrainer.h>
+#include <sopnet/training/io/StructuredProblemWriter.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -74,7 +75,9 @@ Sopnet::Sopnet(
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_segmentRfTrainer(boost::make_shared<RandomForestTrainer>()),
+	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
+	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
+	_spWriter(boost::make_shared<StructuredProblemWriter>()),
 	_projectDirectory(projectDirectory),
 	_problemWriter(problemWriter),
 	_pipelineCreated(false) {
@@ -99,22 +102,28 @@ Sopnet::Sopnet(
 	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
 	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
-	registerOutput(_segmentRfTrainer->getOutput("gold standard"), "gold standard");
-	registerOutput(_segmentRfTrainer->getOutput("negative samples"), "negative samples");
+	registerOutput(_goldStandardExtractor->getOutput("gold standard"), "gold standard");
+	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
-	registerOutput(_segmentRfTrainer->getOutput("ground truth score"), "ground truth score");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 }
 
 void
 Sopnet::updateOutputs() {
 
-	if (!_pipelineCreated)
-		createPipeline();
+	LOG_DEBUG(sopnetlog) << "update requested" << std::endl;
+
+	createPipeline();
 }
 
 void
 Sopnet::createPipeline() {
+
+	if (_pipelineCreated) {
+
+		LOG_DEBUG(sopnetlog) << "pipeline has been created already, skipping" << std::endl;
+		return;
+	}
 
 	LOG_DEBUG(sopnetlog) << "creating pipeline" << std::endl;
 
@@ -125,8 +134,11 @@ Sopnet::createPipeline() {
 
 	createBasicPipeline();
 	createInferencePipeline();
-	if (_groundTruth.isSet())
+	if (_groundTruth.isSet()) {
+
 		createTrainingPipeline();
+		createStructuredProblemPipeline();
+	}
 
 	_pipelineCreated = true;
 }
@@ -302,8 +314,41 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
+	_goldStandardExtractor->setInput("ground truth", _groundTruthExtractor->getOutput());
+	_goldStandardExtractor->setInput("all segments", _problemAssembler->getOutput("segments"));
+	_goldStandardExtractor->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 
-	_segmentRfTrainer->setInput("ground truth", _groundTruthExtractor->getOutput());
-	_segmentRfTrainer->setInput("all segments", _problemAssembler->getOutput("segments"));
-	_segmentRfTrainer->setInput("raw sections", _rawSections.getAssignedOutput());
+	_segmentRfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
+	_segmentRfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
+	_segmentRfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 }
+
+void
+Sopnet::createStructuredProblemPipeline() {
+
+	LOG_DEBUG(sopnetlog) << "re-creating structured problem part..." << std::endl;
+
+	_spWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
+	_spWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+	_spWriter->setInput("ground truth segments", _groundTruthExtractor->getOutput("ground truth segments"));
+	_spWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));
+}
+
+void
+Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints) {
+
+	LOG_DEBUG(sopnetlog) << "requested to write structured problem, updating inputs" << std::endl;
+
+	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
+	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing structured learning files" << std::endl;
+
+	_spWriter->write(filename_labels, filename_features, filename_constraints);
+}
+
