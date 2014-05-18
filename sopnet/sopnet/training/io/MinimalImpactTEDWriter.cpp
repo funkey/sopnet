@@ -6,7 +6,6 @@
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
-	_rNeuronExtractor(boost::make_shared<NeuronExtractor>()),
 	_teDistance(boost::make_shared<TolerantEditDistance>()),
 	_gsimCreator(boost::make_shared<IdMapCreator>()),
 	_rimCreator(boost::make_shared<IdMapCreator>()),
@@ -52,13 +51,10 @@ MinimalImpactTEDWriter::writeToFile(std::string filename) {
 	//_teDistance->getNumSplits()
 	//_teDistance->getNumMerges()
 
-	LOG_DEBUG(minimalImpactTEDlog) << "Attempting to read out the number of TED errors." << std::endl;
-
 	pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
 
 	std::ofstream outfile;
 	outfile.open(filename.c_str(), std::ios_base::app);
-	LOG_DEBUG(minimalImpactTEDlog) << "Now calling errors->getNumSplits()" << std::endl;
 	outfile << errors->getNumSplits()  << std::endl;
 	outfile.close();
 
