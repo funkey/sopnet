@@ -10,6 +10,8 @@
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/inference/LinearSolver.h>
+#include <sopnet/inference/LinearConstraint.h>
+#include <sopnet/inference/LinearConstraints.h>
 #include <sopnet/inference/LinearSolverParameters.h>
 #include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/training/HammingCostFunction.h>
@@ -28,7 +30,7 @@ private:
 
 	void createPipeline();
 
-	void writeToFile(std::string filename);
+	void writeToFile(std::string filename, int value);
 
 	/*********
 	* Inputs *
@@ -46,6 +48,9 @@ private:
 	// The reference that the IdMapCreators need to determin the size of the the output images.
 	// Alternatively the size could be calculated from the segment hypotheses. 
 	pipeline::Input<ImageStack>   			_reference;
+
+	// A problem configuration to map segments to the corresponding variables.
+	pipeline::Input<ProblemConfiguration> 		_problemConfiguration;
 	
 	/********************
 	* Internal pipeline *

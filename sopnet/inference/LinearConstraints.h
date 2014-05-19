@@ -44,6 +44,11 @@ public:
 	void addAll(const LinearConstraints& linearConstraints);
 
 	/**
+	* Removes the last added linear constraint.
+	*/
+	void removeLastConstraint();
+
+	/**
 	 * @return The number of linear constraints in this set.
 	 */
 	unsigned int size() const { return _linearConstraints.size(); }

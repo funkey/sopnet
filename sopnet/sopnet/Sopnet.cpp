@@ -365,6 +365,7 @@ Sopnet::createMinimalImpactTEDPipeline() {
 	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 	_mitWriter->setInput("reference", _rawSections);
+	_mitWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 
 }
 

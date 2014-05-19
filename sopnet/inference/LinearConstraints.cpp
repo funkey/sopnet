@@ -17,6 +17,12 @@ LinearConstraints::addAll(const LinearConstraints& linearConstraints) {
 	_linearConstraints.insert(_linearConstraints.end(), linearConstraints.begin(), linearConstraints.end());
 }
 
+void
+LinearConstraints::removeLastConstraint() {
+
+	_linearConstraints.pop_back();
+}
+
 std::vector<unsigned int>
 LinearConstraints::getConstraints(const std::vector<unsigned int>& variableIds) {
 

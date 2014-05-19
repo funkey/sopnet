@@ -21,6 +21,7 @@ MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 	registerInput(_linearConstraints, "linear constraints");
 	registerInput(_segments, "segments");
 	registerInput(_reference, "reference");
+	registerInput(_problemConfiguration, "problem configuration");
 
 }
 
@@ -32,30 +33,84 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	updateInputs();
 
-	// Loop through segments
-	for ( unsigned int i = 0; i < _segments->size(); i++ )
-	{
-		
-		// Introduce constraints that flip the ith segment compared to the goldstandard
-		// To do...
+	 // Get a vector with all gold standard segments.
+        const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
 
-		// Write the resulting TED to file (check and maybe change file format)
-		writeToFile(filename);
-	}
+	int constant = 0;
+
+	LOG_DEBUG(minimalImpactTEDlog) << "in write function." << std::endl;
+
+	// Loop through variables
+	std::set<unsigned int> variables = _problemConfiguration->getVariables();
+	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
+		
+		// Introduce constraints that flip the segment corresponding to the ith variable
+		// compared to the goldstandard.
 	
+		// Is the segment that corresponds to the variable part of the gold standard?
+                unsigned int segmentId = _problemConfiguration->getSegmentId(varNum);
+
+                bool isContained = false;
+                foreach (boost::shared_ptr<Segment> s, goldStandard) {
+                        if (s->getId() == segmentId) {
+                                isContained = true;
+                        }
+                }
+	
+		LOG_DEBUG(minimalImpactTEDlog) << "is contained: " << isContained << std::endl;
+
+		LinearConstraint constraint;
+		constraint.setRelation(Equal);
+
+                if (isContained == true) {
+			// Force segment to not be used in reconstruction
+			constraint.setCoefficient(varNum,1.0);
+			constraint.setValue(0);
+                }
+                else {
+			// Force segment to be used in reconstruction
+			constraint.setCoefficient(varNum,1.0);
+			constraint.setValue(1);
+                }
+
+		_linearConstraints->add(constraint);
+		
+		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
+		unsigned int splitsAndMerges = errors->getNumSplits() + errors->getNumMerges();
+		int splitsAndMergesInt = (int) splitsAndMerges;
+
+		if (isContained == true) {
+			// Forced segment to not be part of the reconstruction.
+			// This resulted in a number of errors that are going to be stored in the constant.
+			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
+
+			writeToFile(filename, -splitsAndMergesInt);
+
+			constant += splitsAndMergesInt;
+		}
+		else {
+			// Forced segment to be part of the reconstruction.
+			// This resulted in a number of errors that are going to be written to the file.
+
+			writeToFile(filename, splitsAndMergesInt);
+		}
+
+		// Remove constraint
+		_linearConstraints->removeLastConstraint();
+	}
+
+	// Write constant to file
+	writeToFile(filename, constant);
+	
+	LOG_DEBUG(minimalImpactTEDlog) << "Constant is: " << constant << std::endl;
 }
 
 void
-MinimalImpactTEDWriter::writeToFile(std::string filename) {
-
-	//_teDistance->getNumSplits()
-	//_teDistance->getNumMerges()
-
-	pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
+MinimalImpactTEDWriter::writeToFile(std::string filename, int value) {
 
 	std::ofstream outfile;
 	outfile.open(filename.c_str(), std::ios_base::app);
-	outfile << errors->getNumSplits()  << std::endl;
+	outfile << value << std::endl;
 	outfile.close();
 
 }

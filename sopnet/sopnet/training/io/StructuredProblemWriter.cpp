@@ -52,7 +52,7 @@ StructuredProblemWriter::writeLabels(std::string filename_labels) {
 	// For every variable...
 	for (unsigned int i = 0; i <= maxVariable; i++) {
 		
-		// ...check if the segment that corresponds to that variable is contained in the ground truth.
+		// ...check if the segment that corresponds to that variable is contained in the gold standard.
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
 				
 		bool isContained = false;
