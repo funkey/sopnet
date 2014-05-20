@@ -3,7 +3,7 @@
 
 #include <pipeline/SimpleProcessNode.h>
 #include <pipeline/Value.h>
-#include <sopnet/features/Overlap.h>
+#include <imageprocessing/ImageStack.h>
 #include <sopnet/segments/Segments.h>
 
 // forward declarations
@@ -38,53 +38,26 @@ private:
 
 	double costs(const Segment& segment);
 
-	/**
-	 * Get all ground truth segments that overlap the given segment.
-	 */
-	pipeline::Value<Segments> getOverlappingGroundTruthSegments(const Segment& segment);
+	void getGtLabels(const Segment& segment);
 
-	/**
-	 * Get the cost for a segment, as if it would not overlap with any ground 
-	 * truth segment.
-	 */
-	double getDefaultCosts(const Segment& segment);
+	int segmentSize(const Segment& segment);
 
-	/**
-	 * Get the cost for a segment if it would match the given set of connected 
-	 * segments.
-	 */
-	double getMatchingCosts(const Segment& segment, const Segments& segments);
-
-	/**
-	 * Returns true if a and b overlap.
-	 */
-	bool overlaps(const Segment& a, const Segment& b);
-
-	/**
-	 * Append the left and right slices of the given segment to the given lists.
-	 */
-	void addLeftRightSlices(
-			const Segment& segment,
-			std::vector<boost::shared_ptr<Slice> >& leftSlices,
-			std::vector<boost::shared_ptr<Slice> >& rightSlices);
-
-	/**
-	 * Get the sum of sizes of the given slices.
-	 */
-	int sumSizes(const std::vector<boost::shared_ptr<Slice> >& slices);
-
-	/**
-	 * Get the overlap between all slices in a to all slices in b.
-	 */
-	int overlap(
-			const std::vector<boost::shared_ptr<Slice> >& aSlices,
-			const std::vector<boost::shared_ptr<Slice> >& bSlices);
-
-	pipeline::Input<Segments> _groundTruth;
+	pipeline::Input<ImageStack> _groundTruth;
 
 	pipeline::Output<costs_function_type> _costFunction;
 
-	Overlap _overlap;
+	std::map<float, unsigned int> _gtLabels;
+
+	// per pixel reward (i.e., this number is supposed to be negative) for each 
+	// correctly merged pixel
+	double _correctlyMergedPairReward;
+
+	// number of incorrectly merged pixels after which a segment is considered a 
+	// false merge
+	unsigned int _incorrectlyMergedThreshold;
+
+	// per segment costs for false merges
+	double _falseMergeCosts;
 };
 
 #endif // SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__

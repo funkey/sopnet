@@ -542,13 +542,19 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowGoldStandard) {
 
-			gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
-			boost::shared_ptr<NeuronsStackView> goldstandardView  = boost::make_shared<NeuronsStackView>();
-			boost::shared_ptr<NamedView>        namedView         = boost::make_shared<NamedView>("Gold Standard:");
+			boost::shared_ptr<NeuronsStackView>               goldstandardView = boost::make_shared<NeuronsStackView>();
+			boost::shared_ptr<ImageStackView>                 sectionsView     = boost::make_shared<ImageStackView>();
+			boost::shared_ptr<ContainerView<OverlayPlacing> > overlay          = boost::make_shared<ContainerView<OverlayPlacing> >("result");
+			boost::shared_ptr<NamedView>                      namedView        = boost::make_shared<NamedView>("Gold Standard:");
 
-			gsNeuronExtractor->setInput(sopnet->getOutput("gold standard"));
+			gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
+			gsNeuronExtractor->setInput("segments", sopnet->getOutput("gold standard"));
+
 			goldstandardView->setInput(gsNeuronExtractor->getOutput());
-			namedView->setInput(goldstandardView->getOutput());
+			sectionsView->setInput(rawSectionsReader->getOutput());
+			overlay->addInput(goldstandardView->getOutput());
+			overlay->addInput(sectionsView->getOutput());
+			namedView->setInput(overlay->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
 		}

@@ -6,6 +6,7 @@
 #include <sopnet/segments/Segments.h>
 #include <sopnet/inference/Reconstructor.h>
 #include <inference/LinearConstraints.h>
+#include <imageprocessing/ImageStack.h>
 #include <util/point.hpp>
 
 class GoldStandardExtractor : public pipeline::SimpleProcessNode<> {
@@ -18,7 +19,7 @@ private:
 
 	void updateOutputs();
 
-	pipeline::Input<Segments>          _groundTruth;
+	pipeline::Input<ImageStack>        _groundTruth;
 	pipeline::Input<Segments>          _allSegments;
 	pipeline::Input<LinearConstraints> _allLinearConstraints;
 

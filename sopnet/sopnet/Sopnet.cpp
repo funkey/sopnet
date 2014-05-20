@@ -317,7 +317,7 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
-	_goldStandardExtractor->setInput("ground truth", _groundTruthExtractor->getOutput());
+	_goldStandardExtractor->setInput("ground truth", _groundTruth);
 	_goldStandardExtractor->setInput("all segments", _problemAssembler->getOutput("segments"));
 	_goldStandardExtractor->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 
