@@ -25,6 +25,7 @@
 #include <sopnet/training/GoldStandardExtractor.h>
 #include <sopnet/training/SegmentRandomForestTrainer.h>
 #include <sopnet/training/io/StructuredProblemWriter.h>
+#include <sopnet/training/io/MinimalImpactTEDWriter.h>
 #include "Sopnet.h"
 
 static logger::LogChannel sopnetlog("sopnetlog", "[Sopnet] ");
@@ -78,6 +79,7 @@ Sopnet::Sopnet(
 	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
 	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
 	_spWriter(boost::make_shared<StructuredProblemWriter>()),
+	_mitWriter(boost::make_shared<MinimalImpactTEDWriter>()),
 	_projectDirectory(projectDirectory),
 	_problemWriter(problemWriter),
 	_pipelineCreated(false) {
@@ -138,6 +140,7 @@ Sopnet::createPipeline() {
 
 		createTrainingPipeline();
 		createStructuredProblemPipeline();
+		createMinimalImpactTEDPipeline();
 	}
 
 	_pipelineCreated = true;
@@ -350,5 +353,35 @@ Sopnet::writeStructuredProblem(std::string filename_labels, std::string filename
 	LOG_DEBUG(sopnetlog) << "writing structured learning files" << std::endl;
 
 	_spWriter->write(filename_labels, filename_features, filename_constraints);
+}
+
+void
+Sopnet::createMinimalImpactTEDPipeline() {
+
+	LOG_DEBUG(sopnetlog) << "re-creating minimal impact TED part..." << std::endl;
+
+	// Set inputs to MinimalImpactTEDWriter
+	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
+	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
+	_mitWriter->setInput("reference", _rawSections);
+	_mitWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
+
+}
+
+void
+Sopnet::writeMinimalImpactTEDCoefficients(std::string filename) {
+
+	LOG_DEBUG(sopnetlog) << "requested to write minimal impact TED coefficients, updating inputs" << std::endl;
+
+	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
+	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing minimal impact TED coefficient files..." << std::endl;
+
+	_mitWriter->write(filename);
 }
 

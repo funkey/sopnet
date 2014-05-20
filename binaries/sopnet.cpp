@@ -68,6 +68,10 @@ util::ProgramOption optionWriteStructuredProblem(
 		_long_name        = "writeStructuredProblem",
 		_description_text = "Dump the gold standard, all features and constraints for structured learning.");
 
+util::ProgramOption optionWriteMinimalImpactTED(
+		_long_name	  = "writeMinimalImpactTED",
+		_description_text = "Dump coefficients for minimal impact TED for structured learning.");
+
 util::ProgramOption optionFirstSection(
 		_module           = "sopnet",
 		_long_name        = "firstSection",
@@ -602,6 +606,13 @@ int main(int optionc, char** optionv) {
 			sopnet->writeStructuredProblem("./labels.txt", "./features.txt", "./constraints.txt");
 
 			LOG_USER(out) << "[main] files for structured learning written!" << std::endl;
+		}
+
+		if (optionWriteMinimalImpactTED) {
+			
+			sopnet->writeMinimalImpactTEDCoefficients("./minimalImpactTEDcoefficients.txt");
+
+			LOG_USER(out) << "[main] file for minimal impact TED written!" << std::endl;
 		}
 
 		if (optionSaveResultDirectory) {

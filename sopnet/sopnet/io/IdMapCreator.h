@@ -15,8 +15,11 @@ class IdMapCreator : public pipeline::SimpleProcessNode<> {
 public:
 
 	IdMapCreator();
+	IdMapCreator(unsigned int numSections, unsigned int width, unsigned int height);
 
 private:
+
+	void init();
 
 	void updateOutputs();
 
@@ -25,6 +28,12 @@ private:
 	pipeline::Input<SegmentTrees> _neurons;
 	pipeline::Input<ImageStack>   _reference;
 	pipeline::Output<ImageStack>  _idMap;
+
+	bool useReference;
+
+	unsigned int _numSections;
+	unsigned int _width;
+	unsigned int _height;
 };
 
 #endif // SOPNET_IO_ID_MAP_CREATOR_H__
