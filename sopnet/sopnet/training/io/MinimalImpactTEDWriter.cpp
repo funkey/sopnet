@@ -28,10 +28,18 @@ MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 void
 MinimalImpactTEDWriter::write(std::string filename) {
 
+	updateInputs();
+
 	// Create the internal pipeline
 	createPipeline();
 
-	updateInputs();
+	// Remove the old file
+	/*if( std::remove( filename ) != 0 ) {
+		LOG_DEBUG(minimalImpactTEDlog) << "Old file to output minimal impact TED approximation sucessfully deleted." << std::endl;
+	} 
+	else {
+		LOG_DEBUG(minimalImpactTEDlog) << "Could not delete old file to output minimal impact TED approximation." << std::endl;
+	}*/
 
 	 // Get a vector with all gold standard segments.
         const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
@@ -43,7 +51,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	// Loop through variables
 	std::set<unsigned int> variables = _problemConfiguration->getVariables();
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
-		
+
 		// Introduce constraints that flip the segment corresponding to the ith variable
 		// compared to the goldstandard.
 	
@@ -57,8 +65,6 @@ MinimalImpactTEDWriter::write(std::string filename) {
                         }
                 }
 	
-		LOG_DEBUG(minimalImpactTEDlog) << "is contained: " << isContained << std::endl;
-
 		LinearConstraint constraint;
 		constraint.setRelation(Equal);
 
@@ -75,6 +81,10 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		_linearConstraints->add(constraint);
 		
+	//	_linearSolver->clearInputs("linear constraints");
+		_linearSolver->setInput("linear constraints",_linearConstraints);
+		//_linearSolver->setDirty(OutputBase& output);
+
 		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
 		unsigned int splitsAndMerges = errors->getNumSplits() + errors->getNumMerges();
 		int splitsAndMergesInt = (int) splitsAndMerges;
