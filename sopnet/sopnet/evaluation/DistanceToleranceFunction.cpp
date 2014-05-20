@@ -72,6 +72,7 @@ DistanceToleranceFunction::extractCells(
 			}
 	}
 
+	_relabelCandidates.clear();
 	for (unsigned int cellIndex = 0; cellIndex < numCells; cellIndex++)
 		if (maxBoundaryDistances[cellIndex] <= _maxDistanceThreshold*_maxDistanceThreshold)
 			_relabelCandidates.push_back(cellIndex);
