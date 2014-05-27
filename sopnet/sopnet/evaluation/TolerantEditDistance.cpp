@@ -102,6 +102,8 @@ TolerantEditDistance::clear() {
 	_correctedReconstruction->clear();
 	_splitLocations->clear();
 	_mergeLocations->clear();
+	_fpLocations->clear();
+	_fnLocations->clear();
 }
 
 void
