@@ -81,28 +81,26 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		_linearConstraints->add(constraint);
 		
-	//	_linearSolver->clearInputs("linear constraints");
 		_linearSolver->setInput("linear constraints",_linearConstraints);
-		//_linearSolver->setDirty(OutputBase& output);
 
 		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
-		unsigned int splitsAndMerges = errors->getNumSplits() + errors->getNumMerges();
-		int splitsAndMergesInt = (int) splitsAndMerges;
+		unsigned int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
+		int sumErrorsInt = (int) sumErrors;
 
 		if (isContained == true) {
 			// Forced segment to not be part of the reconstruction.
 			// This resulted in a number of errors that are going to be stored in the constant.
 			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
 
-			writeToFile(filename, -splitsAndMergesInt);
+			writeToFile(filename, -sumErrorsInt, varNum, false);
 
-			constant += splitsAndMergesInt;
+			constant += sumErrorsInt;
 		}
 		else {
 			// Forced segment to be part of the reconstruction.
 			// This resulted in a number of errors that are going to be written to the file.
 
-			writeToFile(filename, splitsAndMergesInt);
+			writeToFile(filename, sumErrorsInt, varNum, false);
 		}
 
 		// Remove constraint
@@ -110,17 +108,22 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	}
 
 	// Write constant to file
-	writeToFile(filename, constant);
-	
-	LOG_DEBUG(minimalImpactTEDlog) << "Constant is: " << constant << std::endl;
+	writeToFile(filename, constant, 0, true);
 }
 
 void
-MinimalImpactTEDWriter::writeToFile(std::string filename, int value) {
+MinimalImpactTEDWriter::writeToFile(std::string filename, int value, int varNum, bool isConstant) {
 
 	std::ofstream outfile;
 	outfile.open(filename.c_str(), std::ios_base::app);
-	outfile << value << std::endl;
+	
+	if (isConstant == false) {
+		outfile << "c" << varNum << " " << value << std::endl;
+	}
+	else {
+		outfile << "constant " << value << std::endl;
+	}
+
 	outfile.close();
 
 }

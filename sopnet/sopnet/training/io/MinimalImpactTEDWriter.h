@@ -30,7 +30,7 @@ private:
 
 	void createPipeline();
 
-	void writeToFile(std::string filename, int value);
+	void writeToFile(std::string filename, int value, int varNum, bool isConstant);
 
 	/*********
 	* Inputs *
