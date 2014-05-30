@@ -28,6 +28,8 @@ private:
 
 	void updateOutputs() {}
 
+	void clearPipeline();
+
 	void createPipeline();
 
 	void writeToFile(std::string filename, int value, int varNum, bool isConstant);

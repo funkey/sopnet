@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <stdio.h> 
 
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
@@ -30,16 +31,13 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	updateInputs();
 
-	// Create the internal pipeline
-	createPipeline();
-
 	// Remove the old file
-	/*if( std::remove( filename ) != 0 ) {
+	if( remove( filename.c_str() ) != 0 ) {
 		LOG_DEBUG(minimalImpactTEDlog) << "Old file to output minimal impact TED approximation sucessfully deleted." << std::endl;
 	} 
 	else {
 		LOG_DEBUG(minimalImpactTEDlog) << "Could not delete old file to output minimal impact TED approximation." << std::endl;
-	}*/
+	}
 
 	 // Get a vector with all gold standard segments.
         const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
@@ -52,6 +50,10 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	std::set<unsigned int> variables = _problemConfiguration->getVariables();
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
+		// Re-create pipeline inside loop to avoid memory accumulation.
+		// There should be a better fix for this.
+		createPipeline();
+
 		// Introduce constraints that flip the segment corresponding to the ith variable
 		// compared to the goldstandard.
 	
@@ -62,6 +64,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
                 foreach (boost::shared_ptr<Segment> s, goldStandard) {
                         if (s->getId() == segmentId) {
                                 isContained = true;
+				break;
                         }
                 }
 	
@@ -105,6 +108,9 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		// Remove constraint
 		_linearConstraints->removeLastConstraint();
+		
+		// Clear the pipeline to avoid memory accumulation
+		clearPipeline();
 	}
 
 	// Write constant to file
@@ -125,6 +131,21 @@ MinimalImpactTEDWriter::writeToFile(std::string filename, int value, int varNum,
 	}
 
 	outfile.close();
+
+}
+
+void
+MinimalImpactTEDWriter::clearPipeline() {
+
+	_teDistance = boost::make_shared<TolerantEditDistance>();
+	_gsimCreator = boost::make_shared<IdMapCreator>();
+	_rimCreator = boost::make_shared<IdMapCreator>();
+	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
+	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
+	_rReconstructor = boost::make_shared<Reconstructor>();
+	_linearSolver = boost::make_shared<LinearSolver>();
+	_objectiveGenerator = boost::make_shared<ObjectiveGenerator>();
+	_hammingCostFunction = boost::make_shared<HammingCostFunction>();
 
 }
 
