@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <gui/TextPainter.h>
 #include <sopnet/evaluation/SliceErrors.h>
+#include <sopnet/evaluation/Errors.h>
 
 class ErrorsView : public pipeline::SimpleProcessNode<> {
 
@@ -16,6 +17,7 @@ public:
 
 		registerInput(_sliceErrors, "slice errors");
 		registerInput(_variationOfInformation, "variation of information", pipeline::Optional);
+		registerInput(_tEDerrors, "tolerant edit distance errors", pipeline::Optional);
 		registerOutput(_painter, "painter");
 
 		_painter.registerSlot(_sizeChanged);
@@ -30,8 +32,8 @@ private:
 		ss
 				<< "false positives: " << _sliceErrors->numFalsePositives() << ", "
 				<< "false negatives: " << _sliceErrors->numFalseNegatives() << ", "
-				<< "false splits: " << _sliceErrors->numFalseSplits() << ", "
-				<< "false merges: " << _sliceErrors->numFalseMerges() << "; "
+				<< "splits: " << _sliceErrors->numFalseSplits() << ", "
+				<< "merges: " << _sliceErrors->numFalseMerges() << "; "
 				<< "total: " <<
 					(_sliceErrors->numFalsePositives() +
 					 _sliceErrors->numFalseNegatives() +
@@ -41,7 +43,15 @@ private:
 		if (_variationOfInformation.isSet())
 			ss
 				<< " -- "
-				<< "variation of information: " << *_variationOfInformation << std::endl;
+				<< "variation of information: " << *_variationOfInformation;
+
+		if (_tEDerrors.isSet())
+			ss
+				<< " -- "
+				<< "splits: " << _tEDerrors->getNumSplits() << ", "
+				<< "merges: " << _tEDerrors->getNumMerges() << ", "
+				<< "fp" << _tEDerrors->getNumFalsePositives() << ", "
+				<< "fn" << _tEDerrors->getNumFalseNegatives();
 
 		_painter->setText(ss.str());
 
@@ -50,6 +60,7 @@ private:
 
 	pipeline::Input<SliceErrors>       _sliceErrors;
 	pipeline::Input<double>            _variationOfInformation;
+	pipeline::Input<Errors>		   _tEDerrors;
 	pipeline::Output<gui::TextPainter> _painter;
 
 	signals::Slot<const gui::SizeChanged> _sizeChanged;
