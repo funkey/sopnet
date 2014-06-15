@@ -326,15 +326,6 @@ NeuronsStackPainter::drawNeuron(
 	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)); GLfloat emission[4] = { 0, 0, 0, 1 };
 	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
 
-	// enable alpha blending
-	glCheck(glEnable(GL_BLEND));
-	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-	glCheck(glEnable(GL_CULL_FACE));
-	glCheck(glEnable(GL_LIGHTING));
-	glCheck(glEnable(GL_LIGHT0));
-	glCheck(glEnable(GL_COLOR_MATERIAL));
-
 	double red   = _colors[neuronNum][0];
 	double green = _colors[neuronNum][1];
 	double blue  = _colors[neuronNum][2];
@@ -564,6 +555,14 @@ NeuronsStackPainter::drawSlice(
 	glCheck(glColor4f(red, green, blue, alpha));
 
 	glCheck(glEnable(GL_TEXTURE_2D));
+
+	glCheck(glEnable(GL_BLEND));
+	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
+	glCheck(glEnable(GL_CULL_FACE));
+	glCheck(glEnable(GL_LIGHTING));
+	glCheck(glEnable(GL_LIGHT0));
+	glCheck(glEnable(GL_COLOR_MATERIAL));
 
 	try {
 
