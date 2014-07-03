@@ -1,6 +1,7 @@
 #ifndef SOPNET_SKELETONS_SPHERES_H__
 #define SOPNET_SKELETONS_SPHERES_H__
 
+#include <vector>
 #include <pipeline/Data.h>
 #include "Sphere.h"
 

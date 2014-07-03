@@ -1,6 +1,8 @@
 #ifndef SOPNET_SKELETONS_SPHERE_H__
 #define SOPNET_SKELETONS_SPHERE_H__
 
+#include <ostream>
+
 class Sphere {
 
 public:
@@ -23,6 +25,25 @@ public:
 
 	float getRadius() const { return _r; }
 
+	bool operator<(const Sphere& other) const {
+
+		if (_r < other._r)
+			return true;
+		if (_r > other._r)
+			return false;
+		if (_x < other._x)
+			return true;
+		if (_x > other._x)
+			return false;
+		if (_y < other._y)
+			return true;
+		if (_y > other._y)
+			return false;
+		if (_z < other._z)
+			return true;
+		return false;
+	}
+
 private:
 
 	float _x;
@@ -30,6 +51,9 @@ private:
 	float _z;
 	float _r;
 };
+
+std::ostream&
+operator<<(std::ostream& os, const Sphere& sphere);
 
 #endif // SOPNET_SKELETONS_SPHERE_H__
 
