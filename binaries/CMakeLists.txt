@@ -9,3 +9,4 @@ define_module(edit_distance     BINARY SOURCES edit_distance.cpp     LINKS allso
 define_module(grow              BINARY SOURCES grow.cpp              LINKS imageprocessing gui)
 define_module(shrink            BINARY SOURCES shrink.cpp            LINKS imageprocessing gui)
 define_module(viewer            BINARY SOURCES viewer.cpp            LINKS imageprocessing gui)
+define_module(skeletonize       BINARY SOURCES skeletonize.cpp       LINKS allsopnet)
