@@ -152,13 +152,23 @@ int main(int optionc, char** optionv) {
 			findSpheres->setInput(selector->getOutput());
 
 			pipeline::Process<SpheresView> spheresView;
-			spheresView->setInput(findSpheres->getOutput());
+			spheresView->setInput(findSpheres->getOutput("spheres"));
+
+			pipeline::Process<ImageStackView> houghView;
+			houghView->setInput(findSpheres->getOutput("hough space"));
 
 			pipeline::Process<ContainerView<OverlayPlacing> > neuronSpheresView;
 			neuronSpheresView->addInput(neuronView->getOutput());
 			neuronSpheresView->addInput(spheresView->getOutput());
 
-			verticalContainer->addInput(neuronSpheresView->getOutput());
+			pipeline::Process<gui::RotateView> rotateView;
+			rotateView->setInput(neuronSpheresView->getOutput());
+
+			pipeline::Process<ContainerView<HorizontalPlacing> > resultView;
+			resultView->addInput(rotateView->getOutput());
+			resultView->addInput(houghView->getOutput());
+
+			verticalContainer->addInput(resultView->getOutput());
 		}
 
 		// create a zoom view
