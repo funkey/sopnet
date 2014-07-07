@@ -44,7 +44,7 @@ private:
 
 	void onNeuronsModified(const pipeline::Modified& signal);
 
-	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron);
+	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron, pipeline::Output<gui::RotatePainter>* painter);
 
 	pipeline::Input<SegmentTrees>  _neurons;
 	pipeline::Input<SliceErrors>   _sliceErrors;

@@ -38,7 +38,13 @@ NeuronsView::updateOutputs() {
 			boost::shared_ptr<SegmentsView>    neuronView = boost::make_shared<SegmentsView>("single neuron");
 			boost::shared_ptr<gui::RotateView> rotateView = boost::make_shared<gui::RotateView>();
 
-			boost::function<void(gui::MouseDown&)> callback = boost::bind(&NeuronsView::onMouseDownOnNeuron, this, _1, neuronNum);
+			boost::function<void(gui::MouseDown&)> callback =
+					boost::bind(
+							&NeuronsView::onMouseDownOnNeuron,
+							this,
+							_1,
+							neuronNum,
+							static_cast<pipeline::Output<gui::RotatePainter>*>(&rotateView->getOutput()));
 			rotateView->getOutput().registerCallback(callback, this, signals::Transparent);
 
 			neuronView->setInput("segments", neuron);
@@ -63,9 +69,9 @@ NeuronsView::onNeuronsModified(const pipeline::Modified&) {
 }
 
 void
-NeuronsView::onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron) {
+NeuronsView::onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron, pipeline::Output<gui::RotatePainter>* painter) {
 
-	if (signal.button == gui::buttons::Left) {
+	if (signal.button == gui::buttons::Left && (*painter)->getSize().contains(signal.position)) {
 
 		LOG_DEBUG(neuronsviewlog) << "you clicked on neuron " << neuron << std::endl;
 
