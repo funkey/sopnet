@@ -47,10 +47,9 @@ private:
 
 	// create kernels that produce the Hough transform for a point with the 
 	// given radius
-	void createKernels(
+	void createKernel(
 			unsigned int radius,
-			vigra::Kernel1D<float>& smallKernel,
-			vigra::Kernel1D<float>& largeKernel);
+			vigra::MultiArray<3, float>& houghKernel);
 
 	typedef vigra::MultiArray<4, float> hough_space_type;
 

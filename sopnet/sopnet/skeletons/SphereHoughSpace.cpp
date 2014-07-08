@@ -1,5 +1,7 @@
 #include "SphereHoughSpace.h"
+#include <vigra/functorexpression.hxx>
 #include <vigra/multi_convolution.hxx>
+#include <vigra/multi_fft.hxx>
 #include <vigra/multi_localminmax.hxx>
 #include <vigra/multi_pointoperators.hxx>
 #include <vigra/transformimage.hxx>
@@ -19,9 +21,12 @@ SphereHoughSpace::SphereHoughSpace(
 	_radiusStep(radiusStep),
 	_needProcessing(true) {
 
-	_width  = (_xMax - _xMin)/_xStep;
-	_height = (_yMax - _yMin)/_yStep;
-	_depth  = (_zMax - _zMin)/_zStep;
+	// enlarge the spatial dimensions, such that there are no points withing the 
+	// maximal radius if the borders are reflected (which is the case for the 
+	// convolveFFT call)
+	_width  = (_xMax - _xMin + 2*_radiusMax)/_xStep;
+	_height = (_yMax - _yMin + 2*_radiusMax)/_yStep;
+	_depth  = (_zMax - _zMin + 2*_radiusMax)/_zStep;
 	_radii  = (_radiusMax - _radiusMin)/_radiusStep;
 
 	_houghSpace.reshape(hough_space_type::difference_type(_width, _height, _depth, _radii));
@@ -33,9 +38,18 @@ SphereHoughSpace::addBoundaryPoint(
 		float y,
 		float z) {
 
-	unsigned int discreteX = (static_cast<unsigned int>(x/_xStep) - _xMin)/_xStep;
-	unsigned int discreteY = (static_cast<unsigned int>(y/_yStep) - _yMin)/_yStep;
-	unsigned int discreteZ = (static_cast<unsigned int>(z/_zStep) - _zMin)/_zStep;
+	// account for the radius padding
+	x += _radiusMax;
+	y += _radiusMax;
+	z += _radiusMax;
+
+	std::cout << "corrected by padding " << x << ", " << y << ", " << z << std::endl;
+
+	unsigned int discreteX = (x - _xMin)/_xStep;
+	unsigned int discreteY = (y - _yMin)/_yStep;
+	unsigned int discreteZ = (z - _zMin)/_zStep;
+
+	std::cout << "in Hough: " << discreteX << ", " << discreteY << ", " << discreteZ << std::endl;
 
 	for (unsigned int radius = 0; radius < _radii; radius++)
 		_houghSpace(discreteX, discreteY, discreteZ, radius) += 1.0;
@@ -59,9 +73,10 @@ SphereHoughSpace::getSpheres(unsigned int maxSpheres, float minVotes) {
 
 		if (_houghSpace[i] >= minVotes) {
 
-			double x = _xMin + i[0]*_xStep;
-			double y = _yMin + i[1]*_yStep;
-			double z = _zMin + i[2]*_zStep;
+			// account for the padding
+			double x = _xMin + i[0]*_xStep - _radiusMax;
+			double y = _yMin + i[1]*_yStep - _radiusMax;
+			double z = _zMin + i[2]*_zStep - _radiusMax;
 			double radius = _radiusMin + i[3]*_radiusStep;
 
 			sortedSpheres.push_back(std::make_pair(_houghSpace[i], Sphere(x, y, z, radius)));
@@ -111,41 +126,33 @@ SphereHoughSpace::getHoughSpace() {
 void
 SphereHoughSpace::processHoughSpace() {
 
-	vigra::MultiArray<3, float> smallBlur(vigra::Shape3(_width, _height, _depth));
-	vigra::Kernel1D<float> smallKernel, largeKernel;
+	vigra::MultiArray<3, float> houghKernel;
 
 	for (unsigned int radius = 0; radius < _radii; radius++) {
 
-		createKernels(radius, smallKernel, largeKernel);
+		createKernel(radius, houghKernel);
 
 		vigra::MultiArrayView<3, float> houghSlice = _houghSpace.bind<3>(radius);
 
-		// convolve each radius Hough space dimension with the small kernel
-		vigra::separableConvolveMultiArray(
+		// convolve each radius Hough space dimension with the Hough kernel
+		vigra::convolveFFT(
 				houghSlice,
-				smallBlur,
-				smallKernel);
+				houghKernel,
+				houghSlice);
 
-		// convolve each radius Hough space dimension with the large kernel
-		vigra::separableConvolveMultiArray(
-				houghSlice,
-				houghSlice,
-				largeKernel);
-
-		// subtract small blur version from large blur version
-		houghSlice -= smallBlur;
+		vigra::MultiArray<3, float> maxima(houghSlice.shape());
 
 		// find maxima
-		smallBlur = 0;
+		maxima = 0;
 		vigra::localMaxima(
 				houghSlice,
-				smallBlur, // reuse small blur image
-				vigra::LocalMinmaxOptions().allowAtBorder());
+				maxima,
+				vigra::LocalMinmaxOptions().allowAtBorder().allowPlateaus());
 
 		// remove non-maxima
 		vigra::combineTwoMultiArrays(
 				houghSlice,
-				smallBlur,
+				maxima,
 				houghSlice,
 				vigra::functor::Arg1()*vigra::functor::Arg2());
 	}
@@ -154,50 +161,67 @@ SphereHoughSpace::processHoughSpace() {
 }
 
 void
-SphereHoughSpace::createKernels(
-		unsigned int radius,
-		vigra::Kernel1D<float>& smallKernel,
-		vigra::Kernel1D<float>& largeKernel) {
+SphereHoughSpace::createKernel(
+		unsigned int radiusIndex,
+		vigra::MultiArray<3, float>& houghKernel) {
 
-	float targetRadius = _radiusMin + radius*_radiusStep;
+	// the requested radius
+	unsigned int radius = _radiusMin + radiusIndex*_radiusStep;
 
-	// empirically estimated conversion from requested radius to std
-	float smallStd = 1.6*targetRadius/5.0;
-	float largeStd = 2*smallStd;
+	std::cout << "create kernel for radius " << radius << std::endl;
 
-	std::cout << "target radius for index " << radius << " is " << targetRadius << std::endl;
+	// pad the sphere by at least one pixel to the inside and outside
+	unsigned int padding = std::max(1.0, 0.1*radius);
+	unsigned int outerDistance2 = (radius + padding)*(radius + padding);
+	unsigned int innerDistance2 = (radius - padding)*(radius - padding);
 
-	smallKernel.initGaussian(smallStd);
-	largeKernel.initGaussian(largeStd);
+	std::cout << "padding is " << padding << std::endl;
+	std::cout << "outer distance^2 is " << outerDistance2 << std::endl;
+	std::cout << "inner distance^2 is " << innerDistance2 << std::endl;
 
-	// find the max of applying large - small kernel in R^3
-	double maxDiff = 0;
-	for (int i = largeKernel.left(); i <= largeKernel.right(); i++)
-	for (int j = i; j <= largeKernel.right(); j++)
-	for (int k = j; k <= largeKernel.right(); k++) {
+	// make the kernel slightly larger (3*padding instead of 1*padding), because 
+	// we smooth it later
+	unsigned int outerX = (radius + 3*padding)/_xStep + 1;
+	unsigned int outerY = (radius + 3*padding)/_yStep + 1;
+	unsigned int outerZ = (radius + 3*padding)/_zStep + 1;
 
-		double large_i = largeKernel[i];
-		double small_i = (i >= smallKernel.left() && i <= smallKernel.right() ? smallKernel[i] : 0);
-		double large_j = largeKernel[j];
-		double small_j = (j >= smallKernel.left() && j <= smallKernel.right() ? smallKernel[j] : 0);
-		double large_k = largeKernel[k];
-		double small_k = (k >= smallKernel.left() && k <= smallKernel.right() ? smallKernel[k] : 0);
+	// create an odd sized kernel
+	vigra::Shape3 size(
+			2*outerX + 1,
+			2*outerY + 1,
+			2*outerZ + 1);
+	vigra::Shape3 center(
+			size[0]/2,
+			size[1]/2,
+			size[2]/2
+	);
 
-		double diff = large_i*large_j*large_k - small_i*small_j*small_k;
+	houghKernel.reshape(size);
 
-		maxDiff = std::max(maxDiff, diff);
+	// draw a ring
+	vigra::Shape3 i;
+	for (i[2] = 0; i[2] != size[2]; i[2]++)
+	for (i[1] = 0; i[1] != size[1]; i[1]++)
+	for (i[0] = 0; i[0] != size[0]; i[0]++) {
+
+		unsigned int dx = (i[0] - center[0])*_xStep;
+		unsigned int dy = (i[1] - center[1])*_yStep;
+		unsigned int dz = (i[2] - center[2])*_zStep;
+
+		unsigned int distance2 = dx*dx + dy*dy + dz*dz;
+
+		if (distance2 <= outerDistance2 && distance2 >= innerDistance2)
+			houghKernel[i] = 1.0;
+		else
+			houghKernel[i] = 0.0;
 	}
 
-	// the 3rd root of 1.0/maxDiff
-	double normalize = pow(1.0/maxDiff, 1.0/3);
-
-	// normalize the kernels, such that the maximum of their difference is 1
-	for (int i = smallKernel.left(); i <= smallKernel.right(); i++)
-		smallKernel[i] *= normalize;
-	for (int i = largeKernel.left(); i <= largeKernel.right(); i++)
-		largeKernel[i] *= normalize;
-
-	smallKernel.setBorderTreatment(vigra::BORDER_TREATMENT_ZEROPAD);
-	largeKernel.setBorderTreatment(vigra::BORDER_TREATMENT_ZEROPAD);
+	float scale = std::max(0.01f, static_cast<float>(padding));
+	vigra::gaussianSmoothMultiArray(
+			houghKernel,
+			houghKernel,
+			scale,
+			vigra::ConvolutionOptions<3>()
+					.stepSize(_xStep, _yStep, _zStep));
 }
 

@@ -19,6 +19,17 @@ private:
 
 	void updateOutputs();
 
+	void getBoundingBox(
+			const SegmentTree& neuron,
+			double& minX, double& maxX,
+			double& minY, double& maxY,
+			double& minZ, double& maxZ);
+
+	bool
+	isBoundaryPixel(
+			const ConnectedComponent::bitmap_type& bitmap,
+			vigra::Shape2& location);
+
 	pipeline::Input<SegmentTree> _neuron;
 	pipeline::Output<Spheres>    _spheres;
 	pipeline::Output<ImageStack> _houghSpace;

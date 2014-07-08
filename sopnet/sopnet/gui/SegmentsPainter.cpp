@@ -12,7 +12,7 @@ logger::LogChannel segmentspainterlog("segmentspainterlog", "[SegmentsPainter] "
 
 SegmentsPainter::SegmentsPainter(std::string name) :
 	RecordablePainter(name),
-	_zScale(15),
+	_zScale(10),
 	_showEnds(true),
 	_showContinuations(true),
 	_showBranches(true) {}
