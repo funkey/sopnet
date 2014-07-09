@@ -25,14 +25,10 @@ private:
 			double& minY, double& maxY,
 			double& minZ, double& maxZ);
 
-	bool
-	isBoundaryPixel(
-			const ConnectedComponent::bitmap_type& bitmap,
-			vigra::Shape2& location);
-
 	pipeline::Input<SegmentTree> _neuron;
+	pipeline::Input<double>      _smooth;
 	pipeline::Output<Spheres>    _spheres;
-	pipeline::Output<ImageStack> _houghSpace;
+	pipeline::Output<ImageStack> _maxDistances;
 };
 
 #endif // SOPNET_SKELETONS_FIND_SPHERES_H__

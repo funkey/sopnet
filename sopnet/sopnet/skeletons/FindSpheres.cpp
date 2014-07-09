@@ -1,11 +1,17 @@
 #include "SphereHoughSpace.h"
 #include "FindSpheres.h"
+#include <vigra/multi_convolution.hxx>
+#include <vigra/multi_distance.hxx>
+#include <vigra/multi_pointoperators.hxx>
+#include <vigra/multi_localminmax.hxx>
+#include <vigra/functorexpression.hxx>
 
 FindSpheres::FindSpheres() {
 
 	registerInput(_neuron, "neuron");
+	registerInput(_smooth, "smooth");
 	registerOutput(_spheres, "spheres");
-	registerOutput(_houghSpace, "hough space");
+	registerOutput(_maxDistances, "distances");
 }
 
 void
@@ -13,8 +19,15 @@ FindSpheres::updateOutputs() {
 
 	if (!_spheres)
 		_spheres = new Spheres();
+	else
+		_spheres->clear();
 
-	const unsigned int zRes = 10;
+	if (!_maxDistances)
+		_maxDistances = new ImageStack();
+	else
+		_maxDistances->clear();
+
+	const unsigned int resZ = 10;
 
 	double minX, minY, minZ;
 	double maxX, maxY, maxZ;
@@ -25,18 +38,14 @@ FindSpheres::updateOutputs() {
 			minY, maxY,
 			minZ, maxZ);
 
-	SphereHoughSpace houghSpace(
-			minX,      maxX,      10,
-			minY,      maxY,      10,
-			minZ*zRes, maxZ*zRes, 1,
-			10, 40, 10);
+	vigra::Shape3 size(maxX - minX, maxY - minY, maxZ - minZ);
 
-	std::cout
-			<< "bounding box is: "
-			<< minX << ", " << maxX << "; "
-			<< minY << ", " << maxY << "; "
-			<< minZ << ", " << maxZ << std::endl;
+	vigra::MultiArray<3, float> distance(size);
+	vigra::MultiArray<3, float> maxima(size);
+	distance = 0;
+	maxima = 0;
 
+	// prepare foreground-background picture
 	foreach (boost::shared_ptr<Segment> segment, _neuron->getSegments()) {
 		foreach (boost::shared_ptr<Slice> slice, segment->getSlices()) {
 
@@ -44,25 +53,82 @@ FindSpheres::updateOutputs() {
 			const ConnectedComponent::bitmap_type& bitmap      = slice->getComponent()->getBitmap();
 			unsigned int                           section     = slice->getSection();
 
-			vigra::Shape2 i;
-			for (i[1] = 0; i[1] != bitmap.shape()[1]; i[1]++)
-			for (i[0] = 0; i[0] != bitmap.shape()[0]; i[0]++) {
+			vigra::copyMultiArray(
+					bitmap,
+					distance.bind<2>(section - minZ).subarray(
+							vigra::Shape2(boundingBox.minX - minX, boundingBox.minY - minY),
+							vigra::Shape2(boundingBox.maxX - minX, boundingBox.maxY - minY)));
 
-				if (isBoundaryPixel(bitmap, i)) {
-
-					float x = boundingBox.minX + i[0];
-					float y = boundingBox.minY + i[1];
-
-					std::cout << "adding point at " << x << ", " << y << ", " << section << std::endl;
-					houghSpace.addBoundaryPoint(x, y, section*zRes);
-				}
-			}
 		}
 	}
 
-	*_spheres = houghSpace.getSpheres(10);
+	// perform distance transform
+	float pitch[3];
+	pitch[0] = 1; pitch[1] = 1; pitch[2] = resZ;
+	vigra::separableMultiDistSquared(
+			distance,
+			distance,
+			false, // distance to background
+			pitch);
 
-	_houghSpace = houghSpace.getHoughSpace();
+	// smooth a little
+	float scale = *_smooth;
+	if (scale >= 1e-10)
+		vigra::gaussianSmoothMultiArray(
+				distance,
+				distance,
+				scale,
+				vigra::ConvolutionOptions<3>()
+						.stepSize(1, 1, resZ));
+
+	// find maxima
+	vigra::localMaxima(
+			distance,
+			maxima,
+			vigra::LocalMinmaxOptions().allowAtBorder());
+
+	// extract spheres
+	typedef vigra::CoupledIteratorType<3, float, float>::type CoupledIterator;
+
+	CoupledIterator i = vigra::createCoupledIterator(maxima, distance);
+
+	for (; i != i.getEndIterator(); i++) {
+
+		if (i.get<1>() > 0) {
+
+			vigra::Shape3 location  = i.get<0>();
+			float         distance  = sqrt(i.get<2>());
+
+			_spheres->add(
+					Sphere(
+							 location[0] + minX,
+							 location[1] + minY,
+							(location[2] + minZ)*resZ,
+							 distance));
+		}
+	}
+
+	// normalize distance transform image
+	vigra::FindMinMax<float> findMinMax;
+	vigra::inspectMultiArray(
+			distance,
+			findMinMax);
+	vigra::transformMultiArray(
+			distance,
+			distance,
+			vigra::functor::Param(1.0) - vigra::functor::Arg1()/vigra::functor::Param(findMinMax.max));
+
+	// provide distances as output
+	_maxDistances->setOffset(minX, minY, minZ);
+	_maxDistances->setResolution(1, 1, resZ);
+	for (unsigned int z = 0; z < size[2]; z++) {
+
+		boost::shared_ptr<Image> image = boost::make_shared<Image>(size[0], size[1]);
+		vigra::copyMultiArray(
+				distance.bind<2>(z),
+				*image);
+		_maxDistances->add(image);
+	}
 }
 
 void
@@ -93,27 +159,3 @@ FindSpheres::getBoundingBox(
 		}
 }
 
-bool
-FindSpheres::isBoundaryPixel(
-		const ConnectedComponent::bitmap_type& bitmap,
-		vigra::Shape2& location) {
-
-	if (bitmap[location] == 0)
-		return false;
-
-	if (location[0] == 0 || location[0] == bitmap.shape()[0] - 1)
-		return true;
-	if (location[1] == 0 || location[1] == bitmap.shape()[1] - 1)
-		return true;
-
-	if (bitmap[location - vigra::Shape2(0, 1)] == 0)
-		return true;
-	if (bitmap[location + vigra::Shape2(0, 1)] == 0)
-		return true;
-	if (bitmap[location - vigra::Shape2(1, 0)] == 0)
-		return true;
-	if (bitmap[location + vigra::Shape2(1, 0)] == 0)
-		return true;
-
-	return false;
-}

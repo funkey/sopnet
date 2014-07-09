@@ -11,6 +11,7 @@
 #include <gui/HorizontalPlacing.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
+#include <gui/Slider.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <imageprocessing/ImageExtractor.h>
@@ -27,6 +28,7 @@
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/skeletons/FindSpheres.h>
+#include <sopnet/skeletons/FindSuperPixels.h>
 #include <sopnet/skeletons/gui/SpheresView.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
@@ -149,13 +151,16 @@ int main(int optionc, char** optionv) {
 			neuronView->setInput(selector->getOutput());
 
 			pipeline::Process<FindSpheres> findSpheres;
-			findSpheres->setInput(selector->getOutput());
+			findSpheres->setInput("neuron", selector->getOutput());
+
+			pipeline::Process<gui::Slider<double> > smoothSlider("smooth", 0.0, 10.0, 1.0);
+			findSpheres->setInput("smooth", smoothSlider->getOutput("value"));
 
 			pipeline::Process<SpheresView> spheresView;
 			spheresView->setInput(findSpheres->getOutput("spheres"));
 
-			pipeline::Process<ImageStackView> houghView;
-			houghView->setInput(findSpheres->getOutput("hough space"));
+			pipeline::Process<ImageStackView> maxDistanceView;
+			maxDistanceView->setInput(findSpheres->getOutput("distances"));
 
 			pipeline::Process<ContainerView<OverlayPlacing> > neuronSpheresView;
 			neuronSpheresView->addInput(neuronView->getOutput());
@@ -164,9 +169,18 @@ int main(int optionc, char** optionv) {
 			pipeline::Process<gui::RotateView> rotateView;
 			rotateView->setInput(neuronSpheresView->getOutput());
 
+			pipeline::Process<FindSuperPixels> findSuperPixels;
+			findSuperPixels->setInput("boundary map", findSpheres->getOutput("distances"));
+			findSuperPixels->setInput("seeds", findSpheres->getOutput("spheres"));
+
+			pipeline::Process<ImageStackView> superPixelLabelView;
+			superPixelLabelView->setInput(findSuperPixels->getOutput());
+
 			pipeline::Process<ContainerView<HorizontalPlacing> > resultView;
+			resultView->addInput(maxDistanceView->getOutput());
+			resultView->addInput(smoothSlider->getOutput("painter"));
 			resultView->addInput(rotateView->getOutput());
-			resultView->addInput(houghView->getOutput());
+			resultView->addInput(superPixelLabelView->getOutput());
 
 			verticalContainer->addInput(resultView->getOutput());
 		}

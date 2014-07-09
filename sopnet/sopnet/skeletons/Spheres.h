@@ -21,6 +21,8 @@ public:
 	iterator       end()         { return _spheres.end(); }
 	const_iterator end()   const { return _spheres.end(); }
 
+	void clear() { _spheres.clear(); }
+
 private:
 
 	spheres_type _spheres;
