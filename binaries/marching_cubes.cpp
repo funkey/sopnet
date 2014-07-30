@@ -8,7 +8,7 @@
 #include <pipeline/Process.h>
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
-#include <gui/ExtractSurface.h>
+#include <gui/ExtractSurfaces.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/MeshView.h>
 #include <gui/NamedView.h>
@@ -75,12 +75,12 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// marching cubes
-		pipeline::Process<ExtractSurface> extractSurface;
-		extractSurface->setInput(rawReader->getOutput());
+		pipeline::Process<ExtractSurfaces> extractSurfaces;
+		extractSurfaces->setInput(rawReader->getOutput());
 
 		// mesh view
 		pipeline::Process<MeshView> meshView;
-		meshView->setInput(extractSurface->getOutput());
+		meshView->setInput(extractSurfaces->getOutput());
 
 		// rotate view
 		pipeline::Process<gui::RotateView> rotateView;
