@@ -24,14 +24,6 @@ SpheresPainter::updateRecording() {
 
 	startRecording();
 
-	glEnable(GL_LIGHTING);
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHT0);
-	glDisable(GL_CULL_FACE);
-	glColor3f(1.0, 0.2, 0.4);
-	GLfloat lightpos[] = {0.5, 1.0, 1.0, 0.0};
-	glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
-
 	GLUquadric* quadric = gluNewQuadric();
 
 	if (quadric) {

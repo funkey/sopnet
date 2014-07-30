@@ -458,23 +458,11 @@ SegmentsStackPainter::drawSlice(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-	// set up lighting
-	GLfloat ambient[4] = { 0, 0, 0, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_AMBIENT, ambient));
-	GLfloat diffuse[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse));
-	GLfloat specular[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_SPECULAR, specular));
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)); GLfloat emission[4] = { 0, 0, 0, 1 };
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
-
 	// enable alpha blending
 	glCheck(glEnable(GL_BLEND));
 	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 	glCheck(glEnable(GL_CULL_FACE));
-	glCheck(glEnable(GL_LIGHTING));
-	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
 
 	glCheck(glColor4f(red, green, blue, alpha));
@@ -515,7 +503,6 @@ SegmentsStackPainter::drawSlice(
 	glCheck(glEnd());
 
 	glCheck(glDisable(GL_BLEND));
-	glCheck(glDisable(GL_LIGHTING));
 	glCheck(glDisable(GL_CULL_FACE));
 
 	if (_showSliceIds) {

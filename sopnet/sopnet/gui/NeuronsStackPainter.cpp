@@ -316,16 +316,6 @@ NeuronsStackPainter::drawNeuron(
 	if (neuron.getContinuations().size() >= 1 && !_showCompleteNeurons)
 		return;
 
-	// set up lighting
-	GLfloat ambient[4] = { 0, 0, 0, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_AMBIENT, ambient));
-	GLfloat diffuse[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse));
-	GLfloat specular[4] = { 0.1, 0.1, 0.1, 1 };
-	glCheck(glLightfv(GL_LIGHT0, GL_SPECULAR, specular));
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular)); GLfloat emission[4] = { 0, 0, 0, 1 };
-	glCheck(glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emission));
-
 	double red   = _colors[neuronNum][0];
 	double green = _colors[neuronNum][1];
 	double blue  = _colors[neuronNum][2];
@@ -535,7 +525,6 @@ NeuronsStackPainter::drawNeuron(
 	}
 
 	glCheck(glDisable(GL_BLEND));
-	glCheck(glDisable(GL_LIGHTING));
 	glCheck(glDisable(GL_CULL_FACE));
 }
 
