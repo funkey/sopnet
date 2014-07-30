@@ -8,7 +8,9 @@
 #include <pipeline/Process.h>
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
+#include <gui/ExtractSurfaces.h>
 #include <gui/HorizontalPlacing.h>
+#include <gui/MeshView.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Slider.h>
@@ -153,7 +155,7 @@ int main(int optionc, char** optionv) {
 			pipeline::Process<FindSpheres> findSpheres;
 			findSpheres->setInput("neuron", selector->getOutput());
 
-			pipeline::Process<gui::Slider<double> > smoothSlider("smooth", 0.0, 10.0, 1.0);
+			pipeline::Process<gui::Slider<double> > smoothSlider("smooth", 0.0, 20.0, 10.0);
 			findSpheres->setInput("smooth", smoothSlider->getOutput("value"));
 
 			pipeline::Process<SpheresView> spheresView;
@@ -176,11 +178,21 @@ int main(int optionc, char** optionv) {
 			pipeline::Process<ImageStackView> superPixelLabelView;
 			superPixelLabelView->setInput(findSuperPixels->getOutput());
 
+			pipeline::Process<ExtractSurfaces> extractSurfaces;
+			extractSurfaces->setInput(findSuperPixels->getOutput());
+
+			pipeline::Process<MeshView> meshView;
+			meshView->setInput(extractSurfaces->getOutput());
+
+			pipeline::Process<gui::RotateView> meshRotateView;
+			meshRotateView->setInput(meshView->getOutput());
+
 			pipeline::Process<ContainerView<HorizontalPlacing> > resultView;
 			resultView->addInput(maxDistanceView->getOutput());
 			resultView->addInput(smoothSlider->getOutput("painter"));
 			resultView->addInput(rotateView->getOutput());
 			resultView->addInput(superPixelLabelView->getOutput());
+			resultView->addInput(meshRotateView->getOutput());
 
 			verticalContainer->addInput(resultView->getOutput());
 		}
