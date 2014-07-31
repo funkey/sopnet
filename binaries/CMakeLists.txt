@@ -11,3 +11,4 @@ define_module(shrink            BINARY SOURCES shrink.cpp            LINKS image
 define_module(viewer            BINARY SOURCES viewer.cpp            LINKS imageprocessing gui)
 define_module(skeletonize       BINARY SOURCES skeletonize.cpp       LINKS allsopnet)
 define_module(marching_cubes    BINARY SOURCES marching_cubes.cpp    LINKS imageprocessing gui)
+define_module(blobs             BINARY SOURCES blobs.cpp             LINKS allsopnet)
