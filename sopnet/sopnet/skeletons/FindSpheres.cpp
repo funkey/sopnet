@@ -5,6 +5,9 @@
 #include <vigra/multi_pointoperators.hxx>
 #include <vigra/multi_localminmax.hxx>
 #include <vigra/functorexpression.hxx>
+#include <util/Logger.h>
+
+logger::LogChannel findsphereslog("findsphereslog", "[FindSpheres] ");
 
 FindSpheres::FindSpheres() {
 
@@ -76,16 +79,16 @@ FindSpheres::updateOutputs() {
 	if (scale >= 1e-10)
 		vigra::gaussianSmoothMultiArray(
 				distance,
-				distance,
+				maxima,
 				scale,
 				vigra::ConvolutionOptions<3>()
 						.stepSize(1, 1, resZ));
 
 	// find maxima
 	vigra::localMaxima(
-			distance,
 			maxima,
-			vigra::LocalMinmaxOptions().allowAtBorder());
+			maxima,
+			vigra::LocalMinmaxOptions().allowAtBorder().markWith(-1));
 
 	// extract spheres
 	typedef vigra::CoupledIteratorType<3, float, float>::type CoupledIterator;
@@ -94,7 +97,7 @@ FindSpheres::updateOutputs() {
 
 	for (; i != i.getEndIterator(); i++) {
 
-		if (i.get<1>() > 0) {
+		if (i.get<1>() == -1) {
 
 			vigra::Shape3 location  = i.get<0>();
 			float         distance  = sqrt(i.get<2>());
@@ -107,6 +110,8 @@ FindSpheres::updateOutputs() {
 							 distance));
 		}
 	}
+
+	LOG_DEBUG(findsphereslog) << "found " << _spheres->size() << " spheres" << std::endl;
 
 	// normalize distance transform image
 	vigra::FindMinMax<float> findMinMax;
