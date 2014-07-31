@@ -1,0 +1,1 @@
+define_module(hacd OBJECT INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/inc)
