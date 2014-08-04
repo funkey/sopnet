@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <stdio.h> 
 
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
@@ -30,27 +31,33 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	updateInputs();
 
-	// Create the internal pipeline
-	createPipeline();
-
 	// Remove the old file
-	/*if( std::remove( filename ) != 0 ) {
+	if( remove( filename.c_str() ) != 0 ) {
 		LOG_DEBUG(minimalImpactTEDlog) << "Old file to output minimal impact TED approximation sucessfully deleted." << std::endl;
 	} 
 	else {
 		LOG_DEBUG(minimalImpactTEDlog) << "Could not delete old file to output minimal impact TED approximation." << std::endl;
-	}*/
+	}
 
+	// Open file for writing
+	std::ofstream outfile;
+	outfile.open(filename.c_str(), std::ios_base::app);
+	
 	 // Get a vector with all gold standard segments.
         const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
 
 	int constant = 0;
 
-	LOG_DEBUG(minimalImpactTEDlog) << "in write function." << std::endl;
-
 	// Loop through variables
 	std::set<unsigned int> variables = _problemConfiguration->getVariables();
+
+	outfile << "numVar " << variables.size() << std::endl;
+
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
+
+		// Re-create pipeline inside loop to avoid memory accumulation.
+		// There should be a better fix for this.
+		createPipeline();
 
 		// Introduce constraints that flip the segment corresponding to the ith variable
 		// compared to the goldstandard.
@@ -62,6 +69,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
                 foreach (boost::shared_ptr<Segment> s, goldStandard) {
                         if (s->getId() == segmentId) {
                                 isContained = true;
+				break;
                         }
                 }
 	
@@ -92,7 +100,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 			// This resulted in a number of errors that are going to be stored in the constant.
 			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
 
-			writeToFile(filename, -sumErrorsInt, varNum, false);
+			outfile << "c" << varNum << " " << -sumErrorsInt << std::endl;
 
 			constant += sumErrorsInt;
 		}
@@ -100,31 +108,35 @@ MinimalImpactTEDWriter::write(std::string filename) {
 			// Forced segment to be part of the reconstruction.
 			// This resulted in a number of errors that are going to be written to the file.
 
-			writeToFile(filename, sumErrorsInt, varNum, false);
+			outfile << "c" << varNum << " " << sumErrorsInt << std::endl;
+
 		}
 
 		// Remove constraint
 		_linearConstraints->removeLastConstraint();
+		
+		// Clear the pipeline to avoid memory accumulation
+		clearPipeline();
 	}
 
 	// Write constant to file
-	writeToFile(filename, constant, 0, true);
+	outfile << "constant " << constant << std::endl;
+
+	outfile.close();
 }
 
 void
-MinimalImpactTEDWriter::writeToFile(std::string filename, int value, int varNum, bool isConstant) {
+MinimalImpactTEDWriter::clearPipeline() {
 
-	std::ofstream outfile;
-	outfile.open(filename.c_str(), std::ios_base::app);
-	
-	if (isConstant == false) {
-		outfile << "c" << varNum << " " << value << std::endl;
-	}
-	else {
-		outfile << "constant " << value << std::endl;
-	}
-
-	outfile.close();
+	_teDistance = boost::make_shared<TolerantEditDistance>();
+	_gsimCreator = boost::make_shared<IdMapCreator>();
+	_rimCreator = boost::make_shared<IdMapCreator>();
+	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
+	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
+	_rReconstructor = boost::make_shared<Reconstructor>();
+	_linearSolver = boost::make_shared<LinearSolver>();
+	_objectiveGenerator = boost::make_shared<ObjectiveGenerator>();
+	_hammingCostFunction = boost::make_shared<HammingCostFunction>();
 
 }
 

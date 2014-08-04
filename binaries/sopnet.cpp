@@ -27,6 +27,7 @@
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
+#include <sopnet/evaluation/TolerantEditDistance.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
 #include <sopnet/gui/NeuronsView.h>
@@ -562,6 +563,10 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowErrors && groundTruthReader) {
 
+			boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
+			tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
+			tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
+
 			boost::shared_ptr<ErrorsView> errorsView = boost::make_shared<ErrorsView>();
 			boost::shared_ptr<NamedView>  namedView  = boost::make_shared<NamedView>("Errors:");
 
@@ -573,6 +578,7 @@ int main(int optionc, char** optionv) {
 
 			errorsView->setInput("slice errors", resultEvaluator->getOutput());
 			errorsView->setInput("variation of information", variationOfInformation->getOutput());
+			errorsView->setInput("tolerant edit distance errors", tolerantEditDistance->getOutput("errors"));
 			namedView->setInput(errorsView->getOutput());
 
 			resultContainer->addInput(namedView->getOutput());

@@ -28,9 +28,9 @@ private:
 
 	void updateOutputs() {}
 
-	void createPipeline();
+	void clearPipeline();
 
-	void writeToFile(std::string filename, int value, int varNum, bool isConstant);
+	void createPipeline();
 
 	/*********
 	* Inputs *
