@@ -2,6 +2,14 @@
 #include <vigra/multi_pointoperators.hxx>
 #include <vigra/multi_resize.hxx>
 #include <vigra/multi_watersheds.hxx>
+#include <vigra/seededregiongrowing3d.hxx>
+#include <util/ProgramOptions.h>
+
+util::ProgramOption optionPerformWatershed(
+		util::_long_name        = "performWatershed",
+		util::_module           = "sopnet.skeletons",
+		util::_description_text = "Perform a watershed to obtain superpixels from seeds and a boundary map. If not set, seeded region growing is used instead.",
+		util::_default_value    = true);
 
 FindSuperPixels::FindSuperPixels() {
 
@@ -65,12 +73,33 @@ FindSuperPixels::updateOutputs() {
 		seeds(x, y, z) = label++;
 	}
 
-	// perform watershed
-	vigra::watershedsMultiArray(
-			boundaries,
-			seeds,
-			vigra::DirectNeighborhood,
-			vigra::WatershedOptions().stopAtThreshold(0.99));
+	if (optionPerformWatershed) {
+
+		// perform watershed
+		vigra::watershedsMultiArray(
+				boundaries,
+				seeds,
+				vigra::DirectNeighborhood,
+				vigra::WatershedOptions().stopAtThreshold(0.99));
+
+	} else {
+
+		vigra::ArrayOfRegionStatistics<vigra::SeedRgDirectValueFunctor<float> >  stats(_seeds->size());
+
+		vigra::transformMultiArray(
+				boundaries,
+				boundaries,
+				vigra::functor::Arg1() >= vigra::functor::Param(0.99));
+
+		vigra::seededRegionGrowing3D(
+				boundaries,
+				seeds,
+				seeds,
+				stats,
+				vigra::StopAtThreshold,
+				vigra::NeighborCode3DSix(),
+				0.99);
+	}
 
 	// provide labels as output
 	_labels->setOffset(minX, minY, minZ);
