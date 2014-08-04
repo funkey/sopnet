@@ -23,6 +23,8 @@ public:
 
 	void clear() { _spheres.clear(); }
 
+	unsigned int size() const { return _spheres.size(); }
+
 private:
 
 	spheres_type _spheres;
