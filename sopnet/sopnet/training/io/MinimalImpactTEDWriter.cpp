@@ -53,6 +53,8 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	outfile << "numVar " << variables.size() << std::endl;
 
+	outfile << "# var_num costs # value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
+
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
 		// Re-create pipeline inside loop to avoid memory accumulation.
@@ -95,21 +97,22 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		unsigned int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
 		int sumErrorsInt = (int) sumErrors;
 
-		if (isContained == true) {
+		outfile << "c" << varNum << " ";
+		outfile << (isContained ? -sumErrorsInt : sumErrorsInt) << " ";
+		outfile << "# ";
+		outfile << (isContained ? 1 : 0) << " ";
+		outfile << errors->getNumSplits() << " ";
+		outfile << errors->getNumMerges() << " ";
+		outfile << errors->getNumFalsePositives() << " ";
+		outfile << errors->getNumFalseNegatives() << std::endl;
+
+		if (isContained) {
+
 			// Forced segment to not be part of the reconstruction.
 			// This resulted in a number of errors that are going to be stored in the constant.
 			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
 
-			outfile << "c" << varNum << " " << -sumErrorsInt << std::endl;
-
 			constant += sumErrorsInt;
-		}
-		else {
-			// Forced segment to be part of the reconstruction.
-			// This resulted in a number of errors that are going to be written to the file.
-
-			outfile << "c" << varNum << " " << sumErrorsInt << std::endl;
-
 		}
 
 		// Remove constraint
