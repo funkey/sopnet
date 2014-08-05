@@ -17,7 +17,7 @@ public:
 
 		registerInput(_sliceErrors, "slice errors");
 		registerInput(_variationOfInformation, "variation of information", pipeline::Optional);
-		registerInput(_tEDerrors, "tolerant edit distance errors", pipeline::Optional);
+		registerInput(_tedErrors, "tolerant edit distance errors", pipeline::Optional);
 		registerOutput(_painter, "painter");
 
 		_painter.registerSlot(_sizeChanged);
@@ -45,13 +45,13 @@ private:
 				<< " -- "
 				<< "variation of information: " << *_variationOfInformation;
 
-		if (_tEDerrors.isSet())
+		if (_tedErrors.isSet())
 			ss
-				<< " -- "
-				<< "splits: " << _tEDerrors->getNumSplits() << ", "
-				<< "merges: " << _tEDerrors->getNumMerges() << ", "
-				<< "fp" << _tEDerrors->getNumFalsePositives() << ", "
-				<< "fn" << _tEDerrors->getNumFalseNegatives();
+				<< " -- TED "
+				<< "false positives " << _tedErrors->getNumFalsePositives() << ", "
+				<< "false negatives " << _tedErrors->getNumFalseNegatives() << ", "
+				<< "splits: " << _tedErrors->getNumSplits() << ", "
+				<< "merges: " << _tedErrors->getNumMerges() << std::endl;
 
 		_painter->setText(ss.str());
 
@@ -60,7 +60,7 @@ private:
 
 	pipeline::Input<SliceErrors>       _sliceErrors;
 	pipeline::Input<double>            _variationOfInformation;
-	pipeline::Input<Errors>		   _tEDerrors;
+	pipeline::Input<Errors>		   _tedErrors;
 	pipeline::Output<gui::TextPainter> _painter;
 
 	signals::Slot<const gui::SizeChanged> _sizeChanged;
