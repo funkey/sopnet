@@ -273,6 +273,11 @@ NeuronsStackPainter::draw(
 		const util::rect<double>& roi,
 		const util::point<double>& resolution) {
 
+	gui::OpenGl::Guard guard;
+
+	glEnable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+
 	// aquire a read lock
 	boost::shared_lock<boost::shared_mutex> lockMe(getMutex());
 	boost::shared_lock<boost::shared_mutex> lockNeurons(_neurons->getMutex());
