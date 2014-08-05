@@ -23,7 +23,7 @@ public:
 
 	void setSegmentId(unsigned int segmentId);
 
-	void setGroundTruthScore(boost::shared_ptr<std::map<unsigned int, double> > groundTruthScore);
+	void setGroundTruthScore(double groundTruthScore);
 
 	bool draw(const util::rect<double>& roi, const util::point<double>& resolution);
 
@@ -45,9 +45,9 @@ private:
 	void updateTextPainters();
 
 	double                   _costs;
+	double                   _groundTruthScore;
 	std::vector<double>      _features;
 	std::vector<std::string> _featureNames;
-	boost::shared_ptr<std::map<unsigned int, double> > _groundTruthScore;
 
 	// the size of one _cell
 	float _cellX, _cellY;

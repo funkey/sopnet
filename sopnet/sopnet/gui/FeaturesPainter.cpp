@@ -40,7 +40,7 @@ FeaturesPainter::setSegmentId(unsigned int segmentId) {
 }
 
 void
-FeaturesPainter::setGroundTruthScore(boost::shared_ptr<std::map<unsigned int, double> > groundTruthScore) {
+FeaturesPainter::setGroundTruthScore(double groundTruthScore) {
 
 	_groundTruthScore = groundTruthScore;
 	_textPaintersDirty = true;
@@ -126,7 +126,7 @@ FeaturesPainter::updateTextPainters() {
 				));
 		_textPainters.push_back(
 				std::make_pair(
-						createTextPainter((*_groundTruthScore)[_segmentId]),
+						createTextPainter(_groundTruthScore),
 						util::point<int>(1, (int)_features.size() + 2)
 				));
 	}

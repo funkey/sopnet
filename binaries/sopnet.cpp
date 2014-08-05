@@ -38,7 +38,9 @@
 #include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/inference/GridSearch.h>
+#include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/neurons/NeuronExtractor.h>
+#include <sopnet/training/GoldStandardCostFunction.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
@@ -449,6 +451,7 @@ int main(int optionc, char** optionv) {
 			rotateView->setInput(segmentsView->getOutput());
 
 			container->addInput(overlay->getOutput());
+
 			if (optionShowSegmentFeatures) {
 
 				boost::shared_ptr<FeaturesView> featuresView = boost::make_shared<FeaturesView>();
@@ -456,8 +459,27 @@ int main(int optionc, char** optionv) {
 				featuresView->setInput("features", sopnet->getOutput("all features"));
 				featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 				featuresView->setInput("objective", sopnet->getOutput("objective"));
+
+				if (optionShowGoldStandard) {
+
+					// here we re-create the objective for the gold standard, to 
+					// avoid having to pass it through Sopnet just for the 
+					// visualization
+
+					pipeline::Process<GoldStandardCostFunction> goldStandardCostFunction;
+					pipeline::Process<ObjectiveGenerator>       objectiveGenerator;
+
+					goldStandardCostFunction->setInput("ground truth", groundTruthReader->getOutput());
+
+					objectiveGenerator->setInput("segments", sopnet->getOutput("segments"));
+					objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());
+
+					featuresView->setInput("ground truth score", objectiveGenerator->getOutput());
+				}
+
 				container->addInput(featuresView->getOutput());
 			}
+
 			container->addInput(rotateView->getOutput());
 
 			namedView->setInput(container->getOutput());

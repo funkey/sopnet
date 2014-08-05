@@ -22,7 +22,7 @@ private:
 	pipeline::Input<Features>             _features;
 	pipeline::Input<ProblemConfiguration> _problemConfiguration;
 	pipeline::Input<LinearObjective>      _objective;
-	pipeline::Input<std::map<unsigned int, double> > _groundTruthScore;
+	pipeline::Input<LinearObjective>      _groundTruthScore;
 
 	pipeline::Output<FeaturesPainter> _painter;
 };
