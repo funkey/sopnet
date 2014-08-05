@@ -328,6 +328,8 @@ SegmentsStackPainter::draw(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
+	gui::OpenGl::Guard guard;
+
 	LOG_ALL(segmentsstackpainterlog) << "redrawing section " << _section << std::endl;
 
 	// from previous section
@@ -458,14 +460,18 @@ SegmentsStackPainter::drawSlice(
 		const util::rect<double>&  roi,
 		const util::point<double>& resolution) {
 
-	// enable alpha blending
+	glCheck(glColor4f(red, green, blue, alpha));
+
+	glCheck(glEnable(GL_TEXTURE_2D));
+
 	glCheck(glEnable(GL_BLEND));
 	glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
 	glCheck(glEnable(GL_CULL_FACE));
+	glCheck(glEnable(GL_LIGHTING));
+	glCheck(glEnable(GL_LIGHT0));
 	glCheck(glEnable(GL_COLOR_MATERIAL));
-
-	glCheck(glColor4f(red, green, blue, alpha));
+	glCheck(glDisable(GL_DEPTH_TEST));
 
 	_textures.get(slice.getId())->bind();
 
@@ -488,22 +494,13 @@ SegmentsStackPainter::drawSlice(
 		z = 0;
 	}
 
-	// left side
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.minY + offset, z);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.maxX, bb.maxY + offset, z);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.maxY + offset, z);
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, -1); glVertex3d(bb.minX, bb.minY + offset, z);
-
 	// right side
-	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY + offset, z);
-	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY + offset, z);
-	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY + offset, z);
-	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, z);
+	glTexCoord2d(0.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.minY + offset, 0);
+	glTexCoord2d(0.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.minX, bb.maxY + offset, 0);
+	glTexCoord2d(1.0, 1.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.maxY + offset, 0);
+	glTexCoord2d(1.0, 0.0); glNormal3d(0, 0, 1); glVertex3d(bb.maxX, bb.minY + offset, 0);
 
 	glCheck(glEnd());
-
-	glCheck(glDisable(GL_BLEND));
-	glCheck(glDisable(GL_CULL_FACE));
 
 	if (_showSliceIds) {
 
@@ -514,9 +511,10 @@ SegmentsStackPainter::drawSlice(
 		double x = slice.getComponent()->getCenter().x;
 		double y = slice.getComponent()->getCenter().y + offset;
 
-		glTranslatef(x, y, z);
+		glPushMatrix();
+		glTranslatef(x, y, 0);
 		idPainter.draw(roi - util::point<double>(x, y), resolution);
-		glTranslatef(-x, -y, -z);
+		glPopMatrix();
 	}
 }
 
