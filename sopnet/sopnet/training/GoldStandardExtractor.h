@@ -23,7 +23,8 @@ private:
 	pipeline::Input<Segments>          _allSegments;
 	pipeline::Input<LinearConstraints> _allLinearConstraints;
 
-	pipeline::Process<Reconstructor> _reconstructor;
+	pipeline::Process<Reconstructor>      _reconstructor;
+	pipeline::Process<ObjectiveGenerator> _objectiveGenerator;
 };
 
 #endif // SOPNET_GOLD_STANDARD_EXTRACTOR_H__

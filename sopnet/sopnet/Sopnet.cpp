@@ -335,8 +335,8 @@ Sopnet::createStructuredProblemPipeline() {
 	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 	_spWriter->setInput("segments", _problemAssembler->getOutput("segments"));
-	_spWriter->setInput("ground truth segments", _groundTruthExtractor->getOutput("ground truth segments"));
 	_spWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));
+	_spWriter->setInput("gold standard objective", _goldStandardExtractor->getOutput("gold standard objective"));
 }
 
 void
