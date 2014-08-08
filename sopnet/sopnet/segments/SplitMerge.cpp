@@ -500,11 +500,17 @@ SplitMerge::getCurrentSlices(const util::point<double>& position) {
 	std::vector<boost::shared_ptr<Segment> > closestSegments;
 	for (int section = *_section; section <= *_section + 1; section++) {
 
-		std::vector<boost::shared_ptr<EndSegment> >          ends          = _segments->findEnds(position, *_section, 1000000);
-		std::vector<boost::shared_ptr<ContinuationSegment> > continuations = _segments->findContinuations(position, *_section, 1000000);
+		std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >          ends          = _segments->findEnds(position, *_section, 1000000);
+		std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > continuations = _segments->findContinuations(position, *_section, 1000000);
 
-		std::copy(ends.begin(),          ends.end(),          std::back_inserter(closestSegments));
-		std::copy(continuations.begin(), continuations.end(), std::back_inserter(closestSegments));
+		boost::shared_ptr<EndSegment> end;
+		boost::shared_ptr<ContinuationSegment> continuation;
+		double distance;
+
+		foreach (boost::tie(end, distance), ends)
+			closestSegments.push_back(end);
+		foreach (boost::tie(continuation, distance), continuations)
+			closestSegments.push_back(continuation);
 	}
 
 	// get all the slices that are in the current section

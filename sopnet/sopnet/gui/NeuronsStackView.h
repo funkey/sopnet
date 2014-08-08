@@ -4,6 +4,7 @@
 #include <gui/Buttons.h>
 #include <gui/GuiSignals.h>
 #include <gui/KeySignals.h>
+#include <gui/MouseSignals.h>
 #include "NeuronsStackPainter.h"
 
 class NeuronsStackView : public pipeline::SimpleProcessNode<> {
@@ -25,6 +26,8 @@ private:
 
 	void onKeyDown(gui::KeyDown& signal);
 
+	void onMouseDown(gui::MouseDown& signal);
+
 	// the neurons to show
 	pipeline::Input<SegmentTrees> _neurons;
 
@@ -33,6 +36,9 @@ private:
 
 	// the painter for the currently selected section
 	pipeline::Output<NeuronsStackPainter> _painter;
+
+	// the currently user-selected set of neurons
+	pipeline::Output<SegmentTrees> _selection;
 
 	// signal to report size changes
 	signals::Slot<gui::SizeChanged> _sizeChanged;
@@ -51,5 +57,8 @@ private:
 
 	// the alpha value for the painter
 	double _alpha;
+
+	// internal set of selected neurons
+	boost::shared_ptr<SegmentTrees> _selectedNeurons;
 };
 

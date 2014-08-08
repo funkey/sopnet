@@ -289,21 +289,21 @@ SegmentsStackPainter::updateVisibleSegments() {
 	if (_showPrev) {
 
 		if (_showEnds && _closestPrevEndSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment].first);
 		else if (_showContinuations && _closestPrevContinuationSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment].first);
 		else if (_showBranches && _closestPrevBranchSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment].first);
 	}
 
 	if (_showNext) {
 
 		if (_showEnds && _closestNextEndSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextEndSegments[_closestNextSegment].first);
 		else if (_showContinuations && _closestNextContinuationSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment].first);
 		else if (_showBranches && _closestNextBranchSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment].first);
 	}
 }
 

@@ -22,6 +22,11 @@ public:
 	void setNeurons(boost::shared_ptr<SegmentTrees> segments);
 
 	/**
+	 * Set a set of neurons that are currently selected.
+	 */
+	void setSelection(boost::shared_ptr<SegmentTrees> selection);
+
+	/**
 	 * Change the currently visible section.
 	 */
 	void setCurrentSection(unsigned int section);
@@ -37,7 +42,7 @@ public:
 	void showAllNeurons();
 
 	/**
-	 * Show neurons that contain at leas one continuation segment.
+	 * Show only neurons that contain at least one continuation segment.
 	 */
 	void showCompleteNeurons(bool show);
 
@@ -88,14 +93,16 @@ private:
 		SegmentTree& neuron,
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
-		const util::point<double>& resolution);
+		const util::point<double>& resolution,
+		bool selected = false);
 
 	void drawSlice(
 			const Slice& slice,
 			double red, double green, double blue,
 			double alpha,
 			const util::rect<double>&  roi,
-			const util::point<double>& resolution);
+			const util::point<double>& resolution,
+			double scale = 1.0);
 
 	void drawMerge(
 			const util::point<double>& source1,
@@ -136,6 +143,9 @@ private:
 
 	// the neurons
 	boost::shared_ptr<SegmentTrees> _neurons;
+
+	// selected neurons, subset of _neurons
+	boost::shared_ptr<SegmentTrees> _selectedNeurons;
 
 	// the textures of the slices to draw
 	SliceTextures _textures;

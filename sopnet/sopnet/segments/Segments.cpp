@@ -1,4 +1,7 @@
 #include "Segments.h"
+#include <util/Logger.h>
+
+logger::LogChannel segmentslog("segmentslog", "[Segments] ");
 
 std::vector<boost::shared_ptr<EndSegment> >          Segments::EmptyEnds;
 std::vector<boost::shared_ptr<ContinuationSegment> > Segments::EmptyContinuations;
@@ -215,7 +218,7 @@ Segments::getSegments(unsigned int interval) {
 	return allSegments;
 }
 
-std::vector<boost::shared_ptr<EndSegment> >
+std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >
 Segments::findEnds(
 		boost::shared_ptr<EndSegment> reference,
 		double distance) {
@@ -223,7 +226,7 @@ Segments::findEnds(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _ends, _endAdaptors, _endTrees, _endTreeDirty);
 }
 
-std::vector<boost::shared_ptr<ContinuationSegment> >
+std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> >
 Segments::findContinuations(
 		boost::shared_ptr<ContinuationSegment> reference,
 		double distance) {
@@ -231,7 +234,7 @@ Segments::findContinuations(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _continuations, _continuationAdaptors, _continuationTrees, _continuationTreeDirty);
 }
 
-std::vector<boost::shared_ptr<BranchSegment> >
+std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >
 Segments::findBranches(
 		boost::shared_ptr<BranchSegment> reference,
 		double distance) {
@@ -239,7 +242,7 @@ Segments::findBranches(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _branches, _branchAdaptors, _branchTrees, _branchTreeDirty);
 }
 
-std::vector<boost::shared_ptr<EndSegment> >
+std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >
 Segments::findEnds(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
@@ -248,7 +251,7 @@ Segments::findEnds(
 	return find(center, interSectionInterval, distance, _ends, _endAdaptors, _endTrees, _endTreeDirty);
 }
 
-std::vector<boost::shared_ptr<ContinuationSegment> >
+std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> >
 Segments::findContinuations(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
@@ -257,7 +260,7 @@ Segments::findContinuations(
 	return find(center, interSectionInterval, distance, _continuations, _continuationAdaptors, _continuationTrees, _continuationTreeDirty);
 }
 
-std::vector<boost::shared_ptr<BranchSegment> >
+std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >
 Segments::findBranches(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
