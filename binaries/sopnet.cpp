@@ -13,6 +13,7 @@
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
+#include <gui/MeshView.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Window.h>
@@ -30,6 +31,7 @@
 #include <sopnet/evaluation/TolerantEditDistance.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
+#include <sopnet/gui/NeuronsMeshExtractor.h>
 #include <sopnet/gui/NeuronsView.h>
 #include <sopnet/gui/NeuronsStackView.h>
 #include <sopnet/gui/SegmentsView.h>
@@ -508,15 +510,14 @@ int main(int optionc, char** optionv) {
 
 		if (optionShowResult3d) {
 
-			boost::shared_ptr<SegmentsView> resultView   = boost::make_shared<SegmentsView>("result");
-			boost::shared_ptr<RotateView>   rotateView   = boost::make_shared<RotateView>();
-			boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
+			boost::shared_ptr<NeuronsMeshExtractor> meshExtractor = boost::make_shared<NeuronsMeshExtractor>();
+			boost::shared_ptr<MeshView>             result3DView  = boost::make_shared<MeshView>();
+			boost::shared_ptr<RotateView>           rotateView    = boost::make_shared<RotateView>();
+			boost::shared_ptr<NamedView>            namedView     = boost::make_shared<NamedView>("Result:");
 
-			if (optionShowErrors)
-				resultView->setInput("slice errors", resultEvaluator->getOutput());
-
-			resultView->setInput(sopnet->getOutput("solution"));
-			rotateView->setInput(resultView->getOutput());
+			meshExtractor->setInput(resultView->getOutput("selection"));
+			result3DView->setInput(meshExtractor->getOutput());
+			rotateView->setInput(result3DView->getOutput());
 			namedView->setInput(rotateView->getOutput());
 
 			segmentsContainer->addInput(namedView->getOutput());
