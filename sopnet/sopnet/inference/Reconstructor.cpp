@@ -27,7 +27,15 @@ Reconstructor::updateReconstruction() {
 
 	// remove all previous segment in the reconstruction
 	_reconstruction->clear();
+	_reconstruction->setResolution(
+			_segments->getResolutionX(),
+			_segments->getResolutionY(),
+			_segments->getResolutionZ());
 	_discardedSegments->clear();
+	_discardedSegments->setResolution(
+			_segments->getResolutionX(),
+			_segments->getResolutionY(),
+			_segments->getResolutionZ());
 
 	LOG_ALL(reconstructorlog) << "Solution consists of segments: ";
 

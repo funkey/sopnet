@@ -5,6 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
+#include <imageprocessing/DiscreteVolume.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
@@ -68,7 +69,7 @@ private:
 	const segments_type& _segments;
 };
 
-class Segments : public pipeline::Data {
+class Segments : public pipeline::Data, public DiscreteVolume {
 
 	// nanoflann segment vector adaptors for each segment type
 	typedef SegmentVectorAdaptor<EndSegment>          EndSegmentVectorAdaptor;
@@ -274,12 +275,19 @@ public:
 	 *
 	 * @return The number of inter-section intervals.
 	 */
-	unsigned int getNumInterSectionIntervals();
+	unsigned int getNumInterSectionIntervals() const;
 
 	/**
 	 * Get the number of segments.
 	 */
 	unsigned int size();
+
+protected:
+
+	/**
+	 * Overwritten from Volume.
+	 */
+	virtual BoundingBox computeBoundingBox() const;
 
 private:
 
@@ -384,6 +392,7 @@ private:
 		if (i != segments.end()) {
 
 			segments.erase(i);
+			setBoundingBoxDirty();
 			return true;
 		}
 

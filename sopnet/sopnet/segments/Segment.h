@@ -4,6 +4,7 @@
 #include <boost/thread.hpp>
 
 #include <pipeline/all.h>
+#include <imageprocessing/DiscreteVolume.h>
 #include <sopnet/slices/Slice.h>
 #include <util/point.hpp>
 
@@ -21,7 +22,7 @@ enum Direction {
  * implement one-to-one segments (continuations), one-to-two segments
  * (branches), and one-to-zero segments (ends).
  */
-class Segment : public pipeline::Data {
+class Segment : public pipeline::Data, public DiscreteVolume {
 
 public:
 
@@ -60,6 +61,13 @@ public:
 	std::vector<boost::shared_ptr<Slice> > getSourceSlices() const;
 
 	std::vector<boost::shared_ptr<Slice> > getTargetSlices() const;
+
+protected:
+
+	/**
+	 * Overwritten from Volume.
+	 */
+	BoundingBox computeBoundingBox() const;
 
 private:
 

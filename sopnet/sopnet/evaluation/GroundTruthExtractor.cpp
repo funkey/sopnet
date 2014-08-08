@@ -55,12 +55,16 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 	// list of all slices for each section
 	std::vector<Slices> slices;
 
+	float resX = _groundTruthSections->getResolutionX();
+	float resY = _groundTruthSections->getResolutionY();
+	float resZ = _groundTruthSections->getResolutionZ();
+
 	for (int section = firstSection; section <= lastSection; section++) {
 
 		LOG_DEBUG(groundtruthextractorlog) << "extracting slices in section " << section << std::endl;
 
 		// create a SliceExtractor
-		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, false /* don't downsample */);
+		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, resX, resY, resZ, false /* don't downsample */);
 
 		// give it the section it has to process and our mser parameters
 		sliceExtractor->setInput("membrane", sectionExtractor->getOutput(section));
@@ -81,6 +85,11 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 
 	// tree segments of all found neurons
 	Segments segments;
+
+	segments.setResolution(
+			_groundTruthSections->getResolutionX(),
+			_groundTruthSections->getResolutionY(),
+			_groundTruthSections->getResolutionZ());
 
 	// all possible continuation segments by neuron label
 	std::map<float, std::vector<ContinuationSegment> > links;

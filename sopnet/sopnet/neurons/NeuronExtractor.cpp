@@ -82,8 +82,14 @@ NeuronExtractor::updateOutputs() {
 
 	// prepare neurons
 	std::vector<boost::shared_ptr<SegmentTree> > neurons(neuronId);
-	for (unsigned int i = 0; i < neuronId; i++)
+	for (unsigned int i = 0; i < neuronId; i++) {
+
 		neurons[i] = boost::make_shared<SegmentTree>();
+		neurons[i]->setResolution(
+				_segments->getResolutionX(),
+				_segments->getResolutionY(),
+				_segments->getResolutionZ());
+	}
 
 	// collect all end segments
 	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {

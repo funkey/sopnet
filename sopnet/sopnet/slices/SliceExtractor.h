@@ -29,11 +29,14 @@ public:
 	 * @param section
 	 *              The section number that the extracted slices will have.
 	 *
+	 * @param resX, resY, resZ
+	 *              The resolution of the image stack used to extract slices.
+	 *
 	 * @param downsample
 	 *              Do not extract slices that are single children of their 
 	 *              parents in the component tree.
 	 */
-	SliceExtractor(unsigned int section, bool downsample);
+	SliceExtractor(unsigned int section, float resX, float resY, float resZ, bool downsample);
 
 private:
 

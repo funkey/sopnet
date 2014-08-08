@@ -19,8 +19,11 @@ util::ProgramOption optionSetDifferenceThreshold(
 		util::_description_text = "The maximal set difference for which two slices are considered the same.",
 		util::_default_value    = 200);
 
-StackSliceExtractor::StackSliceExtractor(unsigned int section) :
+StackSliceExtractor::StackSliceExtractor(unsigned int section, float resX, float resY, float resZ) :
 	_section(section),
+	_resX(resX),
+	_resY(resY),
+	_resZ(resZ),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_mserParameters(boost::make_shared<MserParameters>()),
 	_sliceCollector(boost::make_shared<SliceCollector>()) {
@@ -58,7 +61,7 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 		mser->setInput("image", _sliceImageExtractor->getOutput(i));
 		mser->setInput("parameters", _mserParameters);
 
-		boost::shared_ptr<ComponentTreeConverter> converter = boost::make_shared<ComponentTreeConverter>(_section);
+		boost::shared_ptr<ComponentTreeConverter> converter = boost::make_shared<ComponentTreeConverter>(_section, _resX, _resY, _resZ);
 
 		converter->setInput(mser->getOutput());
 

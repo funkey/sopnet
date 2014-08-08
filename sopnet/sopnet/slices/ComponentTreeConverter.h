@@ -45,7 +45,12 @@ class ComponentTreeConverter : public pipeline::SimpleProcessNode<>, public Comp
 
 public:
 
-	ComponentTreeConverter(unsigned int _section);
+	/**
+	 * Create a new component tree converter that creates slices from a 
+	 * component tree. The produced set of slices will be annotated to be part 
+	 * of the given section, coming from images having the given resolution.
+	 */
+	ComponentTreeConverter(unsigned int section, float resX, float resY, float resZ);
 
 	void visitNode(boost::shared_ptr<ComponentTree::Node> node);
 
@@ -73,6 +78,8 @@ private:
 	std::deque<unsigned int> _path;
 
 	unsigned int _section;
+
+	float _resX, _resY, _resZ;
 };
 
 #endif // SOPNET_COMPONENT_TREE_CONVERTER_H__

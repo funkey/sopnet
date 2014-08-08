@@ -51,6 +51,8 @@ Segments::clear() {
 	_ends.clear();
 	_continuations.clear();
 	_branches.clear();
+
+	resetBoundingBox();
 }
 
 void
@@ -86,6 +88,8 @@ Segments::add(boost::shared_ptr<EndSegment> end) {
 	_endTreeDirty[interSectionInterval] = true;
 
 	_ends[interSectionInterval].push_back(end);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -103,6 +107,8 @@ Segments::add(boost::shared_ptr<ContinuationSegment> continuation) {
 	_continuationTreeDirty[interSectionInterval] = true;
 
 	_continuations[interSectionInterval].push_back(continuation);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -120,6 +126,8 @@ Segments::add(boost::shared_ptr<BranchSegment> branch) {
 	_branchTreeDirty[interSectionInterval] = true;
 
 	_branches[interSectionInterval].push_back(branch);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -259,7 +267,7 @@ Segments::findBranches(
 }
 
 unsigned int
-Segments::getNumInterSectionIntervals() {
+Segments::getNumInterSectionIntervals() const {
 
 	return std::max(_ends.size(), std::max(_continuations.size(), _branches.size()));
 }
@@ -277,5 +285,27 @@ Segments::size() {
 		size += branches.size();
 
 	return size;
+}
+
+BoundingBox
+Segments::computeBoundingBox() const {
+
+	LOG_ALL(segmentslog) << "updating bounding box" << std::endl;
+
+	BoundingBox boundingBox;
+
+	foreach (std::vector<boost::shared_ptr<EndSegment> > ends, _ends)
+		foreach (boost::shared_ptr<EndSegment> end, ends)
+			boundingBox += end->getBoundingBox();
+	foreach (std::vector<boost::shared_ptr<ContinuationSegment> > continuations, _continuations)
+		foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+			boundingBox += continuation->getBoundingBox();
+	foreach (std::vector<boost::shared_ptr<BranchSegment> > branches, _branches)
+		foreach (boost::shared_ptr<BranchSegment> branch, branches)
+			boundingBox += branch->getBoundingBox();
+
+	LOG_ALL(segmentslog) << "bounding box of my segments is " << boundingBox << std::endl;
+
+	return boundingBox;
 }
 

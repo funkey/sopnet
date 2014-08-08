@@ -2,10 +2,13 @@
 
 static logger::LogChannel componenttreeconverterlog("componenttreeconverterlog", "[ComponentTreeConverter] ");
 
-ComponentTreeConverter::ComponentTreeConverter(unsigned int section) :
+ComponentTreeConverter::ComponentTreeConverter(unsigned int section, float resX, float resY, float resZ) :
 	_slices(new Slices()),
 	_conflictSets(new ConflictSets()),
-	_section(section) {
+	_section(section),
+	_resX(resX),
+	_resY(resY),
+	_resZ(resZ) {
 
 	registerInput(_componentTree, "component tree");
 	registerOutput(_slices, "slices");
@@ -59,7 +62,10 @@ ComponentTreeConverter::visitNode(boost::shared_ptr<ComponentTree::Node> node) {
 
 	boost::shared_ptr<ConnectedComponent> component = node->getComponent();
 
-	_slices->add(boost::make_shared<Slice>(sliceId, _section, component));
+	boost::shared_ptr<Slice> slice = boost::make_shared<Slice>(sliceId, _section, component);
+	slice->setResolution(_resX, _resY, _resZ);
+
+	_slices->add(slice);
 
 	LOG_ALL(componenttreeconverterlog) << "extracted a slice at " << component->getCenter() << std::endl;
 

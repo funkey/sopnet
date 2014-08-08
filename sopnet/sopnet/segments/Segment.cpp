@@ -78,6 +78,16 @@ Segment::getTargetSlices() const {
 	return targetSlices;
 }
 
+BoundingBox
+Segment::computeBoundingBox() const {
+
+	BoundingBox boundingBox;
+
+	foreach (boost::shared_ptr<Slice> slice, getSlices())
+		boundingBox += slice->getBoundingBox();
+
+	return boundingBox;
+}
 
 unsigned int Segment::NextSegmentId = 0;
 boost::mutex Segment::SegmentIdMutex;

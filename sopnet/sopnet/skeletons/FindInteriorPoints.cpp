@@ -27,9 +27,9 @@ FindInteriorPoints::updateOutputs() {
 	else
 		_boundaries->clear();
 
-	const unsigned int minX = _membranes->getOffsetX();
-	const unsigned int minY = _membranes->getOffsetY();
-	const unsigned int minZ = _membranes->getOffsetZ();
+	const unsigned int minX = _membranes->getBoundingBox().getMinX();
+	const unsigned int minY = _membranes->getBoundingBox().getMinY();
+	const unsigned int minZ = _membranes->getBoundingBox().getMinZ();
 	const unsigned int resX = _membranes->getResolutionX();
 	const unsigned int resY = _membranes->getResolutionY();
 	const unsigned int resZ = _membranes->getResolutionZ();
@@ -110,7 +110,10 @@ FindInteriorPoints::updateOutputs() {
 			vigra::functor::Param(1.0) - vigra::functor::Arg1()/vigra::functor::Param(findMinMax.max));
 
 	// provide distances as output
-	_boundaries->setOffset(minX, minY, minZ);
+	_boundaries->setBoundingBox(
+			BoundingBox(
+					minX, minY, minZ,
+					minX + size[0]*resX, minY + size[1]*resY, minZ + size[2]*resZ));
 	_boundaries->setResolution(resX, resY, resZ);
 	for (unsigned int z = 0; z < size[2]; z++) {
 

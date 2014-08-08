@@ -32,6 +32,10 @@ public:
 	 */
 	void addAll(boost::shared_ptr<SegmentTrees> neurons) { foreach (boost::shared_ptr<SegmentTree> neuron, *neurons) _neurons.push_back(neuron); _lastSection = -1; }
 
+	void remove(boost::shared_ptr<SegmentTree> neuron) { iterator i = std::find(_neurons.begin(), _neurons.end(), neuron); if (i != _neurons.end()) _neurons.erase(i); }
+
+	bool contains(boost::shared_ptr<SegmentTree> neuron) { return std::find(_neurons.begin(), _neurons.end(), neuron) != _neurons.end(); }
+
 	/**
 	 * Get the number of neurons.
 	 */

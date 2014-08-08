@@ -113,6 +113,17 @@ SegmentExtractor::extractSegments() {
 			<< "previous sections contains " << _prevSlices->size() << " slices,"
 			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
 
+	if (_prevSlices->size() > 0)
+		_segments->setResolution(
+				(*_prevSlices)[0]->getResolutionX(),
+				(*_prevSlices)[0]->getResolutionY(),
+				(*_prevSlices)[0]->getResolutionZ());
+	else if (_nextSlices->size() > 0)
+		_segments->setResolution(
+				(*_nextSlices)[0]->getResolutionX(),
+				(*_nextSlices)[0]->getResolutionY(),
+				(*_nextSlices)[0]->getResolutionZ());
+
 	buildOverlapMap();
 
 	unsigned int oldSize = 0;

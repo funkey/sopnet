@@ -3,13 +3,14 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <imageprocessing/DiscreteVolume.h>
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 
 // forward declaration
 class ConnectedComponent;
 
-class Slice {
+class Slice : public DiscreteVolume {
 
 public:
 
@@ -53,6 +54,13 @@ public:
 	void translate(const util::point<int>& pt);
 
 	bool operator==(const Slice& other) const;
+
+protected:
+
+	/**
+	 * Overwritten from Volume.
+	 */
+	BoundingBox computeBoundingBox() const;
 
 private:
 

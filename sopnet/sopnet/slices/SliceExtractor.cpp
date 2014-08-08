@@ -34,12 +34,12 @@ util::ProgramOption optionMaxSliceMerges(
 		util::_default_value    = 3);
 
 template <typename Precision>
-SliceExtractor<Precision>::SliceExtractor(unsigned int section, bool downsample) :
+SliceExtractor<Precision>::SliceExtractor(unsigned int section, float resX, float resY, float resZ, bool downsample) :
 	_mser(boost::make_shared<Mser<Precision> >()),
 	_defaultMserParameters(boost::make_shared<MserParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_pruner(boost::make_shared<ComponentTreePruner>()),
-	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
+	_converter(boost::make_shared<ComponentTreeConverter>(section, resX, resY, resZ)) {
 
 	registerInput(_mser->getInput("image"), "membrane");
 	registerInput(_mserParameters, "mser parameters");

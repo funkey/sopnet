@@ -124,7 +124,10 @@ FindSpheres::updateOutputs() {
 			vigra::functor::Param(1.0) - vigra::functor::Arg1()/vigra::functor::Param(findMinMax.max));
 
 	// provide distances as output
-	_maxDistances->setOffset(minX, minY, minZ);
+	_maxDistances->setBoundingBox(
+			BoundingBox(
+					minX, minY, minZ,
+					minX + size[0], minY + size[1], minZ + size[2]*resZ));
 	_maxDistances->setResolution(1, 1, resZ);
 	for (unsigned int z = 0; z < size[2]; z++) {
 
