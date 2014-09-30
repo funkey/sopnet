@@ -3,6 +3,8 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include "SliceHash.h"
+
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 
@@ -45,6 +47,12 @@ public:
 	 * a single connected component any longer.
 	 */
 	void intersect(const Slice& other);
+	
+	/**
+	 * Computes a hash value for this Slice over its section id, and the geometry of its
+	 * underlying ConnectedComponent.
+	 */
+	SliceHash hashValue() const;
 
 	/**
 	 * Translate this Slice
@@ -61,6 +69,9 @@ private:
 	unsigned int _section;
 
 	boost::shared_ptr<ConnectedComponent> _component;
+
+	mutable SliceHash _hash;
+	mutable bool      _hashDirty;
 };
 
 #endif // CELLTRACKER_CELL_H__

@@ -65,8 +65,9 @@ private:
 	pipeline::Output<LinearConstraints> _linearConstraints;
 
 	// a map from slices to overlapping slices and the overlap value
-	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _nextOverlaps;
-	std::map<unsigned int, std::vector<std::pair<unsigned int, unsigned int> > > _prevOverlaps;
+	typedef boost::shared_ptr<Slice> slice_ptr;
+	std::map<slice_ptr, std::vector<std::pair<unsigned int, slice_ptr> > > _nextOverlaps;
+	std::map<slice_ptr, std::vector<std::pair<unsigned int, slice_ptr> > > _prevOverlaps;
 
 	// map from slice ids to slice ids if connected by a continuation
 	std::map<unsigned int, std::vector<unsigned int> > _continuationPartners;
