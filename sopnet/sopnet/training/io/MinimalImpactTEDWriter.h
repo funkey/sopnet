@@ -30,7 +30,18 @@ private:
 
 	void clearPipeline();
 
-	void createPipeline();
+	/**
+	 * Create the pipeline for the computation of the TED for the current 
+	 * segment.
+	 *
+	 * @param interSectionInterval
+	 *              The inter-section interval of the segment that is currently 
+	 *              flipped.
+	 * @param numAdjacentSections
+	 *              The number of sections to consider around the current 
+	 *              segment for the computation of the TED.
+	 */
+	void createPipeline(int interSectionInterval, int numAdjacentSections = 0);
 
 	/*********
 	* Inputs *

@@ -1,8 +1,19 @@
-#include "MinimalImpactTEDWriter.h" 
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <stdio.h> 
+#include <stdio.h>
+
+#include <boost/timer/timer.hpp>
+
+#include <imageprocessing/SubStackSelector.h>
+#include <util/ProgramOptions.h>
+#include "MinimalImpactTEDWriter.h" 
+
+util::ProgramOption optionNumAdjacentSections(
+		util::_module           = "sopnet.training",
+		util::_long_name        = "numAdjacentSections",
+		util::_default_value    = 0,
+		util::_description_text = "The number of adjacent sections to consider for the computation of the minimal impact TED coefficients. If set to 0 (default), all sections will be considered.");
 
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
@@ -51,22 +62,29 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	// Loop through variables
 	std::set<unsigned int> variables = _problemConfiguration->getVariables();
 
+	LOG_USER(minimalImpactTEDlog) << "computing ted coefficients for " << variables.size() << " variables" << std::endl;
+
 	outfile << "numVar " << variables.size() << std::endl;
 
 	outfile << "# var_num costs # value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
 
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
-		// Re-create pipeline inside loop to avoid memory accumulation.
-		// There should be a better fix for this.
-		createPipeline();
+		std::string timerMessage = "MinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n";
+		boost::timer::auto_cpu_timer timer(timerMessage);
+
+		unsigned int segmentId = _problemConfiguration->getSegmentId(varNum);
+
+		int interSectionInterval = _problemConfiguration->getInterSectionInterval(varNum);
+
+		// re-create the pipeline for the current segment and its inter-section 
+		// interval
+		createPipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
 
 		// Introduce constraints that flip the segment corresponding to the ith variable
 		// compared to the goldstandard.
 	
 		// Is the segment that corresponds to the variable part of the gold standard?
-                unsigned int segmentId = _problemConfiguration->getSegmentId(varNum);
-
                 bool isContained = false;
                 foreach (boost::shared_ptr<Segment> s, goldStandard) {
                         if (s->getId() == segmentId) {
@@ -94,11 +112,10 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		_linearSolver->setInput("linear constraints",_linearConstraints);
 
 		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
-		unsigned int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
-		int sumErrorsInt = (int) sumErrors;
+		int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
 
 		outfile << "c" << varNum << " ";
-		outfile << (isContained ? -sumErrorsInt : sumErrorsInt) << " ";
+		outfile << (isContained ? -sumErrors : sumErrors) << " ";
 		outfile << "# ";
 		outfile << (isContained ? 1 : 0) << " ";
 		outfile << errors->getNumSplits() << " ";
@@ -112,7 +129,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 			// This resulted in a number of errors that are going to be stored in the constant.
 			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
 
-			constant += sumErrorsInt;
+			constant += sumErrors;
 		}
 
 		// Remove constraint
@@ -144,14 +161,41 @@ MinimalImpactTEDWriter::clearPipeline() {
 }
 
 void
-MinimalImpactTEDWriter::createPipeline() {
+MinimalImpactTEDWriter::createPipeline(int interSectionInterval, int numAdjacentSections) {
+
+	// find the range of sections to consider for the computation of the TED
+	int minSection = interSectionInterval - numAdjacentSections;
+	int maxSection = interSectionInterval + numAdjacentSections - 1;
+
+	// pipeline values for the image stacks used to compute the TED
+	pipeline::Value<ImageStack> goldStandard;
+	pipeline::Value<ImageStack> reconstruction;
+
+	// get image stacks for TED either as subsets (if numAdjacentSections is 
+	// set) or as the original stacks
+	if (numAdjacentSections > 0) {
+
+		pipeline::Process<SubStackSelector> goldStandardSelector(minSection, maxSection);
+		pipeline::Process<SubStackSelector> reconstructionSelector(minSection, maxSection);
+
+		goldStandardSelector->setInput(_gsimCreator->getOutput("id map"));
+		reconstructionSelector->setInput(_rimCreator->getOutput("id map"));
+
+		goldStandard   = goldStandardSelector->getOutput();
+		reconstruction = reconstructionSelector->getOutput();
+
+	} else {
+
+		goldStandard = _gsimCreator->getOutput("id map");
+		reconstruction = _rimCreator->getOutput("id map");
+	}
 
 	// Set inputs
 
 	// The name ground truth is slightly misleading here because really we are setting the gold standard as input,
 	// but that is what the correct input in the TED is called.
 	// IdMapCreator [gold standard] ----> TED
-	_teDistance->setInput("ground truth", _gsimCreator->getOutput("id map"));
+	_teDistance->setInput("ground truth", goldStandard);
 	// -- gold standard --> NeuronExtractor [gold standard]
 	_gsNeuronExtractor->setInput("segments",_goldStandard);
 	// NeuronExtractor [gold standard] ----> IdMapCreator [gold standard]
@@ -160,7 +204,7 @@ MinimalImpactTEDWriter::createPipeline() {
 	// -- reference --> IdMapCreator
 	_gsimCreator->setInput("reference",_reference);
 	// IdMapCreator [reconstruction] ----> TED
-	_teDistance->setInput("reconstruction", _rimCreator->getOutput("id map"));
+	_teDistance->setInput("reconstruction", reconstruction);
 	// Reconstructor ----> NeuronExtractor [reconstruction]
 	_rNeuronExtractor->setInput("segments", _rReconstructor->getOutput("reconstruction"));
 	// NeuronExtractor [reconstruction] ----> IdMapCreator [reconstruction]
