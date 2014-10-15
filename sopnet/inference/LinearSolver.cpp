@@ -1,3 +1,4 @@
+#include <boost/timer/timer.hpp>
 #include <util/Logger.h>
 #include <util/foreach.h>
 #include <util/helpers.hpp>
@@ -79,6 +80,8 @@ LinearSolver::onParametersModified(const pipeline::Modified&) {
 
 void
 LinearSolver::updateOutputs() {
+
+	boost::timer::auto_cpu_timer timer("\tLinearSolver::updateOutputs()\t\t%ws\n");
 
 	updateLinearProgram();
 

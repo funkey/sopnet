@@ -70,9 +70,13 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	outfile << "# var_num costs # value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
 
+	std::set<unsigned int> goldStandardIds;
+	foreach (boost::shared_ptr<Segment> s, goldStandard)
+		goldStandardIds.insert(s->getId());
+
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
-		std::string timerMessage = "MinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n";
+		std::string timerMessage = "\n\nMinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n\n";
 		boost::timer::auto_cpu_timer timer(timerMessage);
 
 		unsigned int segmentId = _problemConfiguration->getSegmentId(varNum);
@@ -84,13 +88,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		updatePipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
 	
 		// Is the segment that corresponds to the variable part of the gold standard?
-		bool isContained = false;
-		foreach (boost::shared_ptr<Segment> s, goldStandard) {
-			if (s->getId() == segmentId) {
-				isContained = true;
-				break;
-			}
-		}
+		bool isContained = (goldStandardIds.count(segmentId) > 0);
 
 		// pin the value of the current variable to its opposite
 		_linearSolver->pinVariable(varNum, (isContained ? 0 : 1));
@@ -167,6 +165,8 @@ MinimalImpactTEDWriter::initPipeline() {
 
 void
 MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacentSections) {
+
+	boost::timer::auto_cpu_timer timer("\tupdatePipeline()\t\t\t%ws\n");
 
 	// create new pipeline components
 	_teDistance = boost::make_shared<TolerantEditDistance>();

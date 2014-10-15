@@ -1,3 +1,4 @@
+#include <boost/timer/timer.hpp>
 #include "IdMapCreator.h"
 
 static logger::LogChannel idMapCreatorLog("idMapCreatorLog", "[IdMapCreator] ");
@@ -36,6 +37,8 @@ IdMapCreator::init() {
 
 void
 IdMapCreator::updateOutputs() {
+
+	boost::timer::auto_cpu_timer timer("\tIdMapCreator::updateOutputs():\t\t%ws\n");
 
 	if ( useReference ) { 
 		// get widht, height and size from reference image stack

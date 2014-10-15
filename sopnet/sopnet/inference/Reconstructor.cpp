@@ -26,7 +26,7 @@ Reconstructor::updateOutputs() {
 void
 Reconstructor::updateReconstruction() {
 
-	boost::timer::auto_cpu_timer timer("Reconstructor::updateReconstruction(): %ws\n");
+	boost::timer::auto_cpu_timer timer("\tReconstructor::updateReconstruction():\t%ws\n");
 
 	// remove all previous segment in the reconstruction
 	_reconstruction->clear();

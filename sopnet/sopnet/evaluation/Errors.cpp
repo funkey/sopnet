@@ -187,7 +187,7 @@ Errors::updateErrorCounts() {
 	if (!_dirty)
 		return;
 
-	boost::timer::auto_cpu_timer timer("Errors::updateErrorCounts(): %w\n");
+	boost::timer::auto_cpu_timer timer("\tErrors::updateErrorCounts():\t\t%w\n");
 
 	_dirty = false;
 
