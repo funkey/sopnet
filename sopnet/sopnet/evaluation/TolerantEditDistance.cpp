@@ -1,6 +1,7 @@
 #include <algorithm>
 
 #include <boost/range/adaptors.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <vigra/multi_labeling.hxx>
 
@@ -109,6 +110,8 @@ TolerantEditDistance::clear() {
 void
 TolerantEditDistance::extractCells() {
 
+	boost::timer::auto_cpu_timer timer(std::cout, "extractCells(): %ws\n");
+
 	if (_groundTruth->size() != _reconstruction->size())
 		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size") << STACK_TRACE);
 
@@ -165,6 +168,8 @@ TolerantEditDistance::extractCells() {
 
 void
 TolerantEditDistance::findBestCellLabels() {
+
+	boost::timer::auto_cpu_timer timer(std::cout, "findBestCellLabels(): %ws\n");
 
 	pipeline::Value<LinearConstraints>      constraints;
 	pipeline::Value<LinearSolverParameters> parameters;
@@ -367,6 +372,8 @@ TolerantEditDistance::findBestCellLabels() {
 void
 TolerantEditDistance::findErrors() {
 
+	boost::timer::auto_cpu_timer timer(std::cout, "findErrors(): %ws\n");
+
 	// prepare error location image stack
 
 	for (unsigned int i = 0; i < _depth; i++) {
@@ -444,6 +451,8 @@ TolerantEditDistance::findErrors() {
 
 void
 TolerantEditDistance::correctReconstruction() {
+
+	boost::timer::auto_cpu_timer timer(std::cout, "correctReconstruction(): %ws\n");
 
 	// prepare output image
 
