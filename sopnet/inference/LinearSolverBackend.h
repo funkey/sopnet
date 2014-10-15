@@ -57,6 +57,28 @@ public:
 	virtual void setConstraints(const LinearConstraints& constraints) = 0;
 
 	/**
+	 * Force the value of a variable to be a given value, i.e., pin the variable 
+	 * to a fixed value.
+	 *
+	 * @param varNum
+	 *              The number of the variable to pin.
+	 *
+	 * @param value
+	 *              The value the variable has to assume.
+	 */
+	virtual void pinVariable(unsigned int varNum, double value) = 0;
+
+	/**
+	 * Remove a previous pin from a variable.
+	 *
+	 * @param varNum
+	 *              The number of the variable to unpin.
+	 *
+	 * @return True, if the variable was pinned before.
+	 */
+	virtual bool unpinVariable(unsigned int varNum) = 0;
+
+	/**
 	 * Solve the problem.
 	 *
 	 * @param solution A solution object to write the solution to.
