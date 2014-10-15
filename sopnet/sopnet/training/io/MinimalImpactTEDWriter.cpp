@@ -131,11 +131,15 @@ MinimalImpactTEDWriter::initPipeline() {
 
 	// Here we assemble the static part of the pipeline, i.e., the parts that 
 	// don't change between iterations. Currently, these are all parts below the 
-	// linear solver that creates new reconstructions based on pinned variables.
+	// linear solver that creates new reconstructions based on pinned variables; 
+	// and everything below the gold standard id map creator.
 
 	_hammingCostFunction = boost::make_shared<HammingCostFunction>();
 	_objectiveGenerator = boost::make_shared<ObjectiveGenerator>();
 	_linearSolver = boost::make_shared<LinearSolver>();
+
+	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
+	_gsimCreator = boost::make_shared<IdMapCreator>();
 
 	// -- Gold Standard --> Hamming Cost Function
 	_hammingCostFunction->setInput("gold standard", _goldStandard);
@@ -151,6 +155,14 @@ MinimalImpactTEDWriter::initPipeline() {
 	_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
 	// Objective Generator ----> Linear Solver
 	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
+
+	// -- gold standard --> NeuronExtractor [gold standard]
+	_gsNeuronExtractor->setInput("segments", _goldStandard);
+	// NeuronExtractor [gold standard] ----> IdMapCreator [gold standard]
+	_gsimCreator->setInput("neurons", _gsNeuronExtractor->getOutput("neurons"));
+	// reference image stack for width height and size of output image stacks
+	// -- reference --> IdMapCreator
+	_gsimCreator->setInput("reference", _reference);
 }
 
 void
@@ -158,10 +170,8 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 
 	// create new pipeline components
 	_teDistance = boost::make_shared<TolerantEditDistance>();
-	_gsimCreator = boost::make_shared<IdMapCreator>();
 	_rimCreator = boost::make_shared<IdMapCreator>();
 	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
-	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
 	_rReconstructor = boost::make_shared<Reconstructor>();
 
 	// find the range of sections to consider for the computation of the TED
@@ -197,13 +207,6 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 	// but that is what the correct input in the TED is called.
 	// IdMapCreator [gold standard] ----> TED
 	_teDistance->setInput("ground truth", goldStandard);
-	// -- gold standard --> NeuronExtractor [gold standard]
-	_gsNeuronExtractor->setInput("segments",_goldStandard);
-	// NeuronExtractor [gold standard] ----> IdMapCreator [gold standard]
-	_gsimCreator->setInput("neurons", _gsNeuronExtractor->getOutput("neurons"));
-	// reference image stack for width height and size of output image stacks
-	// -- reference --> IdMapCreator
-	_gsimCreator->setInput("reference",_reference);
 	// IdMapCreator [reconstruction] ----> TED
 	_teDistance->setInput("reconstruction", reconstruction);
 	// Reconstructor ----> NeuronExtractor [reconstruction]

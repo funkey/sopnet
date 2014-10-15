@@ -1,3 +1,4 @@
+#include <boost/timer/timer.hpp>
 #include <boost/range/adaptors.hpp>
 #include <util/exceptions.h>
 #include <util/foreach.h>
@@ -185,6 +186,8 @@ Errors::updateErrorCounts() {
 
 	if (!_dirty)
 		return;
+
+	boost::timer::auto_cpu_timer timer("Errors::updateErrorCounts(): %w\n");
 
 	_dirty = false;
 
