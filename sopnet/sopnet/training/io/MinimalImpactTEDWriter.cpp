@@ -42,6 +42,8 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	updateInputs();
 
+	initPipeline();
+
 	// Remove the old file
 	if( remove( filename.c_str() ) != 0 ) {
 		LOG_DEBUG(minimalImpactTEDlog) << "Old file to output minimal impact TED approximation sucessfully deleted." << std::endl;
@@ -79,37 +81,19 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		// re-create the pipeline for the current segment and its inter-section 
 		// interval
-		createPipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
-
-		// Introduce constraints that flip the segment corresponding to the ith variable
-		// compared to the goldstandard.
+		updatePipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
 	
 		// Is the segment that corresponds to the variable part of the gold standard?
-                bool isContained = false;
-                foreach (boost::shared_ptr<Segment> s, goldStandard) {
-                        if (s->getId() == segmentId) {
-                                isContained = true;
+		bool isContained = false;
+		foreach (boost::shared_ptr<Segment> s, goldStandard) {
+			if (s->getId() == segmentId) {
+				isContained = true;
 				break;
-                        }
-                }
-	
-		LinearConstraint constraint;
-		constraint.setRelation(Equal);
+			}
+		}
 
-                if (isContained == true) {
-			// Force segment to not be used in reconstruction
-			constraint.setCoefficient(varNum,1.0);
-			constraint.setValue(0);
-                }
-                else {
-			// Force segment to be used in reconstruction
-			constraint.setCoefficient(varNum,1.0);
-			constraint.setValue(1);
-                }
-
-		_linearConstraints->add(constraint);
-		
-		_linearSolver->setInput("linear constraints",_linearConstraints);
+		// pin the value of the current variable to its opposite
+		_linearSolver->pinVariable(varNum, (isContained ? 0 : 1));
 
 		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
 		int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
@@ -133,10 +117,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		}
 
 		// Remove constraint
-		_linearConstraints->removeLastConstraint();
-		
-		// Clear the pipeline to avoid memory accumulation
-		clearPipeline();
+		_linearSolver->unpinVariable(varNum);
 	}
 
 	// Write constant to file
@@ -146,22 +127,42 @@ MinimalImpactTEDWriter::write(std::string filename) {
 }
 
 void
-MinimalImpactTEDWriter::clearPipeline() {
+MinimalImpactTEDWriter::initPipeline() {
 
+	// Here we assemble the static part of the pipeline, i.e., the parts that 
+	// don't change between iterations. Currently, these are all parts below the 
+	// linear solver that creates new reconstructions based on pinned variables.
+
+	_hammingCostFunction = boost::make_shared<HammingCostFunction>();
+	_objectiveGenerator = boost::make_shared<ObjectiveGenerator>();
+	_linearSolver = boost::make_shared<LinearSolver>();
+
+	// -- Gold Standard --> Hamming Cost Function
+	_hammingCostFunction->setInput("gold standard", _goldStandard);
+
+	// -- Segments --> Objective Generator
+	_objectiveGenerator->setInput("segments", _segments);
+	// Hamming Cost Function ----> Objective Generator
+	_objectiveGenerator->addInput("cost functions", _hammingCostFunction->getOutput());
+
+	// -- Linear Constraints --> Linear Solver
+	_linearSolver->setInput("linear constraints",_linearConstraints);
+	// -- Parameters --> Linear Solver
+	_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
+	// Objective Generator ----> Linear Solver
+	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
+}
+
+void
+MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacentSections) {
+
+	// create new pipeline components
 	_teDistance = boost::make_shared<TolerantEditDistance>();
 	_gsimCreator = boost::make_shared<IdMapCreator>();
 	_rimCreator = boost::make_shared<IdMapCreator>();
 	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
 	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
 	_rReconstructor = boost::make_shared<Reconstructor>();
-	_linearSolver = boost::make_shared<LinearSolver>();
-	_objectiveGenerator = boost::make_shared<ObjectiveGenerator>();
-	_hammingCostFunction = boost::make_shared<HammingCostFunction>();
-
-}
-
-void
-MinimalImpactTEDWriter::createPipeline(int interSectionInterval, int numAdjacentSections) {
 
 	// find the range of sections to consider for the computation of the TED
 	int minSection = interSectionInterval - numAdjacentSections;
@@ -216,17 +217,4 @@ MinimalImpactTEDWriter::createPipeline(int interSectionInterval, int numAdjacent
 	_rReconstructor->setInput("solution", _linearSolver->getOutput("solution"));
 	// -- Segments --> Reconstructor
 	_rReconstructor->setInput("segments",_segments);
-	// -- Linear Constraints --> Linear Solver
-	_linearSolver->setInput("linear constraints",_linearConstraints);
-	// -- Parameters --> Linear Solver
-	_linearSolver->setInput("parameters", boost::make_shared<LinearSolverParameters>(Binary));
-	// Objective Generator ----> Linear Solver
-	_linearSolver->setInput("objective", _objectiveGenerator->getOutput());
-	// -- Segments --> Objective Generator
-        _objectiveGenerator->setInput("segments", _segments);
-	// -- Gold Standard --> Hamming Cost Function
-       	_hammingCostFunction->setInput("gold standard", _goldStandard);
-	// Hamming Cost Function ----> Objective Generator
-        _objectiveGenerator->addInput("cost functions", _hammingCostFunction->getOutput());
-
 }

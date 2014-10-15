@@ -28,10 +28,13 @@ private:
 
 	void updateOutputs() {}
 
-	void clearPipeline();
+	/**
+	 * Initialize the pipeline components that don't change between iterations.
+	 */
+	void initPipeline();
 
 	/**
-	 * Create the pipeline for the computation of the TED for the current 
+	 * Update the pipeline for the computation of the TED for the current 
 	 * segment.
 	 *
 	 * @param interSectionInterval
@@ -41,7 +44,7 @@ private:
 	 *              The number of sections to consider around the current 
 	 *              segment for the computation of the TED.
 	 */
-	void createPipeline(int interSectionInterval, int numAdjacentSections = 0);
+	void updatePipeline(int interSectionInterval, int numAdjacentSections = 0);
 
 	/*********
 	* Inputs *
