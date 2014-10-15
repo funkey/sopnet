@@ -25,6 +25,7 @@
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
+#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
@@ -468,8 +469,10 @@ int main(int optionc, char** optionv) {
 
 					pipeline::Process<GoldStandardCostFunction> goldStandardCostFunction;
 					pipeline::Process<ObjectiveGenerator>       objectiveGenerator;
+					pipeline::Process<GroundTruthExtractor>     groundTruthExtractor;
 
-					goldStandardCostFunction->setInput("ground truth", groundTruthReader->getOutput());
+					groundTruthExtractor->setInput(groundTruthReader->getOutput());
+					goldStandardCostFunction->setInput("ground truth", groundTruthExtractor->getOutput());
 
 					objectiveGenerator->setInput("segments", sopnet->getOutput("segments"));
 					objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());
