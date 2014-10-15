@@ -12,3 +12,5 @@ define_module(viewer            BINARY SOURCES viewer.cpp            LINKS image
 define_module(skeletonize       BINARY SOURCES skeletonize.cpp       LINKS allsopnet)
 define_module(marching_cubes    BINARY SOURCES marching_cubes.cpp    LINKS allsopnet)
 define_module(blobs             BINARY SOURCES blobs.cpp             LINKS allsopnet)
+
+add_subdirectory(tests)
