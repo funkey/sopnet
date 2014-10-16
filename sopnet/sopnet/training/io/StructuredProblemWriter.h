@@ -24,6 +24,8 @@ private:
 	void writeLabels(std::string filename_labels);
 	void writeFeatures(std::string filename_features);
 	void writeConstraints(std::string filename_constraints);
+
+	boost::shared_ptr<Segment> findSegment(unsigned int segmentId, bool& isGoldStandard);
  
 	pipeline::Input<LinearConstraints> _linearConstraints;
 	pipeline::Input<ProblemConfiguration> _problemConfiguration;

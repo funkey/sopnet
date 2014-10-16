@@ -1,7 +1,10 @@
-#include "StructuredProblemWriter.h"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <util/Logger.h>
+#include "StructuredProblemWriter.h"
+
+logger::LogChannel structuredproblemwriterlog("structuredproblemwriterlog", "[StructuredProblemWriter] ");
 
 StructuredProblemWriter::StructuredProblemWriter()
 {
@@ -49,25 +52,30 @@ StructuredProblemWriter::writeLabels(std::string filename_labels) {
 	std::ofstream labelsOutput;
         labelsOutput.open(filename_labels.c_str());
 
+	std::set<SegmentHash> segmentHashes;
+
 	// For every variable...
 	for (unsigned int i = 0; i <= maxVariable; i++) {
 		
 		// ...check if the segment that corresponds to that variable is contained in the gold standard.
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
-				
-		bool isContained = false;
-		foreach (boost::shared_ptr<Segment> s, goldStandard) {
-                        if (s->getId() == segmentId) {
-                                isContained = true;
-			}
-		}
-		
-		if (isContained == true) {
-			labelsOutput << 1 << std::endl;
+
+		bool isGoldStandard;
+		boost::shared_ptr<Segment> segment = findSegment(segmentId, isGoldStandard);
+
+		SegmentHash segmentHash = segment->hashValue();
+
+		if (isGoldStandard) {
+			labelsOutput << 1 << " # " << segmentHash << std::endl;
 		} 
 		else {
-			labelsOutput << 0 << std::endl;
+			labelsOutput << 0 << " # " << segmentHash << std::endl;
 		}
+
+		if (!segmentHashes.insert(segmentHash).second)
+			LOG_ERROR(structuredproblemwriterlog)
+					<< "hash collision detected: hash " << segmentHash
+					<< " appears at least twice!" << std::endl;
 	}
 
 	labelsOutput.close();
@@ -113,4 +121,28 @@ StructuredProblemWriter::writeConstraints(std::string filenames_constraints) {
 	}
         constraintOutput.close();
 
+}
+
+boost::shared_ptr<Segment>
+StructuredProblemWriter::findSegment(unsigned int segmentId, bool& isGoldStandard) {
+
+	// try to find it in the gold-standard
+	foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
+		if (segment->getId() == segmentId) {
+
+			isGoldStandard = true;
+			return segment;
+		}
+
+	// try to find it in all segments
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		if (segment->getId() == segmentId) {
+
+			isGoldStandard = false;
+			return segment;
+		}
+
+	UTIL_THROW_EXCEPTION(
+			UsageError,
+			"segment with id " << segmentId << " is not contained in given segment set");
 }
