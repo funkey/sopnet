@@ -2,16 +2,8 @@
 
 logger::LogChannel sopnetdialoglog("sopnetdialoglog", "[SopnetDialog] ");
 
-util::ProgramOption optionForceExplanation(
-		util::_module           = "sopnet.inference",
-		util::_long_name        = "forceExplanation",
-		util::_description_text = "Force the solver to explain every segmentation hypotheses, i.e., that in every maximal "
-		                          "set of conflicting slices exactly one gets chosen. This usually results in a denser "
-		                          "reconstruction. This works only for slice hypotheses coming from a component tree, which "
-		                          "means it cannot be combined with 'slicesFromStacks'.");
-
-SopnetDialog::SopnetDialog() :
-	_forceExplanationSwitch(boost::make_shared<gui::Switch>("force slice explanation", optionForceExplanation)),
+SopnetDialog::SopnetDialog(bool forceExplanation) :
+	_forceExplanationSwitch(boost::make_shared<gui::Switch>("force slice explanation", forceExplanation)),
 	_segmentationCostWeightSlider(
 			boost::make_shared<gui::Slider<double> >(
 					"segmentation cost weight",
