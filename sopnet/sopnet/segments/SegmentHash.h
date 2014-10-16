@@ -3,7 +3,7 @@
 
 #include <cstddef>
 #include <vector>
-#include <slices/SliceHash.h>
+#include <sopnet/slices/SliceHash.h>
 
 typedef std::size_t SegmentHash;
 

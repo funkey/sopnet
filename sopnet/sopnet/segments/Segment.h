@@ -6,6 +6,7 @@
 #include <pipeline/all.h>
 #include <sopnet/slices/Slice.h>
 #include <util/point.hpp>
+#include <util/Hashable.h>
 #include "SegmentHash.h"
 
 /**
@@ -22,7 +23,7 @@ enum Direction {
  * implement one-to-one segments (continuations), one-to-two segments
  * (branches), and one-to-zero segments (ends).
  */
-class Segment : public pipeline::Data {
+class Segment : public pipeline::Data, public Hashable<Segment, SegmentHash> {
 
 public:
 
@@ -62,8 +63,6 @@ public:
 
 	std::vector<boost::shared_ptr<Slice> > getTargetSlices() const;
 
-	SegmentHash hashValue() const;
-
 private:
 
 	static unsigned int NextSegmentId;
@@ -82,10 +81,6 @@ private:
 
 	// the number of the inter-section interval this segment lives in
 	unsigned int _interSectionInterval;
-
-	// the hash value of this segment
-	mutable SegmentHash _hash;
-	mutable bool _hashDirty;
 };
 
 #endif // CELLTRACKER_TRACKLET_H__

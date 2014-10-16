@@ -3,15 +3,15 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "SliceHash.h"
-
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
+#include <util/Hashable.h>
+#include "SliceHash.h"
 
 // forward declaration
 class ConnectedComponent;
 
-class Slice {
+class Slice : public Hashable<Slice, SliceHash> {
 
 public:
 
@@ -49,12 +49,6 @@ public:
 	void intersect(const Slice& other);
 	
 	/**
-	 * Computes a hash value for this Slice over its section id, and the geometry of its
-	 * underlying ConnectedComponent.
-	 */
-	SliceHash hashValue() const;
-
-	/**
 	 * Translate this Slice
 	 * @param pt a point representing the translation to perform.
 	 */
@@ -69,9 +63,6 @@ private:
 	unsigned int _section;
 
 	boost::shared_ptr<ConnectedComponent> _component;
-
-	mutable SliceHash _hash;
-	mutable bool      _hashDirty;
 };
 
 #endif // CELLTRACKER_CELL_H__

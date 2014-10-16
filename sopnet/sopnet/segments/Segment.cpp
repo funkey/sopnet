@@ -8,8 +8,7 @@ Segment::Segment(
 	_id(id),
 	_direction(direction),
 	_center(center),
-	_interSectionInterval(interSectionInterval),
-	_hashDirty(true) {}
+	_interSectionInterval(interSectionInterval) {}
 
 unsigned int
 Segment::getNextSegmentId() {
@@ -77,19 +76,6 @@ Segment::getTargetSlices() const {
 			targetSlices.push_back(slice);
 
 	return targetSlices;
-}
-
-
-SegmentHash
-Segment::hashValue() const {
-
-	if (_hashDirty) {
-
-		_hash = hash(*this);
-		_hashDirty = false;
-	}
-
-	return _hash;
 }
 
 unsigned int Segment::NextSegmentId = 0;
