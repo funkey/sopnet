@@ -5,6 +5,11 @@
 
 typedef std::size_t SliceHash;
 
+struct SliceHashConfiguration {
+
+	static unsigned int sectionOffset;
+};
+
 // forward declaration
 class Slice;
 

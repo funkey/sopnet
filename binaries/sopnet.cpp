@@ -207,8 +207,9 @@ int main(int optionc, char** optionv) {
 
 		LOG_USER(out) << "[main] starting..." << std::endl;
 
-		int firstSection = optionFirstSection;
+		int firstSection = std::max(0,optionFirstSection);
 		int lastSection  = optionLastSection;
+		SliceHashConfiguration::sectionOffset = firstSection;
 
 		/*********
 		 * SETUP *

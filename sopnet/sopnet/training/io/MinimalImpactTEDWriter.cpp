@@ -15,6 +15,11 @@ util::ProgramOption optionNumAdjacentSections(
 		util::_default_value    = 0,
 		util::_description_text = "The number of adjacent sections to consider for the computation of the minimal impact TED coefficients. If set to 0 (default), all sections will be considered.");
 
+util::ProgramOption optionLimitToISI(
+		util::_module           = "sopnet.training",
+		util::_long_name        = "limitToISI",
+		util::_description_text = "If set, limits the computation of the TED coefficients to segments in the given inter-section interval.");
+
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
@@ -43,6 +48,10 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	updateInputs();
 
 	initPipeline();
+
+	// append ISI number to output filename
+	if (optionLimitToISI)
+		filename = optionLimitToISI.as<std::string>() + "_" + filename;
 
 	// Remove the old file
 	if( remove( filename.c_str() ) != 0 ) {
@@ -81,12 +90,16 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
-		std::string timerMessage = "\n\nMinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n\n";
-		boost::timer::auto_cpu_timer timer(timerMessage);
-
 		unsigned int segmentId = _problemConfiguration->getSegmentId(varNum);
 
 		int interSectionInterval = _problemConfiguration->getInterSectionInterval(varNum);
+
+		if (optionLimitToISI)
+			if (interSectionInterval != optionLimitToISI.as<int>())
+				continue;
+
+		std::string timerMessage = "\n\nMinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n\n";
+		boost::timer::auto_cpu_timer timer(timerMessage);
 
 		// re-create the pipeline for the current segment and its inter-section 
 		// interval
