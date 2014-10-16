@@ -57,7 +57,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	outfile.open(filename.c_str(), std::ios_base::app);
 	
 	 // Get a vector with all gold standard segments.
-        const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
+	const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
 
 	int constant = 0;
 
@@ -68,11 +68,16 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	outfile << "numVar " << variables.size() << std::endl;
 
-	outfile << "# var_num costs # value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
+	outfile << "# var_num costs # hash value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
 
 	std::set<unsigned int> goldStandardIds;
 	foreach (boost::shared_ptr<Segment> s, goldStandard)
 		goldStandardIds.insert(s->getId());
+
+	// create a map from segment ids to segment pointers
+	std::map<unsigned int, boost::shared_ptr<Segment> > idToSegment;
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		idToSegment[segment->getId()] = segment;
 
 	for ( unsigned int varNum = 0 ; varNum < variables.size() ; varNum++ ) {
 
@@ -90,6 +95,9 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		// Is the segment that corresponds to the variable part of the gold standard?
 		bool isContained = (goldStandardIds.count(segmentId) > 0);
 
+		// get the hash value of this segment
+		SegmentHash segmentHash = idToSegment[segmentId]->hashValue();
+
 		// pin the value of the current variable to its opposite
 		_linearSolver->pinVariable(varNum, (isContained ? 0 : 1));
 
@@ -99,6 +107,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		outfile << "c" << varNum << " ";
 		outfile << (isContained ? -sumErrors : sumErrors) << " ";
 		outfile << "# ";
+		outfile << segmentHash << " ";
 		outfile << (isContained ? 1 : 0) << " ";
 		outfile << errors->getNumSplits() << " ";
 		outfile << errors->getNumMerges() << " ";
