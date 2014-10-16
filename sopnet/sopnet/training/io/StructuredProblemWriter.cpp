@@ -25,6 +25,12 @@ StructuredProblemWriter::write(std::string filename_labels,
 
 	updateInputs();
 
+	// create maps from segment ids to hashes
+	foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
+		_gsHashes[segment->getId()] = segment->hashValue();
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		_allHashes[segment->getId()] = segment->hashValue();
+
 	// call write functions for the different files to write.
 	writeLabels(filename_labels);
 	writeFeatures(filename_features);
@@ -61,9 +67,7 @@ StructuredProblemWriter::writeLabels(std::string filename_labels) {
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
 
 		bool isGoldStandard;
-		boost::shared_ptr<Segment> segment = findSegment(segmentId, isGoldStandard);
-
-		SegmentHash segmentHash = segment->hashValue();
+		SegmentHash segmentHash = findSegmentHash(segmentId, isGoldStandard);
 
 		if (isGoldStandard) {
 			labelsOutput << 1 << " # " << segmentHash << std::endl;
@@ -123,24 +127,23 @@ StructuredProblemWriter::writeConstraints(std::string filenames_constraints) {
 
 }
 
-boost::shared_ptr<Segment>
-StructuredProblemWriter::findSegment(unsigned int segmentId, bool& isGoldStandard) {
+SegmentHash
+StructuredProblemWriter::findSegmentHash(unsigned int segmentId, bool& isGoldStandard) {
 
 	// try to find it in the gold-standard
-	foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
-		if (segment->getId() == segmentId) {
 
-			isGoldStandard = true;
-			return segment;
-		}
+	if (_gsHashes.count(segmentId)) {
+
+		isGoldStandard = true;
+		return _gsHashes[segmentId];
+	}
 
 	// try to find it in all segments
-	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
-		if (segment->getId() == segmentId) {
+	if (_allHashes.count(segmentId)) {
 
-			isGoldStandard = false;
-			return segment;
-		}
+		isGoldStandard = false;
+		return _allHashes[segmentId];
+	}
 
 	UTIL_THROW_EXCEPTION(
 			UsageError,

@@ -23,6 +23,7 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
+#include <sopnet/training/io/GoldStandardFileReader.h>
 #include <sopnet/training/SegmentRandomForestTrainer.h>
 #include <sopnet/training/io/StructuredProblemWriter.h>
 #include <sopnet/training/io/MinimalImpactTEDWriter.h>
@@ -360,8 +361,12 @@ Sopnet::createMinimalImpactTEDPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating minimal impact TED part..." << std::endl;
 
+	// read the gold standard from a file
+	pipeline::Process<GoldStandardFileReader> goldStandardReader("labels.txt");
+	goldStandardReader->setInput("all segments", _problemAssembler->getOutput("segments"));
+
 	// Set inputs to MinimalImpactTEDWriter
-	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("gold standard", goldStandardReader->getOutput("gold standard"));
 	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 	_mitWriter->setInput("reference", _rawSections);

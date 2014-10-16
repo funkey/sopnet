@@ -25,14 +25,18 @@ private:
 	void writeFeatures(std::string filename_features);
 	void writeConstraints(std::string filename_constraints);
 
-	boost::shared_ptr<Segment> findSegment(unsigned int segmentId, bool& isGoldStandard);
- 
+	SegmentHash findSegmentHash(unsigned int segmentId, bool& isGoldStandard);
+
 	pipeline::Input<LinearConstraints> _linearConstraints;
 	pipeline::Input<ProblemConfiguration> _problemConfiguration;
 	pipeline::Input<Features> _features;
 	pipeline::Input<Segments> _segments;
 	pipeline::Input<Segments> _groundTruthSegments;
 	pipeline::Input<Segments> _goldStandard;
+
+	// maps from segment ids to segment hashes
+	std::map<unsigned int, SegmentHash> _gsHashes;
+	std::map<unsigned int, SegmentHash> _allHashes;
 };
 
 #endif // SOPNET_STRUCTURED_PROBLEM_WRITER_H__
