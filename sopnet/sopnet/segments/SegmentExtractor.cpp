@@ -232,7 +232,7 @@ SegmentExtractor::ensureMinContinuationPartners() {
 		if (numPartners < _minContinuationPartners) {
 
 			// sort overlapping slices by overlap
-			std::sort(_nextOverlaps[prev].rbegin(), _nextOverlaps[prev].rend());
+			std::sort(_nextOverlaps[prev].rbegin(), _nextOverlaps[prev].rend(), OverlapCompare());
 
 			// ...and all overlapping slices in the next section...
 			boost::shared_ptr<Slice> next;

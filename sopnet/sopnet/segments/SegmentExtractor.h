@@ -65,9 +65,26 @@ private:
 	pipeline::Output<LinearConstraints> _linearConstraints;
 
 	// a map from slices to overlapping slices and the overlap value
-	typedef boost::shared_ptr<Slice> slice_ptr;
-	std::map<slice_ptr, std::vector<std::pair<unsigned int, slice_ptr> > > _nextOverlaps;
-	std::map<slice_ptr, std::vector<std::pair<unsigned int, slice_ptr> > > _prevOverlaps;
+	typedef boost::shared_ptr<Slice>           slice_ptr;
+	typedef std::pair<unsigned int, slice_ptr> overlap_slice_pair;
+	std::map<slice_ptr, std::vector<overlap_slice_pair> > _nextOverlaps;
+	std::map<slice_ptr, std::vector<overlap_slice_pair> > _prevOverlaps;
+
+	// comparator to sort the vectors of _nextOverlaps and _prevOverlaps by 
+	// overlap
+	struct OverlapCompare {
+
+		bool operator()(const overlap_slice_pair& a, const overlap_slice_pair& b) {
+
+			// overlaps are the same -- sort by id to ensure same sorted 
+			// sequence every time
+			if (a.first == b.first)
+				return a.second->hashValue() < b.second->hashValue();
+
+			// sort by overlap
+			return a.first < b.first;
+		}
+	};
 
 	// map from slice ids to slice ids if connected by a continuation
 	std::map<unsigned int, std::vector<unsigned int> > _continuationPartners;
