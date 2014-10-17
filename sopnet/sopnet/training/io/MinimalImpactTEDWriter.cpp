@@ -49,9 +49,15 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	initPipeline();
 
-	// append ISI number to output filename
+	int limitToISI = -1;
 	if (optionLimitToISI)
-		filename = optionLimitToISI.as<std::string>() + "_" + filename;
+		limitToISI = optionLimitToISI.as<int>() - SliceHashConfiguration::sectionOffset;
+
+	// append ISI number to output filename
+	if (limitToISI >= 0)
+		filename = filename + "_" + optionLimitToISI.as<std::string>();
+
+	LOG_USER(minimalImpactTEDlog) << "writing ted coefficients to " << filename << std::endl;
 
 	// Remove the old file
 	if( remove( filename.c_str() ) != 0 ) {
@@ -94,8 +100,8 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		int interSectionInterval = _problemConfiguration->getInterSectionInterval(varNum);
 
-		if (optionLimitToISI)
-			if (interSectionInterval != optionLimitToISI.as<int>())
+		if (limitToISI >= 0)
+			if (interSectionInterval != limitToISI)
 				continue;
 
 		std::string timerMessage = "\n\nMinimalImpactTEDWriter: variable " + boost::lexical_cast<std::string>(varNum) + ", %ws\n\n";
