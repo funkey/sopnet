@@ -244,7 +244,7 @@ int main(int optionc, char** optionv) {
 			segmentsContainer   = boost::make_shared<ContainerView<HorizontalPlacing> >("segments");
 
 			// create sopnet dialog
-			boost::shared_ptr<SopnetDialog> sopnetDialog = boost::make_shared<SopnetDialog>(optionForceExplanation.as<bool>());
+			sopnetDialog = boost::make_shared<SopnetDialog>(optionForceExplanation.as<bool>());
 
 			// connect them to the window via the zoom view
 			controlContainer->setAlign(VerticalPlacing::Left);
