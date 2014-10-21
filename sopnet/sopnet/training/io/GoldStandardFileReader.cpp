@@ -10,6 +10,7 @@ GoldStandardFileReader::GoldStandardFileReader(const std::string& filename) :
 
 	registerInput(_allSegments, "all segments");
 	registerOutput(_goldStandard, "gold standard");
+	registerOutput(_negativeSamples, "negative samples");
 }
 
 void
@@ -78,11 +79,17 @@ GoldStandardFileReader::updateOutputs() {
 		_goldStandard = new Segments();
 	else
 		_goldStandard->clear();
+	if (!_negativeSamples)
+		_negativeSamples = new Segments();
+	else
+		_negativeSamples->clear();
 
 	foreach (boost::shared_ptr<EndSegment> segment, _allSegments->getEnds())
 		if (goldStandardSegmentHashes.count(segment->hashValue()))
 			_goldStandard->add(segment);
-		else if (!otherSegmentHashes.count(segment->hashValue())) {
+		else if (otherSegmentHashes.count(segment->hashValue()))
+			_negativeSamples->add(segment);
+		else {
 
 			LOG_ERROR(goldstandardfilereaderlog)
 					<< "end segment " << segment->getId()
@@ -93,7 +100,9 @@ GoldStandardFileReader::updateOutputs() {
 	foreach (boost::shared_ptr<ContinuationSegment> segment, _allSegments->getContinuations())
 		if (goldStandardSegmentHashes.count(segment->hashValue()))
 			_goldStandard->add(segment);
-		else if (!otherSegmentHashes.count(segment->hashValue())) {
+		else if (otherSegmentHashes.count(segment->hashValue()))
+			_negativeSamples->add(segment);
+		else {
 
 			LOG_ERROR(goldstandardfilereaderlog)
 					<< "continuation segment " << segment->getId()
@@ -104,7 +113,9 @@ GoldStandardFileReader::updateOutputs() {
 	foreach (boost::shared_ptr<BranchSegment> segment, _allSegments->getBranches())
 		if (goldStandardSegmentHashes.count(segment->hashValue()))
 			_goldStandard->add(segment);
-		else if (!otherSegmentHashes.count(segment->hashValue())) {
+		else if (otherSegmentHashes.count(segment->hashValue()))
+			_negativeSamples->add(segment);
+		else {
 
 			LOG_ERROR(goldstandardfilereaderlog)
 					<< "branch segment " << segment->getId()

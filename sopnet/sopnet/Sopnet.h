@@ -151,7 +151,7 @@ private:
 
 	// the gold standard extractor, gives the closest candidate solution to the 
 	// groundtruth
-	boost::shared_ptr<GoldStandardExtractor>          _goldStandardExtractor;
+	boost::shared_ptr<pipeline::ProcessNode>          _goldStandardProvider;
 
 	// the training node, trains a random forest classifier on the gold standard
 	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;

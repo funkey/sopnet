@@ -16,6 +16,7 @@ private:
 
 	pipeline::Input<Segments>  _allSegments;
 	pipeline::Output<Segments> _goldStandard;
+	pipeline::Output<Segments> _negativeSamples;
 
 	std::string _filename;
 };
