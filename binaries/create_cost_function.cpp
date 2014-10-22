@@ -82,10 +82,9 @@ readVariables(const std::string& filename) {
 
 	std::ifstream labelsfile(filename.c_str());
 
-	while (labelsfile.good()) {
+	std::string line;
 
-		std::string line;
-		std::getline(labelsfile, line);
+	while(std::getline(labelsfile, line)) {
 
 		std::stringstream linestream(line);
 
@@ -133,7 +132,7 @@ int main(int optionc, char** optionv) {
 		std::ofstream costFunctionFile(optionCostFunctionFile.as<std::string>());
 
 		double constant = 0;
-		costFunctionFile << "varNum " << hashes.size() << std::endl;
+		costFunctionFile << "numVar " << hashes.size() << std::endl;
 		for (unsigned int i = 0; i < hashes.size(); i++) {
 
 			double coef = coefs[hashes[i]];
