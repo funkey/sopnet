@@ -82,10 +82,9 @@ readVariables(const std::string& filename) {
 
 	std::ifstream labelsfile(filename.c_str());
 
-	while (labelsfile.good()) {
+	std::string line;
 
-		std::string line;
-		std::getline(labelsfile, line);
+	while(std::getline(labelsfile, line)) {
 
 		std::stringstream linestream(line);
 
