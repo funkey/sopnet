@@ -139,7 +139,7 @@ GoldStandardFileReader::updateOutputs() {
 		foreach (boost::shared_ptr<Slice> slice, segment->getSlices()) {
 			unsigned int section = slice->getSection();
 			firstSection = std::min(firstSection, section);
-			lastSection  = std::min(lastSection,  section);
+			lastSection  = std::max(lastSection,  section);
 		}
 	}
 
