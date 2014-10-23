@@ -20,6 +20,12 @@ util::ProgramOption optionLimitToISI(
 		util::_long_name        = "limitToISI",
 		util::_description_text = "If set, limits the computation of the TED coefficients to segments in the given inter-section interval.");
 
+util::ProgramOption optionWriteTedConditions(
+		util::_module           = "sopnet.training",
+		util::_long_name        = "writeTedConditions",
+		util::_description_text = "Instead of computing the TED coefficients, write TED conditions to file minimalImapctTEDconditions.txt: "
+		                          "These are the individual solutions that are used to compute the TED for a pinned segment variable.");
+
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
@@ -53,11 +59,18 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	if (optionLimitToISI)
 		limitToISI = optionLimitToISI.as<int>() - SliceHashConfiguration::sectionOffset;
 
+	if (optionWriteTedConditions)
+		filename = "minimalImapctTEDconditions.txt";
+
 	// append ISI number to output filename
 	if (limitToISI >= 0)
 		filename = filename + "_" + optionLimitToISI.as<std::string>();
 
-	LOG_USER(minimalImpactTEDlog) << "writing ted coefficients to " << filename << std::endl;
+	if (optionWriteTedConditions) {
+		LOG_USER(minimalImpactTEDlog) << "writing ted conditions to " << filename << std::endl;
+	} else {
+		LOG_USER(minimalImpactTEDlog) << "writing ted coefficients to " << filename << std::endl;
+	}
 
 	// Remove the old file
 	if( remove( filename.c_str() ) != 0 ) {
@@ -69,6 +82,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	// Open file for writing
 	std::ofstream outfile;
+
 	outfile.open(filename.c_str(), std::ios_base::app);
 	
 	 // Get a vector with all gold standard segments.
@@ -81,9 +95,11 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	LOG_USER(minimalImpactTEDlog) << "computing ted coefficients for " << variables.size() << " variables" << std::endl;
 
-	outfile << "numVar " << variables.size() << std::endl;
+	if (!optionWriteTedConditions) {
 
-	outfile << "# var_num costs # hash value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
+		outfile << "numVar " << variables.size() << std::endl;
+		outfile << "# var_num costs # hash value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
+	}
 
 	std::set<unsigned int> goldStandardIds;
 	foreach (boost::shared_ptr<Segment> s, goldStandard)
@@ -109,7 +125,8 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		// re-create the pipeline for the current segment and its inter-section 
 		// interval
-		updatePipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
+		if (!optionWriteTedConditions)
+			updatePipeline(interSectionInterval, optionNumAdjacentSections.as<int>());
 	
 		// Is the segment that corresponds to the variable part of the gold standard?
 		bool isContained = (goldStandardIds.count(segmentId) > 0);
@@ -120,34 +137,49 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		// pin the value of the current variable to its opposite
 		_linearSolver->pinVariable(varNum, (isContained ? 0 : 1));
 
-		pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
-		int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
+		if (!optionWriteTedConditions) {
 
-		outfile << "c" << varNum << " ";
-		outfile << (isContained ? -sumErrors : sumErrors) << " ";
-		outfile << "# ";
-		outfile << segmentHash << " ";
-		outfile << (isContained ? 1 : 0) << " ";
-		outfile << errors->getNumSplits() << " ";
-		outfile << errors->getNumMerges() << " ";
-		outfile << errors->getNumFalsePositives() << " ";
-		outfile << errors->getNumFalseNegatives() << std::endl;
+			pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
+			int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
 
-		if (isContained) {
+			outfile << "c" << varNum << " ";
+			outfile << (isContained ? -sumErrors : sumErrors) << " ";
+			outfile << "# ";
+			outfile << segmentHash << " ";
+			outfile << (isContained ? 1 : 0) << " ";
+			outfile << errors->getNumSplits() << " ";
+			outfile << errors->getNumMerges() << " ";
+			outfile << errors->getNumFalsePositives() << " ";
+			outfile << errors->getNumFalseNegatives() << std::endl;
 
-			// Forced segment to not be part of the reconstruction.
-			// This resulted in a number of errors that are going to be stored in the constant.
-			// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
+			if (isContained) {
 
-			constant += sumErrors;
+				// Forced segment to not be part of the reconstruction.
+				// This resulted in a number of errors that are going to be stored in the constant.
+				// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
+
+				constant += sumErrors;
+			}
+
+		} else {
+
+			pipeline::Value<Solution> solution = _linearSolver->getOutput("solution");
+
+			outfile << varNum << " " << segmentHash;
+			for (unsigned int i = 0; i < variables.size(); i++)
+				outfile << " " << (*solution)[i];
+			outfile << std::endl;
 		}
 
 		// Remove constraint
 		_linearSolver->unpinVariable(varNum);
 	}
 
-	// Write constant to file
-	outfile << "constant " << constant << std::endl;
+	if (!optionWriteTedConditions) {
+
+		// Write constant to file
+		outfile << "constant " << constant << std::endl;
+	}
 
 	outfile.close();
 }
