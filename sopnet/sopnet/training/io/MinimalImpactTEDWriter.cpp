@@ -60,7 +60,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 		limitToISI = optionLimitToISI.as<int>() - SliceHashConfiguration::sectionOffset;
 
 	if (optionWriteTedConditions)
-		filename = "minimalImapctTEDconditions.txt";
+		filename = "minimalImpactTEDconditions.txt";
 
 	// append ISI number to output filename
 	if (limitToISI >= 0)
@@ -83,7 +83,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 	// Open file for writing
 	std::ofstream outfile;
 
-	outfile.open(filename.c_str(), std::ios_base::app);
+	outfile.open(filename.c_str());
 	
 	 // Get a vector with all gold standard segments.
 	const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
@@ -95,7 +95,11 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 	LOG_USER(minimalImpactTEDlog) << "computing ted coefficients for " << variables.size() << " variables" << std::endl;
 
-	if (!optionWriteTedConditions) {
+	if (optionWriteTedConditions) {
+
+		outfile << "# hash: [hashes of flipped segments]" << std::endl;
+
+	} else {
 
 		outfile << "numVar " << variables.size() << std::endl;
 		outfile << "# var_num costs # hash value_in_gs fs fm fp fn ( <- when flipped )" << std::endl;
@@ -165,9 +169,15 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 			pipeline::Value<Solution> solution = _linearSolver->getOutput("solution");
 
-			outfile << varNum << " " << segmentHash;
-			for (unsigned int i = 0; i < variables.size(); i++)
-				outfile << " " << (*solution)[i];
+			outfile << segmentHash << ":";
+			for (unsigned int i = 0; i < variables.size(); i++) {
+
+				unsigned int id = _problemConfiguration->getSegmentId(i);
+
+				// was flipped?
+				if ((*solution)[i] != goldStandardIds.count(id))
+					outfile << " " << idToSegment[id]->hashValue();
+			}
 			outfile << std::endl;
 		}
 
