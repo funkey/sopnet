@@ -129,9 +129,6 @@ private:
 	// a random forest file reader
 	boost::shared_ptr<RandomForestHdf5Reader>         	_randomForestReader;
 
-	// a segment evaluator that provides a cost function for segment types
-	boost::shared_ptr<PriorCostFunction>              	_priorCostFunction;
-
 	// the objective generator that computes the costs for each segment
 	boost::shared_ptr<ObjectiveGenerator>             	_objectiveGenerator;
 

@@ -85,6 +85,14 @@ public:
 	unsigned int getNumFalseNegatives();
 
 	/**
+	 * Get the sum of all errors.
+	 */
+	unsigned int getNumErrors() {
+
+		return getNumSplits() + getNumMerges() + getNumFalsePositives() + getNumFalseNegatives();
+	}
+
+	/**
 	 * Get all ground truth labels that got split in the reconstruction.
 	 */
 	std::set<float> getSplitLabels();

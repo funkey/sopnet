@@ -432,7 +432,7 @@ int main(int optionc, char** optionv) {
 		// create a result id map creator if needed
 		boost::shared_ptr<IdMapCreator> resultIdMapCreator;
 
-		if (optionShowErrors || optionSaveResultDirectory) {
+		if (optionShowErrors || optionSaveResultDirectory || optionGridSearch) {
 
 			resultIdMapCreator = boost::make_shared<IdMapCreator>();
 
@@ -696,52 +696,65 @@ int main(int optionc, char** optionv) {
 			LOG_USER(out) << "[main] file for minimal impact TED written!" << std::endl;
 		}
 
+		if (optionGridSearch) {
+
+			LOG_USER(out) << "[main] performing grid search" << std::endl;
+
+			boost::shared_ptr<GridSearch> gridSearch = boost::make_shared<GridSearch>();
+
+			sopnet->setInput("prior cost parameters", gridSearch->getOutput("prior cost parameters"));
+			sopnet->setInput("segmentation cost parameters", gridSearch->getOutput("segmentation cost parameters"));
+
+			// open file for grid search results
+			std::ofstream gridSearchFile("grid_search.txt");
+			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: FP FN FS FM SUM" << std::endl;
+
+			while (true) {
+
+				std::string parameterString = gridSearch->currentParameters();
+
+				LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
+
+				boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
+				tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
+				tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
+
+				pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
+
+				unsigned int fp = tedErrors->getNumFalsePositives();
+				unsigned int fn = tedErrors->getNumFalseNegatives();
+				unsigned int fs = tedErrors->getNumSplits();
+				unsigned int fm = tedErrors->getNumMerges();
+				unsigned int sum = tedErrors->getNumErrors();
+
+				gridSearchFile
+						<< parameterString << ": "
+						<< fp << " "
+						<< fn << " "
+						<< fs << " "
+						<< fm << " "
+						<< sum << std::endl;
+
+				if (!gridSearch->next())
+					break;
+			}
+
+			LOG_USER(out) << "[main] grid search done." << std::endl;
+
+		}
+
 		if (optionSaveResultDirectory) {
 
-			if (optionGridSearch) {
+			LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
 
-				LOG_USER(out) << "[main] performing grid search" << std::endl;
+			boost::shared_ptr<NeuronsImageWriter> resultWriter =
+					boost::make_shared<NeuronsImageWriter>(
+							optionSaveResultDirectory,
+							optionSaveResultBasename,
+							optionFirstSection);
 
-				boost::shared_ptr<GridSearch> gridSearch = boost::make_shared<GridSearch>();
-
-				sopnet->setInput("prior cost parameters", gridSearch->getOutput("prior cost parameters"));
-				sopnet->setInput("segmentation cost parameters", gridSearch->getOutput("segmentation cost parameters"));
-
-				while (true) {
-
-					std::string parameterString = gridSearch->currentParameters();
-
-					LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
-
-					boost::shared_ptr<IdMapCreator>       gridResultIdMapCreator = boost::make_shared<IdMapCreator>();
-					boost::shared_ptr<NeuronsImageWriter> gridResultWriter       = boost::make_shared<NeuronsImageWriter>(optionSaveResultDirectory.as<std::string>() + "/" + parameterString, optionSaveResultBasename);
-
-					gridResultIdMapCreator->setInput("neurons", neuronExtractor->getOutput());
-					gridResultIdMapCreator->setInput("reference", rawSectionsReader->getOutput());
-
-					gridResultWriter->setInput("id map", gridResultIdMapCreator->getOutput("id map"));
-					gridResultWriter->setInput("annotation", variationOfInformation->getOutput());
-					gridResultWriter->write();
-
-					if (!gridSearch->next())
-						break;
-				}
-
-				LOG_USER(out) << "[main] grid search done." << std::endl;
-
-			} else {
-
-				LOG_USER(out) << "[main] writing solution to directory " << optionSaveResultDirectory.as<std::string>() << std::endl;
-
-				boost::shared_ptr<NeuronsImageWriter> resultWriter =
-						boost::make_shared<NeuronsImageWriter>(
-								optionSaveResultDirectory,
-								optionSaveResultBasename,
-								optionFirstSection);
-
-				resultWriter->setInput(resultIdMapCreator->getOutput("id map"));
-				resultWriter->write();
-			}
+			resultWriter->setInput(resultIdMapCreator->getOutput("id map"));
+			resultWriter->write();
 		}
 
 		// finally, show the windows

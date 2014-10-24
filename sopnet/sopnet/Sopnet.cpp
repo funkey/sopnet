@@ -48,6 +48,12 @@ util::ProgramOption optionSegmentationCostFunction(
 		util::_long_name        = "segmentationCostFunction",
 		util::_description_text = "Use the segmentation cost function (based on membrane probabilites) for segments.");
 
+util::ProgramOption optionPriorCostFunction(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "priorCostFunction",
+		util::_description_text = "Use the prior cost function for segments (only really makes sense for gridSearch, since linearCostFunction provides the same).",
+		util::_default_value    = false);
+
 util::ProgramOption optionRandomForestFile(
 		util::_module           = "sopnet.inference",
 		util::_long_name        = "segmentRandomForest",
@@ -77,7 +83,6 @@ Sopnet::Sopnet(
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
-	_priorCostFunction(boost::make_shared<PriorCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
@@ -239,6 +244,7 @@ Sopnet::createInferencePipeline() {
 	boost::shared_ptr<LinearCostFunction>       linearCostFunction;
 	boost::shared_ptr<RandomForestCostFunction> rfCostFunction;
 	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction;
+	boost::shared_ptr<PriorCostFunction>        priorCostFunction;
 
 	// setup the segment evaluation functions
 	if (optionLinearCostFunction) {
@@ -272,7 +278,11 @@ Sopnet::createInferencePipeline() {
 		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 	}
 
-	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
+	if (optionPriorCostFunction) {
+
+		priorCostFunction = boost::make_shared<PriorCostFunction>();
+		priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
+	}
 
 	if (_problemWriter) {
 
@@ -299,6 +309,8 @@ Sopnet::createInferencePipeline() {
 			_objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 		if (segmentationCostFunction)
 			_objectiveGenerator->addInput("cost functions", segmentationCostFunction->getOutput("cost function"));
+		if (priorCostFunction)
+			_objectiveGenerator->addInput("cost functions", priorCostFunction->getOutput("cost function"));
 
 		if (optionDecomposeProblem) {
 
