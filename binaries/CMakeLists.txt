@@ -14,5 +14,6 @@ define_module(marching_cubes    BINARY SOURCES marching_cubes.cpp    LINKS allso
 define_module(blobs             BINARY SOURCES blobs.cpp             LINKS allsopnet)
 define_module(create_cost_function BINARY SOURCES create_cost_function.cpp LINKS allsopnet)
 define_module(create_ted_conditions BINARY SOURCES create_ted_conditions.cpp LINKS allsopnet)
+define_module(create_svm_training_data BINARY SOURCES create_svm_training_data.cpp LINKS allsopnet)
 
 add_subdirectory(tests)
