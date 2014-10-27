@@ -145,10 +145,18 @@ int main(int optionc, char** optionv) {
 			const std::vector<SegmentHash>& flipPartners = flips[variables[i].first];
 
 			// write the varnum of the flip partners
-			foreach (SegmentHash hash, flipPartners)
-				conditionFile << hashToVarnum[hash] << " ";
+			foreach (SegmentHash hash, flipPartners) {
+
+				if (!hashToVarnum.count(hash))
+					std::cout << "WARNING: can not find variable number for segment with hash " << hash << std::endl;
+				else
+					conditionFile << hashToVarnum[hash] << " ";
+			}
+
 			conditionFile << std::endl;
 		}
+
+		std::cout << "(warinings about missing segments might be due to a limited scope of labels.txt: Some variables that get flipped in the big problem are not part of the small problem.)" << std::endl;
 
 	} catch (Exception& e) {
 
