@@ -16,5 +16,6 @@ define_module(create_cost_function BINARY SOURCES create_cost_function.cpp LINKS
 define_module(create_ted_conditions BINARY SOURCES create_ted_conditions.cpp LINKS allsopnet)
 define_module(create_svm_training_data BINARY SOURCES create_svm_training_data.cpp LINKS allsopnet)
 define_module(ted_linear_regression BINARY SOURCES ted_linear_regression.cpp LINKS allsopnet)
+define_module(create_weightvector_from_SvmOutput BINARY SOURCES create_weightvector_from_SvmOutput.cpp LINKS allsopnet)
 
 add_subdirectory(tests)
