@@ -3,21 +3,26 @@
 
 static logger::LogChannel idMapCreatorLog("idMapCreatorLog", "[IdMapCreator] ");
 
+util::ProgramOption optionDrawSkeletons(
+		util::_long_name        = "drawSkeletons",
+		util::_description_text = "Store all neuron id maps as skeletons instead of volumetric processes.");
+
 IdMapCreator::IdMapCreator():
 	_idMap(new ImageStack()) {
 
-	useReference = true;	
-	
-	registerInput(_reference, "reference");
-	
-	init();
+	_useReference = true;	
 
+	_drawSkeletons = optionDrawSkeletons;
+
+	registerInput(_reference, "reference");
+
+	init();
 }
 
 IdMapCreator::IdMapCreator(unsigned int numSections, unsigned int width, unsigned int height) :
 	_idMap(new ImageStack()) {
 
-	useReference = false;
+	_useReference = false;
 	
 	_numSections = numSections;
 	_width = width;
@@ -40,7 +45,7 @@ IdMapCreator::updateOutputs() {
 
 	boost::timer::auto_cpu_timer timer("\tIdMapCreator::updateOutputs():\t\t%ws\n");
 
-	if ( useReference ) { 
+	if ( _useReference ) { 
 		// get widht, height and size from reference image stack
 		_numSections = _reference->size();
 		_width  = _reference->width();
@@ -106,8 +111,17 @@ IdMapCreator::drawSlice(const Slice& slice, std::vector<boost::shared_ptr<Image>
 
 	unsigned int section = slice.getSection();
 
-	foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()){
+	if (_drawSkeletons) {
 
-		(*images[section])(pixel.x, pixel.y) = static_cast<float>(id);
+		util::point<unsigned int> center = slice.getComponent()->getCenter();
+
+		(*images[section])(center.x, center.y) = static_cast<float>(id);
+
+	} else {
+
+		foreach (const util::point<unsigned int>& pixel, slice.getComponent()->getPixels()){
+
+			(*images[section])(pixel.x, pixel.y) = static_cast<float>(id);
+		}
 	}
 }
