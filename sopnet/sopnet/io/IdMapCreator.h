@@ -29,11 +29,14 @@ private:
 	pipeline::Input<ImageStack>   _reference;
 	pipeline::Output<ImageStack>  _idMap;
 
-	bool useReference;
+	bool _useReference;
 
 	unsigned int _numSections;
 	unsigned int _width;
 	unsigned int _height;
+
+	// instead of drawing complete slices, draw only one pixel at their center
+	bool _drawSkeletons;
 };
 
 #endif // SOPNET_IO_ID_MAP_CREATOR_H__
