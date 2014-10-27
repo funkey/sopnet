@@ -47,10 +47,19 @@ int main(int optionc, char** optionv) {
 
 		double threshold;
 		std::vector<double> weights;
+		int numWeights = 0;
 
 		std::string line;
 		// Read file, line by line
 		while (std::getline(modelFile, line)) {
+
+			// This is the line that indicates how many weights there are.
+			if (line.find("highest feature index") != std::string::npos) {
+				std::stringstream numWeightsStream(line);
+				numWeightsStream >> numWeights;
+				// The number of actual weights allways seems to be two less than indicated.
+				numWeights = numWeights -2;
+			}
 
 			// Skip if not at threshold line
 			if (line.find("threshold") == std::string::npos) {
@@ -89,6 +98,11 @@ int main(int optionc, char** optionv) {
 					vector_index++;
 				}
 				weights.push_back(weight);
+				vector_index++;
+			}
+
+			while (vector_index < numWeights) {
+				weights.push_back(0);
 				vector_index++;
 			}
 		}
