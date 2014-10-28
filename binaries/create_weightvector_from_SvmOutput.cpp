@@ -18,6 +18,11 @@ util::ProgramOption optionModelFile(
 		util::_description_text = "A file that contains the svm model",
 		util::_default_value    = "model.dat");
 
+util::ProgramOption optionNormFile(
+		util::_long_name        = "normalisation",
+		util::_description_text = "A file that contains the feature normalisation information",
+		util::_default_value    = "svm_normalisation.txt");
+
 util::ProgramOption optionFeatureWeightsFile(
 		util::_long_name        = "out",
 		util::_description_text = "The file to store the weight vector in.",
@@ -107,9 +112,26 @@ int main(int optionc, char** optionv) {
 			}
 		}
 
+		// Open normalisation file
+		std::ifstream normFile(optionNormFile.as<std::string>());
+
+		std::vector<double> mins, maxs;
+
+		std::string normLine;
+		while (std::getline(normFile, normLine)) {
+
+			double min, max;
+			std::stringstream normStream(normLine);
+			normStream >> min;
+			normStream >> max;
+			mins.push_back(min);
+			maxs.push_back(max);
+		}
+
 		// Write out weights
 		for (unsigned int i = 0; i < weights.size(); i++) {
-			featureWeightsFile << weights[i] << std::endl;
+			double unnormalised_weight = ( weights[i] * (mins[i]-maxs[i]) ) + mins[i];
+			featureWeightsFile << unnormalised_weight << std::endl;
 		}
 
 	} catch (Exception& e) {

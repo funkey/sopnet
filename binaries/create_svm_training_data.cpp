@@ -28,6 +28,11 @@ util::ProgramOption optionSvmFile(
 		util::_description_text = "The file to store the svm training data in.",
 		util::_default_value    = "svm_training.txt");
 
+util::ProgramOption optionNormFile(
+		util::_long_name        = "outNorm",
+		util::_description_text = "The file to store the feature normalisation data in.",
+		util::_default_value    = "svm_normalisation.txt");
+
 int main(int optionc, char** optionv) {
 
 	try {
@@ -45,8 +50,45 @@ int main(int optionc, char** optionv) {
 		LOG_USER(logger::out) << "[main] starting..." << std::endl;
 
 		// open svm file
+		LOG_USER(logger::out) << "Opening file for writing" << std::endl;
 		std::ofstream svmFile(optionSvmFile.as<std::string>());
 
+		// Read features to compute normalisation
+		// After the next loop mins and maxs should contain the
+		// maximums and minimums for all features.
+		LOG_USER(logger::out) << "Reading features to compute minimums and maximus" << std::endl;
+		std::ifstream featuresFileNorm(optionFeatures.as<std::string>());
+		std::vector<double> mins(0);
+		std::vector<double> maxs(0);
+		std::string featureLineNorm;
+
+		while (std::getline(featuresFileNorm, featureLineNorm)) {
+
+			std::stringstream featureStreamNorm(featureLineNorm);
+			double f;
+			unsigned int featureNumber = 0;
+			while (featureStreamNorm >> f) {
+				// Make sure vector is large enough
+				if (mins.size() <= featureNumber)
+					mins.resize(featureNumber+1,0);
+				if (maxs.size() <= featureNumber)
+					maxs.resize(featureNumber+1,0);
+
+				// If appropriate set new minimum and maximum
+				if (f < mins[featureNumber])
+					mins[featureNumber] = f;
+				if (f > maxs[featureNumber])
+					maxs[featureNumber] = f;
+
+				featureNumber++;
+			}
+		}
+
+		std::ofstream normFile(optionNormFile.as<std::string>());
+		for (unsigned int i = 0; i < mins.size() && i < maxs.size(); i++)
+			normFile << mins[i] << " " << maxs[i] << std::endl;
+
+		LOG_USER(logger::out) << "Looping through labels and features to write out result" << std::endl;
 		// loop through labels and features file
 		std::ifstream labelsFile(optionLabels.as<std::string>());
 		std::ifstream featuresFile(optionFeatures.as<std::string>());
@@ -60,12 +102,16 @@ int main(int optionc, char** optionv) {
 			std::stringstream labelStream(labelLine);
 			labelStream >> label;
 
-			// get the features
+			// get the features and normalise them using mins and maxs from above
 			std::vector<double> features;
 			std::stringstream featureStream(featureLine);
 			double f;
-			while (featureStream >> f)
-				features.push_back(f);
+			int featureNumber = 0;
+			while (featureStream >> f) {
+				double f_norm = (f - mins[featureNumber]) / (maxs[featureNumber] - mins[featureNumber]);
+				features.push_back(f_norm);
+				featureNumber++;
+			}
 
 			// write a svm training line
 			svmFile << (label ? 1 : -1) << " ";
@@ -80,5 +126,3 @@ int main(int optionc, char** optionv) {
 		handleException(e, std::cerr);
 	}
 }
-
-
