@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sstream>
 #include <sopnet/segments/SegmentHash.h>
-#include <inference/LinearSolver.h>
+#include <inference/QuadraticSolver.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <util/exceptions.h>
@@ -20,6 +20,11 @@
 std::vector<double>                             tedNumbers;
 std::vector<std::set<unsigned int> >            tedConditions;
 std::map<unsigned int, std::set<unsigned int> > tedConditionsByVariable;
+
+util::ProgramOption optionRegularizerWeight(
+		util::_long_name        = "regularizerWeight",
+		util::_description_text = "Weight of the quadratic regularizer on the linear coefficients.",
+		util::_default_value    = 0);
 
 // read the TED number for each variable that we got by flipping it
 void
@@ -142,13 +147,19 @@ int main(int optionc, char** optionv) {
 		unsigned int numVariables = tedNumbers.size();
 
 		// create a linear solver
-		pipeline::Process<LinearSolver> solver;
+		pipeline::Process<QuadraticSolver> solver;
 
 		// create an objective
-		pipeline::Value<LinearObjective> objective(numVariables);
+		pipeline::Value<QuadraticObjective> objective(numVariables);
+
+		double regularizerWeight = optionRegularizerWeight;
+
+		if (regularizerWeight != 0)
+			for (unsigned int i = 0; i < numVariables; i++)
+				objective->setQuadraticCoefficient(i, i, regularizerWeight);
 
 		// create a configuration
-		pipeline::Value<LinearSolverParameters> parameters;
+		pipeline::Value<QuadraticSolverParameters> parameters;
 
 		// create constraints
 		pipeline::Value<LinearConstraints> constraints;
