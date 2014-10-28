@@ -252,6 +252,21 @@ public:
 	/**
 	 * Check whether the given segment is part of this set.
 	 */
+	bool contains(boost::shared_ptr<Segment> segment) {
+
+		if (boost::shared_ptr<EndSegment> end = boost::dynamic_pointer_cast<EndSegment>(segment))
+			return contains(end);
+		if (boost::shared_ptr<ContinuationSegment> continuation = boost::dynamic_pointer_cast<ContinuationSegment>(segment))
+			return contains(continuation);
+		if (boost::shared_ptr<BranchSegment> branch = boost::dynamic_pointer_cast<BranchSegment>(segment))
+			return contains(branch);
+
+		return false;
+	}
+
+	/**
+	 * Check whether the given segment is part of this set.
+	 */
 	bool contains(boost::shared_ptr<EndSegment>          end)          { return contains(getEnds(end->getInterSectionInterval()), end); }
 	bool contains(boost::shared_ptr<ContinuationSegment> continuation) { return contains(getContinuations(continuation->getInterSectionInterval()), continuation); }
 	bool contains(boost::shared_ptr<BranchSegment>       branch)       { return contains(getBranches(branch->getInterSectionInterval()), branch); }
