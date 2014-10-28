@@ -707,7 +707,15 @@ int main(int optionc, char** optionv) {
 
 			// open file for grid search results
 			std::ofstream gridSearchFile("grid_search.txt");
-			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: FP FN FS FM SUM" << std::endl;
+			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM NUM_CORR_SEGMENTS" << std::endl;
+
+			// get the gold standard and the reconstruction to compute the 
+			// number of correctly classified segments
+			pipeline::Value<Segments> goldStandard   = sopnet->getOutput("gold standard");
+			pipeline::Value<Segments> reconstruction = sopnet->getOutput("solution");
+			pipeline::Value<Segments> allSegments    = sopnet->getOutput("segments");
+
+			unsigned int numSegments = allSegments->size();
 
 			while (true) {
 
@@ -727,13 +735,23 @@ int main(int optionc, char** optionv) {
 				unsigned int fm = tedErrors->getNumMerges();
 				unsigned int sum = tedErrors->getNumErrors();
 
+				unsigned int numCorrectSegments = numSegments;
+				foreach (boost::shared_ptr<Segment> segment, reconstruction->getSegments())
+					if (!goldStandard->contains(segment))
+						numCorrectSegments--;
+				foreach (boost::shared_ptr<Segment> segment, goldStandard->getSegments())
+					if (!reconstruction->contains(segment))
+						numCorrectSegments--;
+
 				gridSearchFile
 						<< parameterString << ": "
 						<< fp << " "
 						<< fn << " "
 						<< fs << " "
 						<< fm << " "
-						<< sum << std::endl;
+						<< sum << " "
+						<< numCorrectSegments
+						<< std::endl;
 
 				if (!gridSearch->next())
 					break;
