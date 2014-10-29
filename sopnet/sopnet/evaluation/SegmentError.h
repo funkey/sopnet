@@ -28,10 +28,10 @@ private:
 		*_missclassified = 0;
 		foreach (boost::shared_ptr<Segment> segment, _reconstruction->getSegments())
 			if (!_goldStandard->contains(segment))
-				(*_missclassified)--;
+				(*_missclassified)++;
 		foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
 			if (!_reconstruction->contains(segment))
-				(*_missclassified)--;
+				(*_missclassified)++;
 		
 	}
 
