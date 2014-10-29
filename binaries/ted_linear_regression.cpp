@@ -115,14 +115,14 @@ readTEDconditions(std::string filename) {
 }
 
 void
-increase(LinearConstraint& constraint, unsigned int i) {
+increase(LinearConstraint& constraint, unsigned int i, double amount = 1.0) {
 
 	const std::map<unsigned int, double>& currentCoefs = constraint.getCoefficients();
 
 	if (!currentCoefs.count(i))
-		constraint.setCoefficient(i, 1);
+		constraint.setCoefficient(i, amount);
 	else
-		constraint.setCoefficient(i, currentCoefs.at(i) + 1);
+		constraint.setCoefficient(i, currentCoefs.at(i) + amount);
 }
 
 int main(int optionc, char** optionv) {
@@ -154,10 +154,6 @@ int main(int optionc, char** optionv) {
 
 		double regularizerWeight = optionRegularizerWeight;
 
-		if (regularizerWeight != 0)
-			for (unsigned int i = 0; i < numVariables; i++)
-				objective->setQuadraticCoefficient(i, i, regularizerWeight);
-
 		// create a configuration
 		pipeline::Value<QuadraticSolverParameters> parameters;
 
@@ -185,6 +181,9 @@ int main(int optionc, char** optionv) {
 				// add the ted number of this configuration to the constant b
 				b += tedNumbers[c];
 			}
+
+			// add the regularizer contribution
+			increase(constraint, i, regularizerWeight);
 
 			constraint.setRelation(Equal);
 			constraint.setValue(b);
