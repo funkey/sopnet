@@ -28,6 +28,7 @@
 #include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
+#include <sopnet/evaluation/SegmentError.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
@@ -707,15 +708,11 @@ int main(int optionc, char** optionv) {
 
 			// open file for grid search results
 			std::ofstream gridSearchFile("grid_search.txt");
-			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM NUM_CORR_SEGMENTS" << std::endl;
+			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM MISSCLASS_SEGMENTS" << std::endl;
 
-			// get the gold standard and the reconstruction to compute the 
-			// number of correctly classified segments
-			pipeline::Value<Segments> goldStandard   = sopnet->getOutput("gold standard");
-			pipeline::Value<Segments> reconstruction = sopnet->getOutput("solution");
-			pipeline::Value<Segments> allSegments    = sopnet->getOutput("segments");
-
-			unsigned int numSegments = allSegments->size();
+			boost::shared_ptr<SegmentError> segmentError = boost::make_shared<SegmentError>();
+			segmentError->setInput("gold standard", sopnet->getOutput("gold standard"));
+			segmentError->setInput("reconstruction", sopnet->getOutput("solution"));
 
 			while (true) {
 
@@ -728,20 +725,13 @@ int main(int optionc, char** optionv) {
 				tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
 
 				pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
+				pipeline::Value<unsigned int> missclassifiedSegments = segmentError->getOutput();
 
 				unsigned int fp = tedErrors->getNumFalsePositives();
 				unsigned int fn = tedErrors->getNumFalseNegatives();
 				unsigned int fs = tedErrors->getNumSplits();
 				unsigned int fm = tedErrors->getNumMerges();
 				unsigned int sum = tedErrors->getNumErrors();
-
-				unsigned int numCorrectSegments = numSegments;
-				foreach (boost::shared_ptr<Segment> segment, reconstruction->getSegments())
-					if (!goldStandard->contains(segment))
-						numCorrectSegments--;
-				foreach (boost::shared_ptr<Segment> segment, goldStandard->getSegments())
-					if (!reconstruction->contains(segment))
-						numCorrectSegments--;
 
 				gridSearchFile
 						<< parameterString << ": "
@@ -750,7 +740,7 @@ int main(int optionc, char** optionv) {
 						<< fs << " "
 						<< fm << " "
 						<< sum << " "
-						<< numCorrectSegments
+						<< *missclassifiedSegments
 						<< std::endl;
 
 				if (!gridSearch->next())

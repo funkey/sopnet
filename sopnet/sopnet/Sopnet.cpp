@@ -131,6 +131,82 @@ Sopnet::Sopnet(
 	registerOutput(_goldStandardProvider->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
+
+	// set input-output dependencies
+	setDependency(_rawSections, _reconstructor->getOutput());
+	setDependency(_rawSections, _objectiveGenerator->getOutput("objective"));
+	setDependency(_rawSections, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_rawSections, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_membranes, _reconstructor->getOutput());
+	setDependency(_membranes, _objectiveGenerator->getOutput("objective"));
+	setDependency(_membranes, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_membranes, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_neuronSlices, _reconstructor->getOutput());
+	setDependency(_neuronSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_neuronSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_neuronSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_neuronSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_neuronSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_neuronSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_neuronSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_neuronSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_neuronSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_neuronSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_neuronSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_neuronSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_neuronSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_neuronSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_neuronSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_mitochondriaSlices, _reconstructor->getOutput());
+	setDependency(_mitochondriaSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_mitochondriaSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_mitochondriaSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_mitochondriaSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_mitochondriaSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_mitochondriaSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_mitochondriaSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_mitochondriaSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_mitochondriaSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_mitochondriaSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_mitochondriaSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_mitochondriaSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_mitochondriaSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_mitochondriaSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_mitochondriaSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_synapseSlices, _reconstructor->getOutput());
+	setDependency(_synapseSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_synapseSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_synapseSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_synapseSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_synapseSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_synapseSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_synapseSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_synapseSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_synapseSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_synapseSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_synapseSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_synapseSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_synapseSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_synapseSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_synapseSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_groundTruth, _groundTruthExtractor->getOutput("ground truth segments"));
+	setDependency(_groundTruth, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_groundTruth, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_groundTruth, _segmentRfTrainer->getOutput("random forest"));
+
+	setDependency(_segmentationCostFunctionParameters, _reconstructor->getOutput());
+	setDependency(_segmentationCostFunctionParameters, _objectiveGenerator->getOutput("objective"));
+
+	setDependency(_priorCostFunctionParameters, _reconstructor->getOutput());
+	setDependency(_priorCostFunctionParameters, _objectiveGenerator->getOutput("objective"));
+
+	setDependency(_forceExplanation, _reconstructor->getOutput());
+	setDependency(_forceExplanation, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_forceExplanation, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_forceExplanation, _segmentRfTrainer->getOutput("random forest"));
 }
 
 void
