@@ -1,6 +1,7 @@
 #include <pipeline/Process.h>
 #include <util/Logger.h>
 #include <sopnet/exceptions.h>
+#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/segments/EndSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
@@ -11,7 +12,8 @@ static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[GoldS
 
 GoldStandardCostFunction::GoldStandardCostFunction() :
 	_costFunction(new costs_function_type(boost::bind(&GoldStandardCostFunction::costs, this, _1, _2, _3, _4))),
-	_overlap(false, false) {
+	_overlap(false, false),
+	_gtFromSkeletons(optionGroundTruthFromSkeletons) {
 
 	registerInput(_groundTruth, "ground truth");
 	registerOutput(_costFunction, "cost function");
@@ -99,6 +101,9 @@ GoldStandardCostFunction::getOverlappingGroundTruthSegments(const Segment& segme
 double
 GoldStandardCostFunction::getDefaultCosts(const Segment& segment) {
 
+	if (_gtFromSkeletons)
+		return 0;
+
 	return sumSizes(segment.getSlices());
 }
 
@@ -116,11 +121,16 @@ GoldStandardCostFunction::getMatchingCosts(const Segment& segment, const Segment
 	foreach (boost::shared_ptr<Segment> gtSegment, segments.getSegments())
 		addLeftRightSlices(*gtSegment, bLeftSlices, bRightSlices);
 
-	int leftSum  = sumSizes(aLeftSlices)  + sumSizes(bLeftSlices);
-	int rightSum = sumSizes(aRightSlices) + sumSizes(bRightSlices);
-
 	int leftOverlap  = overlap(aLeftSlices,  bLeftSlices);
 	int rightOverlap = overlap(aRightSlices, bRightSlices);
+
+	// if ground truth is skeleton, number of different pixels don't mean 
+	// anything -- in this case, return the number of connected skeleton nodes
+	if (_gtFromSkeletons)
+		return -(std::min(leftOverlap, rightOverlap));
+
+	int leftSum  = sumSizes(aLeftSlices)  + sumSizes(bLeftSlices);
+	int rightSum = sumSizes(aRightSlices) + sumSizes(bRightSlices);
 
 	// number of different pixels - overlap
 	// = sum - 3*overlap

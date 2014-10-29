@@ -97,7 +97,7 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// create ground-truth extractor
-		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(-1, -1, false, optionStartFromScratch);
+		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(optionStartFromScratch.as<bool>());
 		groundTruthExtractor->setInput(groundTruthReader->getOutput());
 
 		// create split-merge tool

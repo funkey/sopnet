@@ -111,7 +111,7 @@ int main(int optionc, char** optionv) {
 		pipeline::Process<ImageStackDirectoryReader> rawReader(optionRaw.as<std::string>());
 
 		// create ground-truth extractor
-		pipeline::Process<GroundTruthExtractor> groundTruthExtractor(-1, -1, false);
+		pipeline::Process<GroundTruthExtractor> groundTruthExtractor;
 		groundTruthExtractor->setInput(groundTruthReader->getOutput());
 
 		// create neurons extractor

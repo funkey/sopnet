@@ -85,6 +85,9 @@ private:
 	pipeline::Output<costs_function_type> _costFunction;
 
 	Overlap _overlap;
+
+	// was the ground-truth extracted from skeletons?
+	bool _gtFromSkeletons;
 };
 
 #endif // SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__

@@ -2,6 +2,7 @@
 #include "FeaturesPainter.h"
 
 FeaturesPainter::FeaturesPainter(unsigned int numFeatures) :
+	_groundTruthScore(0),
 	_cellX(200.0),
 	_cellY(20.0),
 	_textPaintersDirty(true),
