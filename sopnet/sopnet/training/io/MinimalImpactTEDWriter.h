@@ -53,6 +53,10 @@ private:
 	// The gold standard with respect to which to measure the TED
 	pipeline::Input<Segments> 			_goldStandard;
 
+	// The ground truth, which can be used instead of the gold standard to 
+	// compute the TED (see option optionUseDirectGroundTruth)
+	pipeline::Input<ImageStack> _groundTruth;
+
 	// The linear constraints that describe the relationship among the segments
 	pipeline::Input<LinearConstraints> 		_linearConstraints;
 

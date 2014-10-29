@@ -26,6 +26,11 @@ util::ProgramOption optionWriteTedConditions(
 		util::_description_text = "Instead of computing the TED coefficients, write TED conditions to file minimalImapctTEDconditions.txt: "
 		                          "These are the individual solutions that are used to compute the TED for a pinned segment variable.");
 
+util::ProgramOption optionUseDirectGroundTruth(
+		util::_module           = "sopnet.training",
+		util::_long_name        = "useDirectGroundTruth",
+		util::_description_text = "For the computation of the TED coefficients, use the ground-truth directly instead of the gold-standard.");
+
 static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalImapctTED] ");
 
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
@@ -41,6 +46,7 @@ MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 	{
 	
 	registerInput(_goldStandard, "gold standard");
+	registerInput(_groundTruth, "ground truth");
 	registerInput(_linearConstraints, "linear constraints");
 	registerInput(_segments, "segments");
 	registerInput(_reference, "reference");
@@ -207,7 +213,6 @@ MinimalImpactTEDWriter::initPipeline() {
 	_linearSolver = boost::make_shared<LinearSolver>();
 
 	_gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
-	_gsimCreator = boost::make_shared<IdMapCreator>();
 
 	// -- Gold Standard --> Hamming Cost Function
 	_hammingCostFunction->setInput("gold standard", _goldStandard);
@@ -226,11 +231,16 @@ MinimalImpactTEDWriter::initPipeline() {
 
 	// -- gold standard --> NeuronExtractor [gold standard]
 	_gsNeuronExtractor->setInput("segments", _goldStandard);
-	// NeuronExtractor [gold standard] ----> IdMapCreator [gold standard]
-	_gsimCreator->setInput("neurons", _gsNeuronExtractor->getOutput("neurons"));
-	// reference image stack for width height and size of output image stacks
-	// -- reference --> IdMapCreator
-	_gsimCreator->setInput("reference", _reference);
+
+	if (!optionUseDirectGroundTruth) {
+
+		_gsimCreator = boost::make_shared<IdMapCreator>();
+		// NeuronExtractor [gold standard] ----> IdMapCreator [gold standard]
+		_gsimCreator->setInput("neurons", _gsNeuronExtractor->getOutput("neurons"));
+		// reference image stack for width height and size of output image stacks
+		// -- reference --> IdMapCreator
+		_gsimCreator->setInput("reference", _reference);
+	}
 }
 
 void
@@ -259,7 +269,10 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 		pipeline::Process<SubStackSelector> goldStandardSelector(minSection, maxSection);
 		pipeline::Process<SubStackSelector> reconstructionSelector(minSection, maxSection);
 
-		goldStandardSelector->setInput(_gsimCreator->getOutput("id map"));
+		if (optionUseDirectGroundTruth)
+			goldStandardSelector->setInput(_groundTruth);
+		else
+			goldStandardSelector->setInput(_gsimCreator->getOutput("id map"));
 		reconstructionSelector->setInput(_rimCreator->getOutput("id map"));
 
 		goldStandard   = goldStandardSelector->getOutput();
@@ -267,7 +280,10 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 
 	} else {
 
-		goldStandard = _gsimCreator->getOutput("id map");
+		if (optionUseDirectGroundTruth)
+			goldStandard = _groundTruth;
+		else
+			goldStandard = _gsimCreator->getOutput("id map");
 		reconstruction = _rimCreator->getOutput("id map");
 	}
 

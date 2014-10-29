@@ -475,6 +475,7 @@ Sopnet::createMinimalImpactTEDPipeline() {
 
 	// Set inputs to MinimalImpactTEDWriter
 	_mitWriter->setInput("gold standard", _goldStandardProvider->getOutput("gold standard"));
+	_mitWriter->setInput("ground truth", _groundTruth);
 	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 	_mitWriter->setInput("reference", _rawSections);
