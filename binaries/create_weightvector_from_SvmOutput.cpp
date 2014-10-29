@@ -128,10 +128,27 @@ int main(int optionc, char** optionv) {
 			maxs.push_back(max);
 		}
 
+		// Threshold after unnormalising
+		double threshold_subterm = 0;
+		for (unsigned int i = 0; i < weights.size(); i++) {
+			threshold_subterm += weights[i] / (maxs[i] - mins[i]) * maxs[i];
+		}
+		double threshold_unnorm = threshold - threshold_subterm;
+
+		// Compute unnormalised weights
+		std::vector<double> unnormalised_weights(weights.size(),0);
+		for (unsigned int i = 0; i < weights.size(); i++) {
+			unnormalised_weights[i] = weights[i] / (maxs[i] - mins[i]);
+		}
+
+		// Encode threshold in the last three weights
+		for (unsigned int i = weights.size() - 3; i < weights.size(); i++) {
+			unnormalised_weights[i] += threshold_unnorm;
+		}
+
 		// Write out weights
 		for (unsigned int i = 0; i < weights.size(); i++) {
-			double unnormalised_weight = ( weights[i] * (mins[i]-maxs[i]) ) + mins[i];
-			featureWeightsFile << unnormalised_weight << std::endl;
+			featureWeightsFile << unnormalised_weights[i] << std::endl;
 		}
 
 	} catch (Exception& e) {
