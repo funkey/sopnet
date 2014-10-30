@@ -399,11 +399,11 @@ TolerantEditDistance::findErrors() {
 		}
 	}
 
-	LOG_USER(tedlog) << "error counts from Errors data structure:" << std::endl;
-	LOG_USER(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
-	LOG_USER(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
-	LOG_USER(tedlog) << "num false positives: " << _errors->getNumFalsePositives() << std::endl;
-	LOG_USER(tedlog) << "num false negatives: " << _errors->getNumFalseNegatives() << std::endl;
+	//LOG_USER(tedlog) << "error counts from Errors data structure:" << std::endl;
+	//LOG_USER(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
+	//LOG_USER(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
+	//LOG_USER(tedlog) << "num false positives: " << _errors->getNumFalsePositives() << std::endl;
+	//LOG_USER(tedlog) << "num false negatives: " << _errors->getNumFalseNegatives() << std::endl;
 
 	// fill error location image stack
 
