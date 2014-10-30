@@ -193,7 +193,7 @@ TolerantEditDistance::findBestCellLabels() {
 		foreach (float l, cell.getAlternativeLabels()) {
 
 			unsigned int ind = var++;
-			_alternativeIndicators.push_back(ind);
+			_alternativeIndicators.push_back(std::make_pair(ind, cell.size()));
 			assignIndicatorVariable(ind, cellIndex, cell.getGroundTruthLabel(), l);
 		}
 
@@ -348,14 +348,11 @@ TolerantEditDistance::findBestCellLabels() {
 	// the least changes -- therefore, we add a small value for each of those 
 	// variables that can not sum up to one and therefor does not change the 
 	// number of splits and merges
-	foreach (unsigned int ind, _alternativeIndicators)
-		objective->setCoefficient(ind, 1.0/(_numCells + 1));
-	// if we have to change a label, slightly prefer the background -- this 
-	// makes merges with background and false positives look nicer
-	if (_haveBackgroundLabel) {
-		foreach (unsigned int ind, getIndicatorsByRec(_recBackgroundLabel))
-			objective->setCoefficient(ind, -0.5/(_numCells + 1));
-	}
+	unsigned int ind;
+	size_t cellSize;
+	double volumeSize = _width*_height*_depth;
+	foreach (boost::tie(ind, cellSize), _alternativeIndicators)
+		objective->setCoefficient(ind, static_cast<double>(cellSize)/(volumeSize + 1));
 	objective->setSense(Minimize);
 
 	// solve

@@ -144,11 +144,6 @@ DistanceToleranceFunction::enumerateCellLabels(const ImageStack& recLabels) {
 
 		std::set<float> alternativeLabels = getAlternativeLabels(cell, neighborhood, recLabels);
 
-		// every cell that is small enough to be relabelled is allowed to change
-		// to background label
-		if (_haveBackgroundLabel)
-			alternativeLabels.insert(_backgroundLabel);
-
 		LOG_ALL(distancetolerancelog) << "; can map to ";
 
 		// for each alternative label

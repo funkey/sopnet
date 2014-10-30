@@ -85,8 +85,8 @@ private:
 	// the number of indicator variables in the ILP
 	unsigned int _numIndicatorVars;
 
-	// indicators for alternative cell labels
-	std::vector<unsigned int> _alternativeIndicators;
+	// indicators for alternative cell labels, and the corresponding cell size
+	std::vector<std::pair<unsigned int, size_t> > _alternativeIndicators;
 
 	// the ILP variables for the number of splits and merges
 	unsigned int _splits;
