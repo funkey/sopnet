@@ -150,6 +150,11 @@ util::ProgramOption optionGridSearch(
 		_long_name        = "gridSearch",
 		_description_text = "Preform a grid search.");
 
+util::ProgramOption optionGridSearchWithTed(
+		_module           = "sopnet.inference",
+		_long_name        = "gridSearchWithTed",
+		_description_text = "Report the TED error for the grid search.");
+
 util::ProgramOption optionForceExplanation(
 		util::_module           = "sopnet.inference",
 		util::_long_name        = "forceExplanation",
@@ -708,7 +713,10 @@ int main(int optionc, char** optionv) {
 
 			// open file for grid search results
 			std::ofstream gridSearchFile("grid_search.txt");
-			gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM MISSCLASS_SEGMENTS" << std::endl;
+			if (optionGridSearchWithTed)
+				gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM MISSCLASS_SEGMENTS" << std::endl;
+			else
+				gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: MISSCLASS_SEGMENTS" << std::endl;
 
 			boost::shared_ptr<SegmentError> segmentError = boost::make_shared<SegmentError>();
 			segmentError->setInput("gold standard", sopnet->getOutput("gold standard"));
@@ -720,27 +728,35 @@ int main(int optionc, char** optionv) {
 
 				LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
 
-				boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
-				tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
-				tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
-
-				pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
-				pipeline::Value<unsigned int> missclassifiedSegments = segmentError->getOutput();
-
-				unsigned int fp = tedErrors->getNumFalsePositives();
-				unsigned int fn = tedErrors->getNumFalseNegatives();
-				unsigned int fs = tedErrors->getNumSplits();
-				unsigned int fm = tedErrors->getNumMerges();
-				unsigned int sum = tedErrors->getNumErrors();
-
 				gridSearchFile
-						<< parameterString << ": "
-						<< fp << " "
-						<< fn << " "
-						<< fs << " "
-						<< fm << " "
-						<< sum << " "
-						<< *missclassifiedSegments
+						<< parameterString << ":";
+
+				if (optionGridSearchWithTed) {
+
+					boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
+					tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
+					tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
+
+					pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
+
+					unsigned int fp = tedErrors->getNumFalsePositives();
+					unsigned int fn = tedErrors->getNumFalseNegatives();
+					unsigned int fs = tedErrors->getNumSplits();
+					unsigned int fm = tedErrors->getNumMerges();
+					unsigned int sum = tedErrors->getNumErrors();
+
+					gridSearchFile
+							<< " "
+							<< fp << " "
+							<< fn << " "
+							<< fs << " "
+							<< fm << " "
+							<< sum;
+				}
+
+				pipeline::Value<unsigned int> missclassifiedSegments = segmentError->getOutput();
+				gridSearchFile
+						<< " " << *missclassifiedSegments
 						<< std::endl;
 
 				if (!gridSearch->next())
@@ -748,7 +764,6 @@ int main(int optionc, char** optionv) {
 			}
 
 			LOG_USER(out) << "[main] grid search done." << std::endl;
-
 		}
 
 		if (optionSaveResultDirectory) {
