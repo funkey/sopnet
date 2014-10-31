@@ -15,133 +15,107 @@ NeuronExtractor::updateOutputs() {
 	if (!_neurons)
 		_neurons = new SegmentTrees();
 
-	_slices.clear();
-	_neuronIds.clear();
-	_neurons->clear();
+	prepareSliceMaps();
 
-	LOG_ALL(neuronextractorlog) << "processing " << _segments->getEnds().size() << " ends" << std::endl;
+	findConnectedSlices();
 
-	// collect all end slices
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds())
-		addSlice(end->getSlice()->getId());
-
-	LOG_ALL(neuronextractorlog) << "processing " << _segments->getContinuations().size() << " continuations" << std::endl;
-
-	// identify slices belonging to the same neuron
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
-
-		mergeSlices(
-				continuation->getSourceSlice()->getId(),
-				continuation->getTargetSlice()->getId());
-	}
-
-	LOG_ALL(neuronextractorlog) << "processing " << _segments->getBranches().size() << " branches" << std::endl;
-
-	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
-
-		mergeSlices(
-				branch->getSourceSlice()->getId(),
-				branch->getTargetSlice1()->getId());
-
-		mergeSlices(
-				branch->getSourceSlice()->getId(),
-				branch->getTargetSlice2()->getId());
-	}
-
-	LOG_ALL(neuronextractorlog) << "found " << _slices.size() << " slices" << std::endl;
-
-	// assign a neuron id to each slice
-
-	unsigned int sliceId;
-	std::set<unsigned int> sameNeuronSlices;
-
-	unsigned int neuronId = 0;
-
-	foreach (boost::tie(sliceId, sameNeuronSlices), _slices) {
-
-		bool alreadyAssigned = false;
-
-		foreach (unsigned int id, sameNeuronSlices) {
-
-			if (!_neuronIds.count(id)) {
-
-				_neuronIds[id] = neuronId;
-
-			} else {
-
-				alreadyAssigned = true;
-				break;
-			}
-		}
-
-		if (!alreadyAssigned)
-			neuronId++;
-	}
-
-	// sort segments according to the neuron their slices belong to
-
-	// prepare neurons
-	std::vector<boost::shared_ptr<SegmentTree> > neurons(neuronId);
-	for (unsigned int i = 0; i < neuronId; i++)
-		neurons[i] = boost::make_shared<SegmentTree>();
-
-	// collect all end segments
-	foreach (boost::shared_ptr<EndSegment> end, _segments->getEnds()) {
-
-		unsigned int id = _neuronIds[end->getSlice()->getId()];
-
-		neurons[id]->add(end);
-	}
-
-	// collect all continuation segments
-	foreach (boost::shared_ptr<ContinuationSegment> continuation, _segments->getContinuations()) {
-
-		unsigned int id = _neuronIds[continuation->getSourceSlice()->getId()];
-
-		neurons[id]->add(continuation);
-	}
-
-	// collect all branch segments
-	foreach (boost::shared_ptr<BranchSegment> branch, _segments->getBranches()) {
-
-		unsigned int id = _neuronIds[branch->getSourceSlice()->getId()];
-
-		neurons[id]->add(branch);
-	}
-
-	// finally, put found neurons in output data structure
-
-	foreach (boost::shared_ptr<SegmentTree> neuron, neurons)
-		_neurons->add(neuron);
+	createNeuronsFromSlices();
 
 	LOG_ALL(neuronextractorlog) << "found " << _neurons->size() << " neurons" << std::endl;
 }
 
 void
-NeuronExtractor::addSlice(unsigned int slice) {
+NeuronExtractor::prepareSliceMaps() {
 
-	_slices[slice].insert(slice);
+	_sliceSegments.clear();
+	_sliceNeighbors.clear();
+	_unvisitedSlices.clear();
+
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
+
+		std::vector<boost::shared_ptr<Slice> > sources = segment->getSourceSlices();
+		std::vector<boost::shared_ptr<Slice> > targets = segment->getTargetSlices();
+
+		foreach (boost::shared_ptr<Slice> slice, sources) {
+
+			_sliceSegments[slice->getId()].push_back(segment);
+			_unvisitedSlices.insert(slice->getId());
+		}
+
+		foreach (boost::shared_ptr<Slice> slice, targets) {
+
+			_sliceSegments[slice->getId()].push_back(segment);
+			_unvisitedSlices.insert(slice->getId());
+		}
+
+		foreach (boost::shared_ptr<Slice> source, sources)
+			foreach (boost::shared_ptr<Slice> target, sources) {
+
+				_sliceNeighbors[source->getId()].push_back(target->getId());
+				_sliceNeighbors[target->getId()].push_back(source->getId());
+			}
+	}
 }
 
 void
-NeuronExtractor::mergeSlices(unsigned int slice1, unsigned int slice2) {
+NeuronExtractor::findConnectedSlices() {
 
-	// make sure we have partner sets for the given slices
-	addSlice(slice1);
-	addSlice(slice2);
+	_connectedSlices.clear();
 
-	// get all partners of slice2 and add them to the partners of slice1
-	foreach (unsigned int id, _slices[slice2])
-		_slices[slice1].insert(id);
+	while (!_unvisitedSlices.empty()) {
 
-	// slice1 is now the only one who knows all its partners
+		// create a new component
+		std::set<unsigned int> connectedSlices;
 
-	// the partners of slice1 might not know about slice2 or any of its partners
+		// pick a unvisited slice and add it to the stack
+		unsigned int seedSlice = *(_unvisitedSlices.begin());
+		_boundarySlices.push(seedSlice);
 
-	// for each partner of slice1, add all partners of slice1 to the partner list
-	foreach (unsigned int id, _slices[slice1]) {
+		// while there are slices on the boundary stack
+		while (!_boundarySlices.empty()) {
 
-		foreach (unsigned int partner, _slices[slice1])
-			_slices[id].insert(partner);
+			// get a boundary slice
+			unsigned int currentSlice = _boundarySlices.top();
+			_boundarySlices.pop();
+
+			// add it to the current component
+			connectedSlices.insert(currentSlice);
+
+			// mark it as visited
+			_unvisitedSlices.erase(currentSlice);
+
+			// add all non-visted neighbors of it to the boundary stack
+			foreach (unsigned int neighbor, _sliceNeighbors[currentSlice])
+				if (_unvisitedSlices.count(neighbor))
+					_boundarySlices.push(neighbor);
+		}
+
+		_connectedSlices.push_back(connectedSlices);
+	}
+}
+
+void
+NeuronExtractor::createNeuronsFromSlices() {
+
+	_neurons->clear();
+
+	foreach (const std::set<unsigned int>& connectedSlices, _connectedSlices) {
+
+		boost::shared_ptr<SegmentTree> segmentTree = boost::make_shared<SegmentTree>();
+
+		foreach (unsigned int slice, connectedSlices) {
+
+			foreach (boost::shared_ptr<Segment> segment, _sliceSegments[slice]) {
+
+				if (boost::shared_ptr<EndSegment> end = boost::dynamic_pointer_cast<EndSegment>(segment))
+					segmentTree->add(end);
+				if (boost::shared_ptr<ContinuationSegment> continuation = boost::dynamic_pointer_cast<ContinuationSegment>(segment))
+					segmentTree->add(continuation);
+				if (boost::shared_ptr<BranchSegment> branch = boost::dynamic_pointer_cast<BranchSegment>(segment))
+					segmentTree->add(branch);
+			}
+		}
+
+		_neurons->add(segmentTree);
 	}
 }
