@@ -678,6 +678,66 @@ int main(int optionc, char** optionv) {
 			}
 		} // !optionHeadless
 
+		if (optionHeadless && optionShowErrors && groundTruthReader) {
+
+			// Compute errors even if headless is on
+			LOG_USER(out) << "Computing HEADLESS ERRORS:" << std::endl;
+
+			// TED
+			boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
+			tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
+			tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
+
+			pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
+
+			// Make a copy to avoid double computation of tolerant edit distance
+			// Come back later and fix this.
+			Errors tedErrors_copy = *tedErrors;
+
+			unsigned int fp = tedErrors_copy.getNumFalsePositives();
+			unsigned int fn = tedErrors_copy.getNumFalseNegatives();
+			unsigned int fs = tedErrors_copy.getNumSplits();
+			unsigned int fm = tedErrors_copy.getNumMerges();
+			unsigned int sum = tedErrors_copy.getNumErrors();
+
+			LOG_USER(out) << "TED ERRORS:" << std::endl;
+			LOG_USER(out) << "fp: " << fp << std::endl;
+			LOG_USER(out) << "fn: " << fn << std::endl;
+			LOG_USER(out) << "fs: " << fs << std::endl;
+			LOG_USER(out) << "fm: " << fm << std::endl;
+			LOG_USER(out) << "sum: " << sum << std::endl;
+
+			// AED
+			resultEvaluator->setInput("result", sopnet->getOutput("solution"));
+			resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+
+			pipeline::Value<SliceErrors> aedErrors = resultEvaluator->getOutput();
+			SliceErrors aedErrors_copy = *aedErrors;
+
+			unsigned int a_fp = aedErrors_copy.numFalsePositives();
+			unsigned int a_fn = aedErrors_copy.numFalseNegatives();
+			unsigned int a_fs = aedErrors_copy.numFalseSplits();
+			unsigned int a_fm = aedErrors_copy.numFalseMerges();
+			unsigned int a_sum = aedErrors_copy.total();
+
+			LOG_USER(out) << "AED ERRORS:" << std::endl;
+			LOG_USER(out) << "fp: " << a_fp << std::endl;
+			LOG_USER(out) << "fn: " << a_fn << std::endl;
+			LOG_USER(out) << "fs: " << a_fs << std::endl;
+			LOG_USER(out) << "fm: " << a_fm << std::endl;
+			LOG_USER(out) << "sum: " << a_sum << std::endl;
+
+			// VOI
+			variationOfInformation->setInput("stack 1", groundTruthReader->getOutput());
+			variationOfInformation->setInput("stack 2", resultIdMapCreator->getOutput());
+
+			pipeline::Value<double> voiError = variationOfInformation->getOutput();
+			double voi = *voiError;
+			LOG_USER(out) << "VOI: " << voi << std::endl;
+
+
+		}
+
 		if (optionTraining) {
 
 			boost::shared_ptr<RandomForestHdf5Writer> rfWriter = boost::make_shared<RandomForestHdf5Writer>("./segment_rf.hdf");
