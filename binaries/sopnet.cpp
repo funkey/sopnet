@@ -678,7 +678,7 @@ int main(int optionc, char** optionv) {
 			}
 		} // !optionHeadless
 
-		if (optionHeadless && optionShowErrors && groundTruthReader) {
+		if (optionHeadless && optionShowErrors && groundTruthReader && !optionGridSearch) {
 
 			// Compute errors even if headless is on
 			LOG_USER(out) << "Computing HEADLESS ERRORS:" << std::endl;
