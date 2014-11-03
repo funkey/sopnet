@@ -49,7 +49,7 @@ NeuronExtractor::prepareSliceMaps() {
 		}
 
 		foreach (boost::shared_ptr<Slice> source, sources)
-			foreach (boost::shared_ptr<Slice> target, sources) {
+			foreach (boost::shared_ptr<Slice> target, targets) {
 
 				_sliceNeighbors[source->getId()].push_back(target->getId());
 				_sliceNeighbors[target->getId()].push_back(source->getId());
