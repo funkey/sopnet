@@ -25,6 +25,7 @@ installed using the default Ubuntu repositories:
 
   • libboost-all-dev (make sure libboost-timer-dev is included)
   • liblapack-dev
+  • libfftw3-dev
   • libx11-dev
   • libx11-xcb-dev
   • libxcb1-dev
