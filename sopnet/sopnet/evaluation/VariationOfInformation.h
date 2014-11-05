@@ -2,8 +2,8 @@
 #define SOPNET_EVALUATION_VARIATION_OF_INFORMATION_H__
 
 #include <pipeline/all.h>
-
 #include <imageprocessing/ImageStack.h>
+#include "VariationOfInformationErrors.h"
 
 class VariationOfInformation : public pipeline::SimpleProcessNode<> {
 
@@ -22,8 +22,7 @@ private:
 	pipeline::Input<ImageStack> _stack1;
 	pipeline::Input<ImageStack> _stack2;
 
-	// variation of information
-	pipeline::Output<double>    _variationOfInformation;
+	pipeline::Output<VariationOfInformationErrors> _errors;
 
 	// label probabilities
 	LabelProb      _p1;

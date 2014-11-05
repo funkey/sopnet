@@ -6,7 +6,7 @@
 #include <pipeline/Value.h>
 #include <inference/Solution.h>
 #include "LocalToleranceFunction.h"
-#include "Errors.h"
+#include "TolerantEditDistanceErrors.h"
 #include "Cell.h"
 
 class TolerantEditDistance : public pipeline::SimpleProcessNode<> {
@@ -58,7 +58,7 @@ private:
 	pipeline::Output<ImageStack> _mergeLocations;
 	pipeline::Output<ImageStack> _fpLocations;
 	pipeline::Output<ImageStack> _fnLocations;
-	pipeline::Output<Errors>     _errors;
+	pipeline::Output<TolerantEditDistanceErrors> _errors;
 
 	// the local tolerance function to use
 	LocalToleranceFunction* _toleranceFunction;

@@ -149,7 +149,7 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		if (!optionWriteTedConditions) {
 
-			pipeline::Value<Errors> errors = _teDistance->getOutput("errors");
+			pipeline::Value<TolerantEditDistanceErrors> errors = _teDistance->getOutput("errors");
 			int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
 
 			outfile << "c" << varNum << " ";

@@ -1,9 +1,10 @@
-#ifndef SOPNET_EVALUATION_SLICEERRORS_H__
-#define SOPNET_EVALUATION_SLICEERRORS_H__
+#ifndef SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_ERRORS_H__
+#define SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_ERRORS_H__
 
 #include <pipeline/all.h>
+#include "Errors.h"
 
-class SliceErrors : public pipeline::Data {
+class AnisotropicEditDistanceErrors : public Errors {
 
 public:
 
@@ -33,9 +34,9 @@ public:
 	const std::set<std::pair<int, int> >& falseSplits() const { return _falseSplits; }
 	const std::set<std::pair<int, int> >& falseMerges() const { return _falseMerges; }
 
-	SliceErrors operator+(const SliceErrors& other) const {
+	AnisotropicEditDistanceErrors operator+(const AnisotropicEditDistanceErrors& other) const {
 
-		SliceErrors result;
+		AnisotropicEditDistanceErrors result;
 
 		result.falsePositives() = falsePositives();
 		result.falseNegatives() = falseNegatives();
@@ -49,6 +50,34 @@ public:
 		return result;
 	}
 
+	std::string errorHeader() { return "AED_FP\tAED_FN\tAED_FS\tAED_FM\tAED_SUM"; }
+
+	std::string errorString() {
+
+		std::stringstream ss;
+		ss
+				<< numFalsePositives() << "\t"
+				<< numFalseNegatives() << "\t"
+				<< numFalseSplits() << "\t"
+				<< numFalseMerges() << "\t"
+				<< total();
+
+		return ss.str();
+	}
+
+	std::string humanReadableErrorString() {
+
+		std::stringstream ss;
+		ss
+				<<   "AED FP: " << numFalsePositives()
+				<< ", AED FN: " << numFalseNegatives()
+				<< ", AED FS: " << numFalseSplits()
+				<< ", AED FM: " << numFalseMerges()
+				<< ", AED Total: " << total();
+
+		return ss.str();
+	}
+
 private:
 
 	// the slice ids of the false positives and negatives
@@ -60,7 +89,7 @@ private:
 	std::set<std::pair<int, int> > _falseMerges;
 };
 
-std::ostream& operator<<(std::ostream& os, const SliceErrors& sliceErrors);
+std::ostream& operator<<(std::ostream& os, const AnisotropicEditDistanceErrors& sliceErrors);
 
-#endif // SOPNET_EVALUATION_SLICEERRORS_H__
+#endif // SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_ERRORS_H__
 

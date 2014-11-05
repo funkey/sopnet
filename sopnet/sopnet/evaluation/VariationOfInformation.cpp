@@ -4,12 +4,11 @@
 
 logger::LogChannel variationofinformationlog("variationofinformationlog", "[ResultEvaluator] ");
 
-VariationOfInformation::VariationOfInformation() :
-	_variationOfInformation(new double(0)) {
+VariationOfInformation::VariationOfInformation() {
 
 	registerInput(_stack1, "stack 1");
 	registerInput(_stack2, "stack 2");
-	registerOutput(_variationOfInformation, "variation of information");
+	registerOutput(_errors, "errors");
 }
 
 void
@@ -58,15 +57,17 @@ VariationOfInformation::updateOutputs() {
 
 	// compute information
 
-	double H0 = 0.0;
+	// H(stack 1)
 	double H1 = 0.0;
+	// H(stack 2)
+	double H2 = 0.0;
 	double I  = 0.0;
 
 	for(typename LabelProb::const_iterator i = _p1.begin(); i != _p1.end(); i++)
-		H0 -= i->second * std::log(i->second);
+		H1 -= i->second * std::log(i->second);
 
 	for(typename LabelProb::const_iterator i = _p2.begin(); i != _p2.end(); i++)
-		H1 -= i->second * std::log(i->second);
+		H2 -= i->second * std::log(i->second);
 
 	for(typename JointLabelProb::const_iterator i = _p12.begin(); i != _p12.end(); i++) {
 
@@ -80,11 +81,22 @@ VariationOfInformation::updateOutputs() {
 		I += pjk * std::log( pjk / (pj*pk) );
 	}
 
+	// H(stack 1, stack2)
+	double H12 = H1 + H2 - I;
+
 	// set output
+	_errors = new VariationOfInformationErrors();
 
-	*_variationOfInformation = H0 + H1 - 2.0 * I;
+	// We compare stack1 to stack2. Thus, the split entropy represents the 
+	// number of splits from stack1 to stack2, and the merge entropy the number 
+	// of merges from stack1 to stack2.
+	//
+	// H(stack 2|stack 1) = H(stack 1, stack 2) - H(stack 1)
+	_errors->setSplitEntropy(H12 - H1);
+	// H(stack 1|stack 2) = H(stack 1, stack 2) - H(stack 2)
+	_errors->setMergeEntropy(H12 - H2);
 
-	// dump to output (useful for redirection into file)
-	LOG_USER(variationofinformationlog) << "# VOI" << std::endl;
-	LOG_USER(variationofinformationlog) << (*_variationOfInformation) << std::endl;
+	LOG_DEBUG(variationofinformationlog)
+			<< "sum of conditional entropies is " << _errors->getEntropy()
+			<< ", which should be equal to " << (H1 + H2 - 2.0*I) << std::endl;
 }

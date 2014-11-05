@@ -50,7 +50,7 @@ TolerantEditDistance::TolerantEditDistance() :
 	_mergeLocations(new ImageStack()),
 	_fpLocations(new ImageStack()),
 	_fnLocations(new ImageStack()),
-	_errors(_haveBackgroundLabel ? new Errors(_gtBackgroundLabel, _recBackgroundLabel) : new Errors()) {
+	_errors(_haveBackgroundLabel ? new TolerantEditDistanceErrors(_gtBackgroundLabel, _recBackgroundLabel) : new TolerantEditDistanceErrors()) {
 
 	if (optionHaveBackgroundLabel) {
 		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;
@@ -411,7 +411,7 @@ TolerantEditDistance::findErrors() {
 
 	// all cells that split the ground truth
 	float gtLabel;
-	typedef Errors::cell_map_t::mapped_type::value_type mapping_t;
+	typedef TolerantEditDistanceErrors::cell_map_t::mapped_type::value_type mapping_t;
 	foreach (gtLabel, _errors->getSplitLabels())
 		foreach (const mapping_t& cells, _errors->getSplits(gtLabel))
 			foreach (unsigned int cellIndex, cells.second)

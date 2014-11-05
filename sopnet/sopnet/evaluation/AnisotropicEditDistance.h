@@ -1,13 +1,13 @@
-#ifndef SOPNET_EVALUATION_RESULT_EVALUATOR_H__
-#define SOPNET_EVALUATION_RESULT_EVALUATOR_H__
+#ifndef SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_H__
+#define SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_H__
 
 #include <pipeline/all.h>
 
 #include <sopnet/features/Overlap.h>
 #include <sopnet/segments/Segments.h>
-#include "SliceErrors.h"
+#include "AnisotropicEditDistanceErrors.h"
 
-class ResultEvaluator : public pipeline::SimpleProcessNode<> {
+class AnisotropicEditDistance : public pipeline::SimpleProcessNode<> {
 
 	typedef std::vector<std::pair<int, int> > Mapping;
 	typedef std::vector<Mapping>              Mappings;
@@ -19,7 +19,7 @@ public:
 	 *             The minimal overlap between a result slice and a ground-truth 
 	 *             slice to consider them for being the same.
 	 */
-	ResultEvaluator(double minOverlap = 0.5);
+	AnisotropicEditDistance(double minOverlap = 0.5);
 
 private:
 
@@ -53,16 +53,16 @@ private:
 			std::vector<boost::shared_ptr<Slice> >& resultSlices,
 			unsigned int                            numSlice);
 
-	SliceErrors getSliceErrors(
+	AnisotropicEditDistanceErrors getSliceErrors(
 			const Mapping& mapping,
 			const Mapping& previousMapping,
 			unsigned int section);
 
-	SliceErrors getIntraSliceErrors(
+	AnisotropicEditDistanceErrors getIntraSliceErrors(
 			const Mapping& mapping,
 			unsigned int section);
 
-	SliceErrors getInterSliceErrors(
+	AnisotropicEditDistanceErrors getInterSliceErrors(
 			const Mapping& mapping,
 			const Mapping& previousMapping,
 			unsigned int section);
@@ -70,7 +70,7 @@ private:
 	pipeline::Input<Segments> _result;
 	pipeline::Input<Segments> _groundTruth;
 
-	pipeline::Output<SliceErrors> _sliceErrors;
+	pipeline::Output<AnisotropicEditDistanceErrors> _errors;
 
 	unsigned int _numSections;
 
@@ -85,5 +85,5 @@ private:
 	std::vector<std::set<std::pair<int, int> > > _groundTruthLinks;
 };
 
-#endif // SOPNET_EVALUATION_RESULT_EVALUATOR_H__
+#endif // SOPNET_EVALUATION_ANISOTROPIC_EDIT_DISTANCE_H__
 

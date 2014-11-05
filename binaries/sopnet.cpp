@@ -26,10 +26,7 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
 #include <sopnet/evaluation/GroundTruthExtractor.h>
-#include <sopnet/evaluation/ResultEvaluator.h>
-#include <sopnet/evaluation/VariationOfInformation.h>
-#include <sopnet/evaluation/SegmentError.h>
-#include <sopnet/evaluation/TolerantEditDistance.h>
+#include <sopnet/evaluation/ErrorReport.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
 #include <sopnet/gui/NeuronsView.h>
@@ -149,11 +146,6 @@ util::ProgramOption optionGridSearch(
 		_module           = "sopnet.inference",
 		_long_name        = "gridSearch",
 		_description_text = "Preform a grid search.");
-
-util::ProgramOption optionGridSearchWithTed(
-		_module           = "sopnet.inference",
-		_long_name        = "gridSearchWithTed",
-		_description_text = "Report the TED error for the grid search.");
 
 util::ProgramOption optionForceExplanation(
 		util::_module           = "sopnet.inference",
@@ -422,13 +414,16 @@ int main(int optionc, char** optionv) {
 
 		// create result evaluator and variation of information if needed by 
 		// anyone
-		boost::shared_ptr<ResultEvaluator>        resultEvaluator;
-		boost::shared_ptr<VariationOfInformation> variationOfInformation;
+		boost::shared_ptr<ErrorReport>            errorReport;
 
 		if (optionShowErrors || optionGridSearch) {
 
-			resultEvaluator        = boost::make_shared<ResultEvaluator>();
-			variationOfInformation = boost::make_shared<VariationOfInformation>();
+			errorReport = boost::make_shared<ErrorReport>();
+
+			errorReport->setInput("ground truth", groundTruthReader->getOutput());
+			errorReport->setInput("ground truth segments", sopnet->getOutput("ground truth segments"));
+			errorReport->setInput("gold standard segments", sopnet->getOutput("gold standard"));
+			errorReport->setInput("reconstruction segments", sopnet->getOutput("solution"));
 		}
 
 		// create a neuron extractor
@@ -555,7 +550,7 @@ int main(int optionc, char** optionv) {
 				boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
 
 				if (optionShowErrors)
-					resultView->setInput("slice errors", resultEvaluator->getOutput());
+					resultView->setInput("aed errors", errorReport->getOutput("aed errors"));
 
 				resultView->setInput(sopnet->getOutput("solution"));
 				rotateView->setInput(resultView->getOutput());
@@ -571,7 +566,7 @@ int main(int optionc, char** optionv) {
 				boost::shared_ptr<NamedView>        namedView         = boost::make_shared<NamedView>("Ground-truth:");
 
 				//if (optionShowErrors)
-					//groundTruthView->setInput("slice errors", resultEvaluator->getOutput());
+					//groundTruthView->setInput("aed errors", errorReport->getOutput("aed errors"));
 
 				gtNeuronExtractor->setInput(sopnet->getOutput("ground truth segments"));
 				groundTruthView->setInput(gtNeuronExtractor->getOutput());
@@ -616,7 +611,7 @@ int main(int optionc, char** optionv) {
 
 				neuronsView->setInput(neuronExtractor->getOutput());
 				if (optionShowErrors)
-					neuronsView->setInput("slice errors", resultEvaluator->getOutput());
+					neuronsView->setInput("aed errors", errorReport->getOutput("aed errors"));
 				namedView->setInput(neuronsView->getOutput());
 
 				controlContainer->addInput(namedView->getOutput());
@@ -629,22 +624,10 @@ int main(int optionc, char** optionv) {
 
 				if (optionShowResult) {
 
-					boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
-					tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
-					tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
-
 					boost::shared_ptr<ErrorsView> errorsView = boost::make_shared<ErrorsView>();
 					boost::shared_ptr<NamedView>  namedView  = boost::make_shared<NamedView>("Errors:");
 
-					resultEvaluator->setInput("result", sopnet->getOutput("solution"));
-					resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
-
-					variationOfInformation->setInput("stack 1", groundTruthReader->getOutput());
-					variationOfInformation->setInput("stack 2", resultIdMapCreator->getOutput());
-
-					errorsView->setInput("slice errors", resultEvaluator->getOutput());
-					errorsView->setInput("variation of information", variationOfInformation->getOutput());
-					errorsView->setInput("tolerant edit distance errors", tolerantEditDistance->getOutput("errors"));
+					errorsView->setInput("error report", errorReport->getOutput("human readable error report"));
 					namedView->setInput(errorsView->getOutput());
 
 					resultContainer->addInput(namedView->getOutput());
@@ -653,24 +636,16 @@ int main(int optionc, char** optionv) {
 				if (optionShowGoldStandard) {
 
 					// gold standard error
-					pipeline::Process<NamedView>       goldStandardNamedView("Error bounds with current hypotheses:");
-					pipeline::Process<ResultEvaluator> goldStandardEvaluator;
-					pipeline::Process<ErrorsView>      goldStandardErrorsView;
+					pipeline::Process<NamedView>   goldStandardNamedView("Error bounds with current hypotheses:");
+					pipeline::Process<ErrorReport> goldStandardErrorReport;
+					pipeline::Process<ErrorsView>  goldStandardErrorsView;
 
-					goldStandardEvaluator->setInput("result", sopnet->getOutput("gold standard"));
-					goldStandardEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
+					goldStandardErrorReport->setInput("ground truth", groundTruthReader->getOutput());
+					goldStandardErrorReport->setInput("ground truth segments", sopnet->getOutput("ground truth segments"));
+					goldStandardErrorReport->setInput("gold standard segments", sopnet->getOutput("gold standard"));
+					goldStandardErrorReport->setInput("reconstruction segments", sopnet->getOutput("gold standard"));
 
-					boost::shared_ptr<IdMapCreator>         gsIdMapCreator       = boost::make_shared<IdMapCreator>();
-					boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
-
-					gsIdMapCreator->setInput("neurons", gsNeuronExtractor->getOutput());
-					gsIdMapCreator->setInput("reference", rawSectionsReader->getOutput());
-
-					tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
-					tolerantEditDistance->setInput("reconstruction", gsIdMapCreator->getOutput());
-
-					goldStandardErrorsView->setInput("slice errors", goldStandardEvaluator->getOutput());
-					goldStandardErrorsView->setInput("tolerant edit distance errors", tolerantEditDistance->getOutput("errors"));
+					goldStandardErrorsView->setInput("error report", goldStandardErrorReport->getOutput("human readable error report"));
 					goldStandardNamedView->setInput(goldStandardErrorsView->getOutput());
 
 					resultContainer->addInput(goldStandardNamedView->getOutput());
@@ -683,59 +658,11 @@ int main(int optionc, char** optionv) {
 			// Compute errors even if headless is on
 			LOG_USER(out) << "Computing HEADLESS ERRORS:" << std::endl;
 
-			// TED
-			boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
-			tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
-			tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
+			pipeline::Value<std::string> reportHeader = errorReport->getOutput("error report header");
+			pipeline::Value<std::string> reportLine = errorReport->getOutput("error report");
 
-			pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
-
-			// Make a copy to avoid double computation of tolerant edit distance
-			// Come back later and fix this.
-			Errors tedErrors_copy = *tedErrors;
-
-			unsigned int fp = tedErrors_copy.getNumFalsePositives();
-			unsigned int fn = tedErrors_copy.getNumFalseNegatives();
-			unsigned int fs = tedErrors_copy.getNumSplits();
-			unsigned int fm = tedErrors_copy.getNumMerges();
-			unsigned int sum = tedErrors_copy.getNumErrors();
-
-			LOG_USER(out) << "TED ERRORS:" << std::endl;
-			LOG_USER(out) << "fp: " << fp << std::endl;
-			LOG_USER(out) << "fn: " << fn << std::endl;
-			LOG_USER(out) << "fs: " << fs << std::endl;
-			LOG_USER(out) << "fm: " << fm << std::endl;
-			LOG_USER(out) << "sum: " << sum << std::endl;
-
-			// AED
-			resultEvaluator->setInput("result", sopnet->getOutput("solution"));
-			resultEvaluator->setInput("ground truth", sopnet->getOutput("ground truth segments"));
-
-			pipeline::Value<SliceErrors> aedErrors = resultEvaluator->getOutput();
-			SliceErrors aedErrors_copy = *aedErrors;
-
-			unsigned int a_fp = aedErrors_copy.numFalsePositives();
-			unsigned int a_fn = aedErrors_copy.numFalseNegatives();
-			unsigned int a_fs = aedErrors_copy.numFalseSplits();
-			unsigned int a_fm = aedErrors_copy.numFalseMerges();
-			unsigned int a_sum = aedErrors_copy.total();
-
-			LOG_USER(out) << "AED ERRORS:" << std::endl;
-			LOG_USER(out) << "fp: " << a_fp << std::endl;
-			LOG_USER(out) << "fn: " << a_fn << std::endl;
-			LOG_USER(out) << "fs: " << a_fs << std::endl;
-			LOG_USER(out) << "fm: " << a_fm << std::endl;
-			LOG_USER(out) << "sum: " << a_sum << std::endl;
-
-			// VOI
-			variationOfInformation->setInput("stack 1", groundTruthReader->getOutput());
-			variationOfInformation->setInput("stack 2", resultIdMapCreator->getOutput());
-
-			pipeline::Value<double> voiError = variationOfInformation->getOutput();
-			double voi = *voiError;
-			LOG_USER(out) << "VOI: " << voi << std::endl;
-
-
+			LOG_USER(out) << *reportHeader << std::endl;
+			LOG_USER(out) << *reportLine   << std::endl;
 		}
 
 		if (optionTraining) {
@@ -771,16 +698,14 @@ int main(int optionc, char** optionv) {
 			sopnet->setInput("prior cost parameters", gridSearch->getOutput("prior cost parameters"));
 			sopnet->setInput("segmentation cost parameters", gridSearch->getOutput("segmentation cost parameters"));
 
+			pipeline::Value<std::string> reportHeader = errorReport->getOutput("error report header");
+			pipeline::Value<std::string> reportLine   = errorReport->getOutput("error report");
+
 			// open file for grid search results
 			std::ofstream gridSearchFile("grid_search.txt");
-			if (optionGridSearchWithTed)
-				gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: TED_FP TED_FN TED_FS TED_FM TED_SUM MISSCLASS_SEGMENTS" << std::endl;
-			else
-				gridSearchFile << "# prior_end prior_continuation prior_branch seg_weights seg_potts seg_fore: MISSCLASS_SEGMENTS" << std::endl;
-
-			boost::shared_ptr<SegmentError> segmentError = boost::make_shared<SegmentError>();
-			segmentError->setInput("gold standard", sopnet->getOutput("gold standard"));
-			segmentError->setInput("reconstruction", sopnet->getOutput("solution"));
+			gridSearchFile
+					<< "# end\tcont\tbranch\tseg_w\tseg_p\tseg_f:\t"
+					<< *reportHeader << std::endl;
 
 			while (true) {
 
@@ -788,36 +713,7 @@ int main(int optionc, char** optionv) {
 
 				LOG_USER(out) << "[main] performing grid search with " << parameterString << std::endl;
 
-				gridSearchFile
-						<< parameterString << ":";
-
-				if (optionGridSearchWithTed) {
-
-					boost::shared_ptr<TolerantEditDistance> tolerantEditDistance = boost::make_shared<TolerantEditDistance>();
-					tolerantEditDistance->setInput("ground truth", groundTruthReader->getOutput());
-					tolerantEditDistance->setInput("reconstruction", resultIdMapCreator->getOutput());
-
-					pipeline::Value<Errors> tedErrors = tolerantEditDistance->getOutput("errors");
-
-					unsigned int fp = tedErrors->getNumFalsePositives();
-					unsigned int fn = tedErrors->getNumFalseNegatives();
-					unsigned int fs = tedErrors->getNumSplits();
-					unsigned int fm = tedErrors->getNumMerges();
-					unsigned int sum = tedErrors->getNumErrors();
-
-					gridSearchFile
-							<< " "
-							<< fp << " "
-							<< fn << " "
-							<< fs << " "
-							<< fm << " "
-							<< sum;
-				}
-
-				pipeline::Value<unsigned int> missclassifiedSegments = segmentError->getOutput();
-				gridSearchFile
-						<< " " << *missclassifiedSegments
-						<< std::endl;
+				gridSearchFile << parameterString << "\t" << *reportLine << std::endl;
 
 				if (!gridSearch->next())
 					break;

@@ -6,7 +6,7 @@
 #include <gui/Keys.h>
 #include <gui/KeySignals.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/evaluation/SliceErrors.h>
+#include <sopnet/evaluation/AnisotropicEditDistanceErrors.h>
 #include <sopnet/segments/Segments.h>
 #include "SegmentsPainter.h"
 
@@ -24,7 +24,7 @@ private:
 
 	pipeline::Input<Segments>    _segments;
 	pipeline::Input<ImageStack>  _rawSections;
-	pipeline::Input<SliceErrors> _sliceErrors;
+	pipeline::Input<AnisotropicEditDistanceErrors> _sliceErrors;
 
 	pipeline::Output<SegmentsPainter> _painter;
 

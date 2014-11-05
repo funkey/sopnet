@@ -27,15 +27,15 @@ public:
 
 		return
 				boost::lexical_cast<std::string>(_priorCostFunctionParameters->priorEnd) +
-				std::string(" ") +
+				std::string("\t") +
 				boost::lexical_cast<std::string>(_priorCostFunctionParameters->priorContinuation) +
-				std::string(" ") +
+				std::string("\t") +
 				boost::lexical_cast<std::string>(_priorCostFunctionParameters->priorBranch) +
-				std::string(" ") +
+				std::string("\t") +
 				boost::lexical_cast<std::string>(_segmentationCostFunctionParameters->weight) +
-				std::string(" ") +
+				std::string("\t") +
 				boost::lexical_cast<std::string>(_segmentationCostFunctionParameters->weightPotts) +
-				std::string(" ") +
+				std::string("\t") +
 				boost::lexical_cast<std::string>(_segmentationCostFunctionParameters->priorForeground);
 	}
 
