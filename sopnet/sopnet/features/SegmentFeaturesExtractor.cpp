@@ -2,6 +2,12 @@
 #include "GeometryFeatureExtractor.h"
 #include "HistogramFeatureExtractor.h"
 #include "TypeFeatureExtractor.h"
+#include <util/ProgramOptions.h>
+
+util::ProgramOption optionSquareFeatures(
+		util::_module           = "sopnet.features",
+		util::_long_name        = "squareFeatures",
+		util::_description_text = "Add the square of each feature to the feature vector.");
 
 logger::LogChannel segmentfeaturesextractorlog("segmentfeaturesextractorlog", "[SegmentFeaturesExtractor] ");
 
@@ -60,11 +66,23 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 			_allFeatures->addName(name);
 		}
 
+		if (optionSquareFeatures) {
+
+			foreach (const std::string& name, features->getNames()) {
+
+				LOG_ALL(segmentfeaturesextractorlog) << "adding name " << name << std::endl;
+				_allFeatures->addName(name + "^2");
+			}
+		}
+
 		if (_allFeatures->size() == 0) {
 
 			LOG_ALL(segmentfeaturesextractorlog) << "initialising all features with " << features->size() << " feature vectors from current feature group" << std::endl;
 
 			unsigned int numFeatures = (features->size() > 0  ? (*features)[0].size() : 0);
+
+			if (optionSquareFeatures)
+				numFeatures *= 2;
 
 			_allFeatures->resize(features->size(), numFeatures);
 
@@ -72,6 +90,12 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 			foreach (const std::vector<double>& feature, *features) {
 
 				std::copy(feature.begin(), feature.end(), (*_allFeatures)[i].begin());
+
+				// add the squares
+				if (optionSquareFeatures)
+					for (unsigned int j = 0; j < feature.size(); j++)
+						(*_allFeatures)[i][j + feature.size()] = feature[j]*feature[j];
+
 				i++;
 			}
 
@@ -83,11 +107,16 @@ SegmentFeaturesExtractor::FeaturesAssembler::updateOutputs() {
 			foreach (const std::vector<double>& feature, *features) {
 
 				unsigned int prevSize = (*_allFeatures)[i].size();
-				unsigned int newSize  = prevSize + feature.size();
+				unsigned int newSize  = prevSize + feature.size()*(optionSquareFeatures ? 2 : 1);
 
 				(*_allFeatures)[i].resize(newSize);
 
 				std::copy(feature.begin(), feature.end(), (*_allFeatures)[i].begin() + prevSize);
+
+				// add the squares
+				if (optionSquareFeatures)
+					for (unsigned int j = 0; j < feature.size(); j++)
+						(*_allFeatures)[i][j + feature.size() + prevSize] = feature[j]*feature[j];
 
 				i++;
 			}
