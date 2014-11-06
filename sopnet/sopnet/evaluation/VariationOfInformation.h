@@ -28,6 +28,9 @@ private:
 	LabelProb      _p1;
 	LabelProb      _p2;
 	JointLabelProb _p12;
+
+	// do not count statistics for pixels that belong to the background
+	bool _ignoreBackground;
 };
 
 #endif // SOPNET_EVALUATION_VARIATION_OF_INFORMATION_H__

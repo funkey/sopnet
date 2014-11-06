@@ -1,10 +1,17 @@
 #include <util/Logger.h>
 #include <util/exceptions.h>
+#include <util/ProgramOptions.h>
 #include "VariationOfInformation.h"
+
+util::ProgramOption optionVoiIgnoreBackground(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "voiIgnoreBackground",
+		util::_description_text = "For the computation of the VOI, do not consider background pixels in the ground truth.");
 
 logger::LogChannel variationofinformationlog("variationofinformationlog", "[ResultEvaluator] ");
 
-VariationOfInformation::VariationOfInformation() {
+VariationOfInformation::VariationOfInformation() :
+		_ignoreBackground(optionVoiIgnoreBackground.as<bool>()) {
 
 	registerInput(_stack1, "stack 1");
 	registerInput(_stack2, "stack 2");
@@ -39,6 +46,12 @@ VariationOfInformation::updateOutputs() {
 		Image::iterator j2 = (*i2)->begin();
 
 		for (; j1 != (*i1)->end(); j1++, j2++) {
+
+			if (_ignoreBackground && (*j1 == 0 || *j2 == 0)) {
+
+				n--;
+				continue;
+			}
 
 			_p1[*j1]++;
 			_p2[*j2]++;

@@ -1,10 +1,17 @@
 #include <util/Logger.h>
 #include <util/exceptions.h>
+#include <util/ProgramOptions.h>
 #include "RandIndex.h"
+
+util::ProgramOption optionRandIgnoreBackground(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "randIgnoreBackground",
+		util::_description_text = "For the computation of the RAND, do not consider background pixels in the ground truth.");
 
 logger::LogChannel randindexlog("randindexlog", "[ResultEvaluator] ");
 
-RandIndex::RandIndex() {
+RandIndex::RandIndex() :
+		_ignoreBackground(optionRandIgnoreBackground.as<bool>()) {
 
 	registerInput(_stack1, "stack 1");
 	registerInput(_stack2, "stack 2");
@@ -54,7 +61,7 @@ RandIndex::updateOutputs() {
 }
 
 size_t
-RandIndex::getNumAgreeingPairs(const ImageStack& stack1, const ImageStack& stack2, size_t numLocations) {
+RandIndex::getNumAgreeingPairs(const ImageStack& stack1, const ImageStack& stack2, size_t& numLocations) {
 
 	// Implementation following algorith by Bjoern Andres:
 	//
@@ -79,6 +86,12 @@ RandIndex::getNumAgreeingPairs(const ImageStack& stack1, const ImageStack& stack
 		Image::iterator i2 = (*image2)->begin();
 
 		for (; i1 != (*image1)->end(); i1++, i2++) {
+
+			if (_ignoreBackground && (*i1 == 0 || *i2 == 0)) {
+
+				numLocations--;
+				continue;
+			}
 
 			c[std::make_pair(*i1, *i2)]++;
 			a[*i1]++;

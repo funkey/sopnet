@@ -1,4 +1,7 @@
 #include "ErrorReport.h"
+#include <vigra/seededregiongrowing.hxx>
+#include <vigra/distancetransform.hxx>
+#include <imageprocessing/io/ImageStackDirectoryWriter.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/io/IdMapCreator.h>
 #include <util/ProgramOptions.h>
@@ -28,6 +31,11 @@ util::ProgramOption optionReportHamming(
 		util::_module           = "sopnet.evaluation",
 		util::_long_name        = "reportHamming",
 		util::_description_text = "Compute the Hamming distance to the gold-standard for the error report.");
+
+util::ProgramOption optionGrowSlices(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "growSlices",
+		util::_description_text = "For the computation of VOI and RAND, grow the reconstruction slices until no background label is present anymore.");
 
 logger::LogChannel errorreportlog("errorreportlog", "[ErrorReport] ");
 
@@ -85,15 +93,27 @@ ErrorReport::updateOutputs() {
 	pipeline::Process<NeuronExtractor> neuronExtractor;
 	pipeline::Process<IdMapCreator>    idMapCreator;
 
+	pipeline::Process<> voiRandIdMapProvider;
+
+	if (optionGrowSlices) {
+
+		voiRandIdMapProvider = pipeline::Process<GrowSlices>();
+		voiRandIdMapProvider->setInput(idMapCreator->getOutput());
+
+	} else {
+
+		voiRandIdMapProvider = idMapCreator;
+	}
+
 	neuronExtractor->setInput(_reconstruction);
 	idMapCreator->setInput("neurons", neuronExtractor->getOutput());
 	idMapCreator->setInput("reference", _groundTruthIdMap);
 
 	_voi->setInput("stack 1", _groundTruthIdMap);
-	_voi->setInput("stack 2", idMapCreator->getOutput());
+	_voi->setInput("stack 2", voiRandIdMapProvider->getOutput());
 
 	_rand->setInput("stack 1", _groundTruthIdMap);
-	_rand->setInput("stack 2", idMapCreator->getOutput());
+	_rand->setInput("stack 2", voiRandIdMapProvider->getOutput());
 
 	_ted->setInput("ground truth", _groundTruthIdMap);
 	_ted->setInput("reconstruction", idMapCreator->getOutput());
@@ -107,4 +127,38 @@ ErrorReport::updateOutputs() {
 	_pipelineSetup = true;
 
 	LOG_DEBUG(errorreportlog) << "internal pipeline set up" << std::endl;
+}
+
+void
+ErrorReport::GrowSlices::updateOutputs() {
+
+	if (!_grown)
+		_grown = new ImageStack();
+	else
+		_grown->clear();
+
+	foreach (boost::shared_ptr<Image> image, *_stack) {
+
+		boost::shared_ptr<Image> grown = boost::make_shared<Image>(image->width(), image->height());
+		*grown = *image;
+
+		// perform Euclidean distance transform
+		vigra::MultiArray<2, float> dist(image->width(), image->height());
+		vigra::distanceTransform(*image, dist, 0, 2);
+
+		float min, max;
+		image->minmax(&min, &max);
+
+		// init statistics functor
+		vigra::ArrayOfRegionStatistics<vigra::SeedRgDirectValueFunctor<float> > stats(max);
+
+		// grow regions
+		vigra::seededRegionGrowing(dist, *grown, *grown, stats);
+
+		_grown->add(grown);
+	}
+
+	pipeline::Process<ImageStackDirectoryWriter> writer("result_grown");
+	writer->setInput(_grown.getSharedPointer());
+	writer->write();
 }

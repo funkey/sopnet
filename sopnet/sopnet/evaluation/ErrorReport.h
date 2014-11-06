@@ -62,6 +62,28 @@ private:
 		pipeline::Output<std::string> _humanReadableReport;
 	};
 
+	/**
+	 * Grows all slices in each image of a given stack until no more background 
+	 * pixels are present.
+	 */
+	class GrowSlices : public pipeline::SimpleProcessNode<> {
+
+	public:
+
+		GrowSlices() {
+
+			registerInput(_stack, "stack");
+			registerOutput(_grown, "grown");
+		}
+
+	private:
+
+		void updateOutputs();
+
+		pipeline::Input<ImageStack>  _stack;
+		pipeline::Output<ImageStack> _grown;
+	};
+
 	void updateOutputs();
 
 	pipeline::Input<ImageStack> _groundTruthIdMap;
