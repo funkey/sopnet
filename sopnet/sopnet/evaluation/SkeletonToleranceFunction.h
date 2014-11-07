@@ -10,6 +10,16 @@
  */
 class SkeletonToleranceFunction : public DistanceToleranceFunction {
 
+public:
+
+	SkeletonToleranceFunction(
+			float distanceThreshold,
+			float backgroundLabel = 0.0) :
+		DistanceToleranceFunction(
+				distanceThreshold,
+				true, /* have background label */
+				backgroundLabel) {}
+
 private:
 
 	// for the skeleton criterion, each cell is allowed to be relabeled

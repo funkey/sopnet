@@ -5,6 +5,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <vigra/multi_labeling.hxx>
 
+#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <inference/LinearConstraints.h>
 #include <inference/LinearObjective.h>
 #include <inference/LinearSolver.h>
@@ -14,6 +15,7 @@
 #include <util/ProgramOptions.h>
 #include "TolerantEditDistance.h"
 #include "DistanceToleranceFunction.h"
+#include "SkeletonToleranceFunction.h"
 
 logger::LogChannel tedlog("tedlog", "[TolerantEditDistance] ");
 
@@ -42,7 +44,7 @@ util::ProgramOption optionReconstructionBackgroundLabel(
 		util::_default_value    = 0.0);
 
 TolerantEditDistance::TolerantEditDistance() :
-	_haveBackgroundLabel(optionHaveBackgroundLabel),
+	_haveBackgroundLabel(optionHaveBackgroundLabel || optionGroundTruthFromSkeletons),
 	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
 	_recBackgroundLabel(optionReconstructionBackgroundLabel),
 	_correctedReconstruction(new ImageStack()),
@@ -68,7 +70,10 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerOutput(_fnLocations, "false negatives");
 	registerOutput(_errors, "errors");
 
-	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
+	if (optionGroundTruthFromSkeletons)
+		_toleranceFunction = new SkeletonToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _recBackgroundLabel);
+	else
+		_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
 }
 
 TolerantEditDistance::~TolerantEditDistance() {
