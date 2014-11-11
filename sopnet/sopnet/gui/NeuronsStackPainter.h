@@ -62,6 +62,11 @@ public:
 	void showSliceIds(bool show);
 
 	/**
+	 * Show lines connecting the centers of the slices.
+	 */
+	void showSkeletons(bool show);
+
+	/**
 	 * Set the transparency of the neurons to draw.
 	 */
 	void setAlpha(double alpha) { _alpha = alpha; }
@@ -159,6 +164,9 @@ private:
 
 	// show slice ids
 	bool _showSliceIds;
+
+	// show lines and boxes
+	bool _showSkeletons;
 
 	// alpha value of the slices
 	double _alpha;

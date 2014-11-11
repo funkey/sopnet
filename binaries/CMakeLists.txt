@@ -8,7 +8,7 @@ define_module(median_filter     BINARY SOURCES median_filter.cpp     LINKS image
 define_module(edit_distance     BINARY SOURCES edit_distance.cpp     LINKS allsopnet)
 define_module(grow              BINARY SOURCES grow.cpp              LINKS imageprocessing gui)
 define_module(shrink            BINARY SOURCES shrink.cpp            LINKS imageprocessing gui)
-define_module(viewer            BINARY SOURCES viewer.cpp            LINKS imageprocessing gui)
+define_module(viewer            BINARY SOURCES viewer.cpp            LINKS allsopnet)
 define_module(analyze_neurons   BINARY SOURCES analyze_neurons.cpp       LINKS allsopnet)
 define_module(marching_cubes    BINARY SOURCES marching_cubes.cpp    LINKS allsopnet)
 define_module(blobs             BINARY SOURCES blobs.cpp             LINKS allsopnet)
