@@ -19,13 +19,23 @@ util::ProgramOption optionLabels(
 
 util::ProgramOption optionTedCoefficientFile(
 		util::_long_name        = "coefficients",
-		util::_description_text = "A file that contains TED coefficients, one per line: [varnum] [coeff] # [hash] [misc]. The important pieces for this script are [coeff] and [hash].",
+		util::_description_text = "A file that contains TED coefficients, one per line: [varnum] [coeff] # [hash] [gs] [fs] [fm] [fp] [fn].",
 		util::_default_value    = "ted_coefficients.txt");
 
 util::ProgramOption optionCostFunctionFile(
 		util::_long_name        = "out",
 		util::_description_text = "The file to store the coefficients in.",
 		util::_default_value    = "cost_function.txt");
+
+util::ProgramOption optionWeightSplits(
+		util::_long_name        = "weightSplits",
+		util::_description_text = "The factor that split errors get multiplied with",
+		util::_default_value    = 1);
+
+util::ProgramOption optionWeightMerges(
+		util::_long_name        = "weightMerges",
+		util::_description_text = "The factor that merge errors get multiplied with",
+		util::_default_value    = 1);
 
 /**
  * Read the coefficients of each segment from the given file.
@@ -65,7 +75,26 @@ readCoefficients(const std::string& filename) {
 		SegmentHash hash;
 		linestream >> hash;
 
-		coefficients[hash] = coef;
+		double gs;
+		linestream >> gs;
+
+		double fs;
+		linestream >> fs;
+
+		double fm;
+		linestream >> fm;
+
+		double fp;
+		linestream >> fp;
+
+		double fn;
+		linestream >> fn;
+
+		double weightSplits = optionWeightSplits.as<double>();
+		double weightMerges = optionWeightMerges.as<double>();
+
+		// Initial factor accounts for sign depending on if the segment is part of the goldstandard.
+		coefficients[hash] = (-2*gs + 1) * ( weightSplits * (fs + fp) + weightMerges * (fm + fn) );
 	}
 
 	return coefficients;
