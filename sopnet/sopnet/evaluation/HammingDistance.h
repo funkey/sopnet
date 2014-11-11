@@ -1,45 +1,50 @@
-#ifndef SOPNET_EVALUATION_SEGMENT_ERROR_H__
-#define SOPNET_EVALUATION_SEGMENT_ERROR_H__
+#ifndef SOPNET_EVALUATION_HAMMING_DISTANCE_H__
+#define SOPNET_EVALUATION_HAMMING_DISTANCE_H__
 
 #include <pipeline/SimpleProcessNode.h>
 #include <sopnet/segments/Segments.h>
+#include "HammingDistanceErrors.h"
 
 /**
  * Given two sets of segments (a gold standard and a reconstruction), provides 
  * the number of missclassified segments.
  */
-class SegmentError : public pipeline::SimpleProcessNode<> {
+class HammingDistance : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	SegmentError() {
+	HammingDistance() {
 
 		registerInput(_goldStandard, "gold standard");
 		registerInput(_reconstruction, "reconstruction");
-		registerOutput(_missclassified, "missclassified");
+		registerOutput(_errors, "errors");
 	}
 
 private:
 
 	void updateOutputs() {
 
-		_missclassified = new unsigned int();
+		_errors = new HammingDistanceErrors();
 
-		*_missclassified = 0;
+		unsigned int fp = 0;
+		unsigned int fn = 0;
+
 		foreach (boost::shared_ptr<Segment> segment, _reconstruction->getSegments())
 			if (!_goldStandard->contains(segment))
-				(*_missclassified)++;
+				fp++;
 		foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
 			if (!_reconstruction->contains(segment))
-				(*_missclassified)++;
-		
+				fn++;
+
+		_errors->setNumFalsePositives(fp);
+		_errors->setNumFalseNegatives(fn);
 	}
 
 	pipeline::Input<Segments> _goldStandard;
 	pipeline::Input<Segments> _reconstruction;
 
-	pipeline::Output<unsigned int> _missclassified;
+	pipeline::Output<HammingDistanceErrors> _errors;
 };
 
-#endif // SOPNET_EVALUATION_SEGMENT_ERROR_H__
+#endif // SOPNET_EVALUATION_HAMMING_DISTANCE_H__
 

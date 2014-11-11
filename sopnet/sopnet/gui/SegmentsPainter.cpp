@@ -46,7 +46,7 @@ SegmentsPainter::setSegments(boost::shared_ptr<Segments> segments) {
 }
 
 void
-SegmentsPainter::setSliceErrors(boost::shared_ptr<SliceErrors> sliceErrors) {
+SegmentsPainter::setSliceErrors(boost::shared_ptr<AnisotropicEditDistanceErrors> sliceErrors) {
 
 	_sliceErrors = sliceErrors;
 }

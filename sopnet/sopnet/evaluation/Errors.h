@@ -1,162 +1,40 @@
 #ifndef SOPNET_EVALUATION_ERRORS_H__
 #define SOPNET_EVALUATION_ERRORS_H__
 
-#include "Cell.h"
+#include <string>
+#include <pipeline/Data.h>
 
 /**
- * Representation of split and merge (and optionally false positive and false 
- * negative) errors between a ground truth and a reconstruction. All errors are 
- * evaluated based on a mapping of Cells from a ground truth label to a 
- * reconstruction label. A cell represents a set of image locations and is in 
- * this context the atomic unit to be labelled.
+ * Base class for error data structures.
  */
-class Errors {
+class Errors : public pipeline::Data {
 
 public:
 
-	typedef Cell<float>                                                cell_t;
-	typedef boost::shared_ptr<std::vector<cell_t> >                    cells_t;
-	typedef std::map<float, std::map<float, std::set<unsigned int> > > cell_map_t;
-
 	/**
-	 * Create an empty errors data structure without using a background label, 
-	 * i.e., without false positives and false negatives.
-	 */
-	Errors();
-
-	/**
-	 * Create an empty errors data structure for the given background labels.
+	 * Return a string describing the return value of errorString(), e.g.,
 	 *
-	 * @param gtBackgroundLabel
-	 *             The background label in the ground truth.
+	 *    "FP FN SUM"
 	 *
-	 * @param recBackgroundLabel
-	 *             The background label in the reconstruction.
+	 * to say that errorString() returns a string with three numbers that are 
+	 * called FP, FN, and SUM, respectively.
 	 */
-	Errors(float gtBackgroundLabel, float recBackgroundLabel);
+	virtual std::string errorHeader() = 0;
 
 	/**
-	 * Set the list of cells this errors data structure is working on. This has 
-	 * to be done before calling addMapping() or getOverlap().
+	 * Return a string representation of the errors that can readily be stored 
+	 * in a plot file, e.g.,
 	 *
-	 * @param cells
-	 *             A list of cells (sets of image locations) that partitions the 
-	 *             ground truth and reconstruction volumes. Each cell has a 
-	 *             ground truth label and can be mapped via addMapping() to an 
-	 *             arbitrary reconstruction label.
+	 *    "12 32 44"
 	 */
-	void setCells(cells_t cells);
+	virtual std::string errorString() = 0;
 
 	/**
-	 * Clear the label mappings and error counts.
-	 */
-	void clear();
-
-	/**
-	 * Register a mapping from a cell to a reconstruction label.
-	 * 
-	 * @param cellIndex
-	 *             The index of the cell in the cell list.
+	 * Return a human readable string of the errors, e.g.,
 	 *
-	 * @param recLabel
-	 *             The reconstruction label of the cell.
+	 *    "False Positives: 12, False Negatives: 32, Total: 44"
 	 */
-	void addMapping(unsigned int cellIndex, float recLabel);
-
-	/**
-	 * Get all reconstruction labels that map to the given ground truth label.
-	 */
-	std::vector<float> getReconstructionLabels(float gtLabel);
-
-	/**
-	 * Get all ground truth labels that map to the given reconstruction label.
-	 */
-	std::vector<float> getGroundTruthLabels(float recLabel);
-
-	/**
-	 * Get the number of locations shared by the given ground truth and 
-	 * reconstruction label.
-	 */
-	unsigned int getOverlap(float gtLabel, float recLabel);
-
-	unsigned int getNumSplits();
-	unsigned int getNumMerges();
-	unsigned int getNumFalsePositives();
-	unsigned int getNumFalseNegatives();
-
-	/**
-	 * Get the sum of all errors.
-	 */
-	unsigned int getNumErrors() {
-
-		return getNumSplits() + getNumMerges() + getNumFalsePositives() + getNumFalseNegatives();
-	}
-
-	/**
-	 * Get all ground truth labels that got split in the reconstruction.
-	 */
-	std::set<float> getSplitLabels();
-
-	/**
-	 * Get all reconstruction labels that merge multiple ground truh labels.
-	 */
-	std::set<float> getMergeLabels();
-
-	/**
-	 * Get all cells that split the given ground truth label.
-	 */
-	const cell_map_t::mapped_type& getSplits(float gtLabel);
-
-	/**
-	 * Get all cells that the given reconstruction label merges.
-	 */
-	const cell_map_t::mapped_type& getMerges(float recLabel);
-
-	/**
-	 * Get all cells that are false positives.
-	 */
-	const cell_map_t::mapped_type& getFalsePositives();
-
-	/**
-	 * Get all cells that are false negatives.
-	 */
-	const cell_map_t::mapped_type& getFalseNegatives();
-
-private:
-
-	void addEntry(cell_map_t& map, float a, float b, unsigned int v);
-
-	void updateErrorCounts();
-
-	void findSplits(
-			const cell_map_t& cellMap,
-			cell_map_t&       splits,
-			unsigned int&     numSplits,
-			unsigned int&     numFalsePositives,
-			float             backgroundLabel);
-
-	// a list of cells partitioning the image
-	cells_t _cells;
-
-	// sparse representation of groundtruth to reconstruction confusion matrix
-	cell_map_t _cellsByRecToGtLabel;
-	cell_map_t _cellsByGtToRecLabel;
-
-	// subset of the confusion matrix without one-to-one mappings
-	cell_map_t _splits;
-	cell_map_t _merges;
-
-	unsigned int _numSplits;
-	unsigned int _numMerges;
-	unsigned int _numFalsePositives;
-	unsigned int _numFalseNegatives;
-
-	bool _haveBackgroundLabel;
-
-	float _gtBackgroundLabel;
-	float _recBackgroundLabel;
-
-	bool _dirty;
+	virtual std::string humanReadableErrorString() = 0;
 };
 
 #endif // SOPNET_EVALUATION_ERRORS_H__

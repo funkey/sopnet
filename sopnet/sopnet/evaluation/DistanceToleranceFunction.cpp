@@ -10,9 +10,9 @@ DistanceToleranceFunction::DistanceToleranceFunction(
 		float distanceThreshold,
 		bool haveBackgroundLabel,
 		float backgroundLabel) :
-	_maxDistanceThreshold(distanceThreshold),
 	_haveBackgroundLabel(haveBackgroundLabel),
-	_backgroundLabel(backgroundLabel) {
+	_backgroundLabel(backgroundLabel),
+	_maxDistanceThreshold(distanceThreshold) {
 
 	_resolutionX = 4.0;
 	_resolutionY = 4.0;
@@ -72,12 +72,18 @@ DistanceToleranceFunction::extractCells(
 			}
 	}
 
-	_relabelCandidates.clear();
-	for (unsigned int cellIndex = 0; cellIndex < numCells; cellIndex++)
-		if (maxBoundaryDistances[cellIndex] <= _maxDistanceThreshold*_maxDistanceThreshold)
-			_relabelCandidates.push_back(cellIndex);
+	findRelabelCandidates(maxBoundaryDistances);
 
 	enumerateCellLabels(recLabels);
+}
+
+void
+DistanceToleranceFunction::findRelabelCandidates(const std::vector<float>& maxBoundaryDistances) {
+
+	_relabelCandidates.clear();
+	for (unsigned int cellIndex = 0; cellIndex < maxBoundaryDistances.size(); cellIndex++)
+		if (maxBoundaryDistances[cellIndex] <= _maxDistanceThreshold*_maxDistanceThreshold)
+			_relabelCandidates.push_back(cellIndex);
 }
 
 void

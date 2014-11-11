@@ -6,7 +6,7 @@
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
 #include <gui/GuiSignals.h>
-#include <sopnet/evaluation/SliceErrors.h>
+#include <sopnet/evaluation/AnisotropicEditDistanceErrors.h>
 #include <sopnet/segments/SegmentTrees.h>
 
 class NeuronsView : public pipeline::SimpleProcessNode<> {
@@ -46,9 +46,9 @@ private:
 
 	void onMouseDownOnNeuron(const gui::MouseDown& signal, unsigned int neuron, pipeline::Output<gui::RotatePainter>* painter);
 
-	pipeline::Input<SegmentTrees>  _neurons;
-	pipeline::Input<SliceErrors>   _sliceErrors;
-	pipeline::Output<unsigned int> _currentNeuron;
+	pipeline::Input<SegmentTrees>                  _neurons;
+	pipeline::Input<AnisotropicEditDistanceErrors> _sliceErrors;
+	pipeline::Output<unsigned int>                 _currentNeuron;
 
 	pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > _container;
 

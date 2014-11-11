@@ -14,6 +14,7 @@ NeuronsStackPainter::NeuronsStackPainter() :
 	_showContinuations(true),
 	_showBranches(true),
 	_showSliceIds(false),
+	_showSkeletons(true),
 	_alpha(0.8),
 	_zScale(15) {}
 
@@ -85,6 +86,12 @@ void
 NeuronsStackPainter::showSliceIds(bool show) {
 
 	_showSliceIds = show;
+}
+
+void
+NeuronsStackPainter::showSkeletons(bool show) {
+
+	_showSkeletons = show;
 }
 
 void
@@ -616,12 +623,15 @@ NeuronsStackPainter::drawEnd(
 	glCheck(glEnable(GL_LINE_SMOOTH));
 	glCheck(glLineWidth(5.0));
 
-	glBegin(GL_QUADS);
-	glVertex3d(center.x - size, center.y - size, 0);
-	glVertex3d(center.x - size, center.y + size, 0);
-	glVertex3d(center.x + size, center.y + size, 0);
-	glVertex3d(center.x + size, center.y - size, 0);
-	glEnd();
+	if (_showSkeletons) {
+
+		glBegin(GL_QUADS);
+		glVertex3d(center.x - size, center.y - size, 0);
+		glVertex3d(center.x - size, center.y + size, 0);
+		glVertex3d(center.x + size, center.y + size, 0);
+		glVertex3d(center.x + size, center.y - size, 0);
+		glEnd();
+	}
 }
 
 void
@@ -641,10 +651,13 @@ NeuronsStackPainter::drawContinuation(
 	glCheck(glEnable(GL_LINE_SMOOTH));
 	glCheck(glLineWidth(5.0));
 
-	glBegin(GL_LINES);
-	glVertex3d(source.x, source.y, 0);
-	glVertex3d(target.x, target.y, 0);
-	glEnd();
+	if (_showSkeletons) {
+
+		glBegin(GL_LINES);
+		glVertex3d(source.x, source.y, 0);
+		glVertex3d(target.x, target.y, 0);
+		glEnd();
+	}
 }
 
 void
@@ -663,14 +676,17 @@ NeuronsStackPainter::drawBranch(
 
 	glCheck(glDisable(GL_TEXTURE_2D));
 
-	glBegin(GL_LINES);
-	glVertex3d(source.x, source.y, 0);
-	glVertex3d(target1.x, target1.y, 0);
-	glEnd();
-	glBegin(GL_LINES);
-	glVertex3d(source.x, source.y, 0);
-	glVertex3d(target2.x, target2.y, 0);
-	glEnd();
+	if (_showSkeletons) {
+
+		glBegin(GL_LINES);
+		glVertex3d(source.x, source.y, 0);
+		glVertex3d(target1.x, target1.y, 0);
+		glEnd();
+		glBegin(GL_LINES);
+		glVertex3d(source.x, source.y, 0);
+		glVertex3d(target2.x, target2.y, 0);
+		glEnd();
+	}
 }
 
 void
