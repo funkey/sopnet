@@ -147,22 +147,46 @@ TolerantEditDistanceErrors::getSplitLabels() {
 	return splitLabels;
 }
 
-const TolerantEditDistanceErrors::cell_map_t::mapped_type&
+std::set<float>
 TolerantEditDistanceErrors::getSplits(float gtLabel) {
+
+	std::set<float> splitLabels;
+
+	typedef cell_map_t::mapped_type::value_type cells_t;
+	foreach (const cells_t& cells, getSplitCells(gtLabel))
+		splitLabels.insert(cells.first);
+
+	return splitLabels;
+}
+
+std::set<float>
+TolerantEditDistanceErrors::getMerges(float recLabel) {
+
+	std::set<float> mergeLabels;
+
+	typedef cell_map_t::mapped_type::value_type cells_t;
+	foreach (const cells_t& cells, getMergeCells(recLabel))
+		mergeLabels.insert(cells.first);
+
+	return mergeLabels;
+}
+
+const TolerantEditDistanceErrors::cell_map_t::mapped_type&
+TolerantEditDistanceErrors::getSplitCells(float gtLabel) {
 
 	updateErrorCounts();
 	return _splits[gtLabel];
 }
 
 const TolerantEditDistanceErrors::cell_map_t::mapped_type&
-TolerantEditDistanceErrors::getMerges(float recLabel) {
+TolerantEditDistanceErrors::getMergeCells(float recLabel) {
 
 	updateErrorCounts();
 	return _merges[recLabel];
 }
 
 const TolerantEditDistanceErrors::cell_map_t::mapped_type&
-TolerantEditDistanceErrors::getFalsePositives() {
+TolerantEditDistanceErrors::getFalsePositiveCells() {
 
 	if (!_haveBackgroundLabel)
 		BOOST_THROW_EXCEPTION(UsageError() << error_message("we don't hav a background label -- cannot give false positives"));
@@ -172,7 +196,7 @@ TolerantEditDistanceErrors::getFalsePositives() {
 }
 
 const TolerantEditDistanceErrors::cell_map_t::mapped_type&
-TolerantEditDistanceErrors::getFalseNegatives() {
+TolerantEditDistanceErrors::getFalseNegativeCells() {
 
 	if (!_haveBackgroundLabel)
 		BOOST_THROW_EXCEPTION(UsageError() << error_message("we don't hav a background label -- cannot give false negatives"));

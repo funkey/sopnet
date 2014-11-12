@@ -104,24 +104,34 @@ public:
 	std::set<float> getMergeLabels();
 
 	/**
+	 * Get all reconstruction labels that split the given ground truth label.
+	 */
+	std::set<float> getSplits(float gtLabel);
+
+	/**
+	 * Get all ground truth labels that the given reconstruction label merges.
+	 */
+	std::set<float> getMerges(float recLabel);
+
+	/**
 	 * Get all cells that split the given ground truth label.
 	 */
-	const cell_map_t::mapped_type& getSplits(float gtLabel);
+	const cell_map_t::mapped_type& getSplitCells(float gtLabel);
 
 	/**
 	 * Get all cells that the given reconstruction label merges.
 	 */
-	const cell_map_t::mapped_type& getMerges(float recLabel);
+	const cell_map_t::mapped_type& getMergeCells(float recLabel);
 
 	/**
 	 * Get all cells that are false positives.
 	 */
-	const cell_map_t::mapped_type& getFalsePositives();
+	const cell_map_t::mapped_type& getFalsePositiveCells();
 
 	/**
 	 * Get all cells that are false negatives.
 	 */
-	const cell_map_t::mapped_type& getFalseNegatives();
+	const cell_map_t::mapped_type& getFalseNegativeCells();
 
 	std::string errorHeader() { return "TED_FP\tTED_FN\tTED_FS\tTED_FM\tTED_SUM"; }
 

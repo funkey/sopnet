@@ -15,6 +15,7 @@
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
+#include <sopnet/evaluation/TolerantEditDistanceErrorsWriter.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
 #include <sopnet/evaluation/RandIndex.h>
 #include <util/ProgramOptions.h>
@@ -31,6 +32,10 @@ util::ProgramOption optionReconstruction(
 		util::_long_name        = "reconstruction",
 		util::_description_text = "The reconstruction image stack.",
 		util::_default_value    = "reconstruction");
+
+util::ProgramOption optionSaveErrors(
+		util::_long_name        = "saveErrors",
+		util::_description_text = "Create an image stack for every split and merge error. Be careful, this can result in a lot of data.");
 
 util::ProgramOption optionHeadless(
 		util::_long_name        = "headless",
@@ -189,6 +194,16 @@ int main(int optionc, char** optionv) {
 		mergesWriter->write();
 		fpWriter->write();
 		fnWriter->write();
+
+		if (optionSaveErrors) {
+
+			pipeline::Process<TolerantEditDistanceErrorsWriter> errorsWriter;
+			errorsWriter->setInput("ground truth", groundTruthReader->getOutput());
+			errorsWriter->setInput("reconstruction", reconstructionReader->getOutput());
+			errorsWriter->setInput("ted errors", editDistance->getOutput("errors"));
+
+			errorsWriter->write("errors");
+		}
 
 	} catch (Exception& e) {
 

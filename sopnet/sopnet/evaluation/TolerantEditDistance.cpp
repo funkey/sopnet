@@ -418,7 +418,7 @@ TolerantEditDistance::findErrors() {
 	float gtLabel;
 	typedef TolerantEditDistanceErrors::cell_map_t::mapped_type::value_type mapping_t;
 	foreach (gtLabel, _errors->getSplitLabels())
-		foreach (const mapping_t& cells, _errors->getSplits(gtLabel))
+		foreach (const mapping_t& cells, _errors->getSplitCells(gtLabel))
 			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
 					(*(*_splitLocations)[l.z])(l.x, l.y) = cells.first;
@@ -426,7 +426,7 @@ TolerantEditDistance::findErrors() {
 	// all cells that split the reconstruction
 	float recLabel;
 	foreach (recLabel, _errors->getMergeLabels())
-		foreach (const mapping_t& cells, _errors->getMerges(recLabel))
+		foreach (const mapping_t& cells, _errors->getMergeCells(recLabel))
 			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
 					(*(*_mergeLocations)[l.z])(l.x, l.y) = cells.first;
@@ -434,7 +434,7 @@ TolerantEditDistance::findErrors() {
 	if (_haveBackgroundLabel) {
 
 		// all cells that are false positives
-		foreach (const mapping_t& cells, _errors->getFalsePositives())
+		foreach (const mapping_t& cells, _errors->getFalsePositiveCells())
 			if (cells.first != _recBackgroundLabel) {
 				foreach (unsigned int cellIndex, cells.second)
 					foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
@@ -442,7 +442,7 @@ TolerantEditDistance::findErrors() {
 			}
 
 		// all cells that are false negatives
-		foreach (const mapping_t& cells, _errors->getFalseNegatives())
+		foreach (const mapping_t& cells, _errors->getFalseNegativeCells())
 			if (cells.first != _gtBackgroundLabel) {
 				foreach (unsigned int cellIndex, cells.second)
 					foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
