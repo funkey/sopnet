@@ -20,6 +20,7 @@ private:
 	void updateOutputs();
 
 	pipeline::Input<ImageStack>        _groundTruth;
+	pipeline::Input<Segments>          _groundTruthSegments;
 	pipeline::Input<Segments>          _allSegments;
 	pipeline::Input<LinearConstraints> _allLinearConstraints;
 

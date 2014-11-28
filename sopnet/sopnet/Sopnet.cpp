@@ -430,7 +430,8 @@ Sopnet::createTrainingPipeline() {
 
 	} else {
 
-		_goldStandardProvider->setInput("ground truth", _groundTruthExtractor->getOutput());
+		_goldStandardProvider->setInput("ground truth", _groundTruth);
+		_goldStandardProvider->setInput("ground truth segments", _groundTruthExtractor->getOutput());
 		_goldStandardProvider->setInput("all segments", _problemAssembler->getOutput("segments"));
 		_goldStandardProvider->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 	}

@@ -18,6 +18,7 @@ logger::LogChannel goldstandardextractorlog("goldstandardextractorlog", "[GoldSt
 GoldStandardExtractor::GoldStandardExtractor() {
 
 	registerInput(_groundTruth, "ground truth");
+	registerInput(_groundTruthSegments, "ground truth segments");
 	registerInput(_allSegments, "all segments");
 	registerInput(_allLinearConstraints, "all linear constraints");
 
@@ -32,14 +33,19 @@ GoldStandardExtractor::updateOutputs() {
 	LOG_DEBUG(goldstandardextractorlog) << "searching for best-fitting segments to ground truth" << std::endl;
 
 	boost::shared_ptr<pipeline::ProcessNode> goldStandardCostFunction;
-	if (optionMergeCostFunction)
+	if (optionMergeCostFunction) {
+
 		goldStandardCostFunction = boost::make_shared<MergeCostFunction>();
-	else
+		goldStandardCostFunction->setInput("ground truth", _groundTruth);
+
+	} else {
+
 		goldStandardCostFunction = boost::make_shared<OverlapCostFunction>();
+		goldStandardCostFunction->setInput("ground truth segments", _groundTruthSegments);
+	}
 
 	pipeline::Process<LinearSolver> linearSolver;
 
-	goldStandardCostFunction->setInput("ground truth", _groundTruth);
 
 	_objectiveGenerator->setInput("segments", _allSegments);
 	_objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());

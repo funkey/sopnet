@@ -15,7 +15,7 @@ OverlapCostFunction::OverlapCostFunction() :
 	_overlap(false, false),
 	_gtFromSkeletons(optionGroundTruthFromSkeletons) {
 
-	registerInput(_groundTruth, "ground truth");
+	registerInput(_groundTruth, "ground truth segments");
 	registerOutput(_costFunction, "cost function");
 }
 
