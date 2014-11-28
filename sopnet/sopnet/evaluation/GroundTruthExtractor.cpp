@@ -44,6 +44,16 @@ GroundTruthExtractor::updateOutputs() {
 std::vector<Slices>
 GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 
+	// find the maximal value in the ground truth images
+	float maxIntensity = 0;
+	foreach (boost::shared_ptr<Image> image, *_groundTruthSections) {
+
+		float min, max;
+		image->minmax(&min, &max);
+
+		maxIntensity = std::max(maxIntensity, max);
+	}
+
 	// create cte parameters suitable to extract ground-truth connected
 	// components
 	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
@@ -53,6 +63,8 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 		cteParameters->minSize = 50; // this is to avoid this tiny annotation that mess up the result
 	cteParameters->maxSize      = 10000000;
 	cteParameters->darkToBright = false;
+	cteParameters->minIntensity = 0;
+	cteParameters->maxIntensity = maxIntensity;
 	// TODO: re-enable same intensity components option
 
 	// create a section extractor to access the sections in the stack
