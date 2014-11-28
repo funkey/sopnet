@@ -19,14 +19,11 @@
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <inference/io/RandomForestHdf5Writer.h>
-#include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
-#include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
-#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/evaluation/ErrorReport.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
@@ -39,9 +36,7 @@
 #include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/inference/GridSearch.h>
-#include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/neurons/NeuronExtractor.h>
-#include <sopnet/training/GoldStandardCostFunction.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
@@ -497,24 +492,8 @@ int main(int optionc, char** optionv) {
 					featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 					featuresView->setInput("objective", sopnet->getOutput("objective"));
 
-					if (optionShowGoldStandard) {
-
-						// here we re-create the objective for the gold standard, to 
-						// avoid having to pass it through Sopnet just for the 
-						// visualization
-
-						pipeline::Process<GoldStandardCostFunction> goldStandardCostFunction;
-						pipeline::Process<ObjectiveGenerator>       objectiveGenerator;
-						pipeline::Process<GroundTruthExtractor>     groundTruthExtractor;
-
-						groundTruthExtractor->setInput(groundTruthReader->getOutput());
-						goldStandardCostFunction->setInput("ground truth", groundTruthExtractor->getOutput());
-
-						objectiveGenerator->setInput("segments", sopnet->getOutput("segments"));
-						objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());
-
-						featuresView->setInput("ground truth score", objectiveGenerator->getOutput());
-					}
+					if (optionShowGoldStandard)
+						featuresView->setInput("ground truth score", sopnet->getOutput("gold standard objective"));
 
 					container->addInput(featuresView->getOutput());
 				}

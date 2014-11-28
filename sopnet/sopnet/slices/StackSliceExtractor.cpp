@@ -1,5 +1,4 @@
-#include <imageprocessing/ComponentTree.h>
-#include <imageprocessing/Mser.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <sopnet/features/Overlap.h>
 #include <util/ProgramOptions.h>
 #include "ComponentTreeConverter.h"
@@ -25,7 +24,7 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section, float resX, float
 	_resY(resY),
 	_resZ(resZ),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
-	_mserParameters(boost::make_shared<MserParameters>()),
+	_cteParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
 	_sliceCollector(boost::make_shared<SliceCollector>()) {
 
 	registerInput(_sliceImageStack, "slices");
@@ -35,11 +34,10 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section, float resX, float
 
 	_sliceImageStack.registerCallback(&StackSliceExtractor::onInputSet, this);
 
-	// set default mser parameters from program options
-	_mserParameters->darkToBright = false;
-	_mserParameters->brightToDark = true;
-	_mserParameters->minArea      = 0;
-	_mserParameters->maxArea      = 100000000;
+	// set default cte parameters from program options
+	_cteParameters->darkToBright = false;
+	_cteParameters->minSize      = 0;
+	_cteParameters->maxSize      = 100000000;
 }
 
 void
@@ -56,14 +54,14 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 	// for each image in the stack, set up the pipeline
 	for (unsigned int i = 0; i < _sliceImageStack->size(); i++) {
 
-		boost::shared_ptr<Mser<unsigned char> > mser = boost::make_shared<Mser<unsigned char> >();
+		boost::shared_ptr<ComponentTreeExtractor<unsigned char> > cte = boost::make_shared<ComponentTreeExtractor<unsigned char> >();
 
-		mser->setInput("image", _sliceImageExtractor->getOutput(i));
-		mser->setInput("parameters", _mserParameters);
+		cte->setInput("image", _sliceImageExtractor->getOutput(i));
+		cte->setInput("parameters", _cteParameters);
 
 		boost::shared_ptr<ComponentTreeConverter> converter = boost::make_shared<ComponentTreeConverter>(_section, _resX, _resY, _resZ);
 
-		converter->setInput(mser->getOutput());
+		converter->setInput(cte->getOutput());
 
 		_sliceCollector->addInput(converter->getOutput());
 	}

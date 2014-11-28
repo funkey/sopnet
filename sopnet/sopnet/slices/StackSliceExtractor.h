@@ -10,15 +10,13 @@
 #include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/ImageStack.h>
 #include <imageprocessing/ComponentTree.h>
-#include <imageprocessing/MserParameters.h>
 #include "ConflictSets.h"
 #include "Slices.h"
 
 // forward declaration
 class ComponentTreeDownSampler;
 class ComponentTreeConverter;
-template <typename Precision> class Mser;
-class MserParameters;
+class ComponentTreeExtractorParameters;
 
 /**
  * A slice extractor for slices stored in a stack of black-and-white images.
@@ -119,11 +117,8 @@ private:
 	// extractor to get the images in the input stack
 	boost::shared_ptr<ImageExtractor>   _sliceImageExtractor;
 
-	// one mser per slice image
-	std::vector<boost::shared_ptr<Mser<unsigned char> > > _msers;
-
-	// mser paramters to use to extract all white connected components
-	boost::shared_ptr<MserParameters>           _mserParameters;
+	// cte paramters to use to extract all white connected components
+	boost::shared_ptr<ComponentTreeExtractorParameters> _cteParameters;
 
 	// converter from component trees to slices
 	boost::shared_ptr<ComponentTreeConverter>   _converter;

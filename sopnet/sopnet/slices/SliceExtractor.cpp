@@ -1,8 +1,7 @@
 #include <util/ProgramOptions.h>
-#include <imageprocessing/ComponentTree.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <imageprocessing/ComponentTreeDownSampler.h>
 #include <imageprocessing/ComponentTreePruner.h>
-#include <imageprocessing/Mser.h>
 #include <pipeline/Value.h>
 #include "ComponentTreeConverter.h"
 #include "SliceExtractor.h"
@@ -35,24 +34,23 @@ util::ProgramOption optionMaxSliceMerges(
 
 template <typename Precision>
 SliceExtractor<Precision>::SliceExtractor(unsigned int section, float resX, float resY, float resZ, bool downsample) :
-	_mser(boost::make_shared<Mser<Precision> >()),
-	_defaultMserParameters(boost::make_shared<MserParameters>()),
+	_cte(boost::make_shared<ComponentTreeExtractor<Precision> >()),
+	_defaultCteParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_pruner(boost::make_shared<ComponentTreePruner>()),
 	_converter(boost::make_shared<ComponentTreeConverter>(section, resX, resY, resZ)) {
 
-	registerInput(_mser->getInput("image"), "membrane");
-	registerInput(_mserParameters, "mser parameters");
+	registerInput(_cte->getInput("image"), "membrane");
+	registerInput(_cteParameters, "component tree extractor parameters");
 	registerOutput(_converter->getOutput("slices"), "slices");
 	registerOutput(_converter->getOutput("conflict sets"), "conflict sets");
 
-	_mserParameters.registerCallback(&SliceExtractor<Precision>::onInputSet, this);
+	_cteParameters.registerCallback(&SliceExtractor<Precision>::onInputSet, this);
 
-	// set default mser parameters from program options
-	_defaultMserParameters->darkToBright =  optionInvertSliceMaps;
-	_defaultMserParameters->brightToDark = !optionInvertSliceMaps;
-	_defaultMserParameters->minArea      =  optionMinSliceSize;
-	_defaultMserParameters->maxArea      =  optionMaxSliceSize;
+	// set default cte parameters from program options
+	_defaultCteParameters->darkToBright =  optionInvertSliceMaps;
+	_defaultCteParameters->minSize      =  optionMinSliceSize;
+	_defaultCteParameters->maxSize      =  optionMaxSliceSize;
 
 	LOG_DEBUG(sliceextractorlog)
 			<< "extracting slices with min size " << optionMinSliceSize.as<int>()
@@ -61,16 +59,16 @@ SliceExtractor<Precision>::SliceExtractor(unsigned int section, float resX, floa
 			<< std::endl;
 
 	// setup internal pipeline
-	_mser->setInput("parameters", _defaultMserParameters);
+	_cte->setInput("parameters", _defaultCteParameters);
 
 	if (downsample) {
 
-		_downSampler->setInput(_mser->getOutput());
+		_downSampler->setInput(_cte->getOutput());
 		_pruner->setInput("component tree", _downSampler->getOutput());
 
 	} else {
 
-		_pruner->setInput("component tree", _mser->getOutput());
+		_pruner->setInput("component tree", _cte->getOutput());
 	}
 	_pruner->setInput("max height", pipeline::Value<int>(optionMaxSliceMerges.as<int>()));
 	_converter->setInput(_pruner->getOutput());
@@ -80,10 +78,10 @@ template <typename Precision>
 void
 SliceExtractor<Precision>::onInputSet(const pipeline::InputSetBase&) {
 
-	LOG_ALL(sliceextractorlog) << "using non-default mser parameters" << std::endl;
+	LOG_ALL(sliceextractorlog) << "using non-default component-tree-extractor parameters" << std::endl;
 
 	// don't use the default
-	_mser->setInput("parameters", _mserParameters);
+	_cte->setInput("parameters", _cteParameters);
 }
 
 // explicit template instantiations

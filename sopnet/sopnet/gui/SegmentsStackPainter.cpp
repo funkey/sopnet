@@ -99,11 +99,17 @@ SegmentsStackPainter::setFocus(const util::point<double>& focus) {
 	// get closest segments to focus
 
 	// create a dummy pixel list with only the focus point in it
-	boost::shared_ptr<ConnectedComponent::pixel_list_type> dummyPixelList = boost::make_shared<ConnectedComponent::pixel_list_type>();
-	dummyPixelList->push_back(util::point<unsigned int>(focus));
+	boost::shared_ptr<ConnectedComponent::pixel_list_type> dummyPixelList = boost::make_shared<ConnectedComponent::pixel_list_type>(1);
+	dummyPixelList->add(util::point<unsigned int>(focus));
 
 	// create a connected component for this list
-	boost::shared_ptr<ConnectedComponent> dummyComponent = boost::make_shared<ConnectedComponent>(boost::shared_ptr<Image>(), 0, dummyPixelList, 0, 1);
+	boost::shared_ptr<ConnectedComponent> dummyComponent =
+			boost::make_shared<ConnectedComponent>(
+					boost::shared_ptr<Image>(),
+					0,
+					dummyPixelList,
+					dummyPixelList->begin(),
+					dummyPixelList->end());
 
 	// create a dummy slice from the component
 	boost::shared_ptr<Slice> dummySlice = boost::make_shared<Slice>(0, _section, dummyComponent);

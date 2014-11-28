@@ -6,9 +6,9 @@
 #include <sopnet/segments/EndSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
 #include <sopnet/segments/BranchSegment.h>
-#include "GoldStandardCostFunction.h"
+#include "MergeCostFunction.h"
 
-static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[GoldStandardCostFunction] ");
+static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[MergeCostFunction] ");
 
 util::ProgramOption optionCorrectlyMergedPairReward(
 		util::_module           = "sopnet.training.gold_standard",
@@ -28,8 +28,8 @@ util::ProgramOption optionFalseMergeCosts(
 		util::_description_text = "The costs in the gold-standard search objective for segments that have been identified as false merges.",
 		util::_default_value    = 1e6 /* a million */);
 
-GoldStandardCostFunction::GoldStandardCostFunction() :
-	_costFunction(new costs_function_type(boost::bind(&GoldStandardCostFunction::costs, this, _1, _2, _3, _4))),
+MergeCostFunction::MergeCostFunction() :
+	_costFunction(new costs_function_type(boost::bind(&MergeCostFunction::costs, this, _1, _2, _3, _4))),
 	_correctlyMergedPairReward(optionCorrectlyMergedPairReward),
 	_incorrectlyMergedThreshold(optionIncorrectlyMergedThreshold),
 	_falseMergeCosts(optionFalseMergeCosts) {
@@ -39,10 +39,10 @@ GoldStandardCostFunction::GoldStandardCostFunction() :
 }
 
 void
-GoldStandardCostFunction::updateOutputs() {}
+MergeCostFunction::updateOutputs() {}
 
 void
-GoldStandardCostFunction::costs(
+MergeCostFunction::costs(
 		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
 		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
 		const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
@@ -78,7 +78,7 @@ GoldStandardCostFunction::costs(
 }
 
 double
-GoldStandardCostFunction::costs(const Segment& segment) {
+MergeCostFunction::costs(const Segment& segment) {
 
 	// count all gt label occurences covered by this segment
 	getGtLabels(segment);
@@ -112,7 +112,7 @@ GoldStandardCostFunction::costs(const Segment& segment) {
 }
 
 void
-GoldStandardCostFunction::getGtLabels(const Segment& segment) {
+MergeCostFunction::getGtLabels(const Segment& segment) {
 
 	_gtLabels.clear();
 
@@ -132,7 +132,7 @@ GoldStandardCostFunction::getGtLabels(const Segment& segment) {
 }
 
 int
-GoldStandardCostFunction::segmentSize(const Segment& segment) {
+MergeCostFunction::segmentSize(const Segment& segment) {
 
 	const std::vector<boost::shared_ptr<Slice> >& slices = segment.getSlices();
 

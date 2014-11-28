@@ -1,5 +1,5 @@
-#ifndef SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
-#define SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
+#ifndef SOPNET_TRAINING_MERGE_COST_FUNCTION_H__
+#define SOPNET_TRAINING_MERGE_COST_FUNCTION_H__
 
 #include <pipeline/SimpleProcessNode.h>
 #include <pipeline/Value.h>
@@ -11,7 +11,7 @@ class EndSegment;
 class ContinuationSegment;
 class BranchSegment;
 
-class GoldStandardCostFunction : public pipeline::SimpleProcessNode<> {
+class MergeCostFunction : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void
@@ -23,7 +23,7 @@ class GoldStandardCostFunction : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	GoldStandardCostFunction();
+	MergeCostFunction();
 
 private:
 
@@ -60,5 +60,5 @@ private:
 	double _falseMergeCosts;
 };
 
-#endif // SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
+#endif // SOPNET_TRAINING_MERGE_COST_FUNCTION_H__
 

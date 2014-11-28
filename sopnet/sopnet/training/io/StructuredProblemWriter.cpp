@@ -96,7 +96,7 @@ StructuredProblemWriter::writeLabels(std::string filename_labels, std::string fi
 
 			objectiveOutput << "c" << i << " " << coefficient << std::endl;
 
-			if (isContained)
+			if (isGoldStandard)
 				goldStandardObjectiveValue += coefficient;
 		}
 

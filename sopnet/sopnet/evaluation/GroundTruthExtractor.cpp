@@ -44,20 +44,16 @@ GroundTruthExtractor::updateOutputs() {
 std::vector<Slices>
 GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 
-	// create mser parameters suitable to extract ground-truth connected
+	// create cte parameters suitable to extract ground-truth connected
 	// components
-	pipeline::Value<MserParameters> mserParameters;
-	mserParameters->delta        = 1;
+	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
 	if (optionGroundTruthFromSkeletons)
-		mserParameters->minArea  = 0; // skeletons are small
+		cteParameters->minSize = 0; // skeletons are small
 	else
-		mserParameters->minArea  = 50; // this is to avoid this tiny annotation that mess up the result
-	mserParameters->maxArea      = 10000000;
-	mserParameters->maxVariation = 100;
-	mserParameters->minDiversity = 0;
-	mserParameters->darkToBright = false;
-	mserParameters->brightToDark = true;
-	mserParameters->sameIntensityComponents = _addIntensityBoundaries; // only extract connected components of same intensity
+		cteParameters->minSize = 50; // this is to avoid this tiny annotation that mess up the result
+	cteParameters->maxSize      = 10000000;
+	cteParameters->darkToBright = false;
+	// TODO: re-enable same intensity components option
 
 	// create a section extractor to access the sections in the stack
 	pipeline::Process<ImageExtractor> sectionExtractor;
@@ -77,9 +73,9 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 		// create a SliceExtractor
 		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, resX, resY, resZ, false /* don't downsample */);
 
-		// give it the section it has to process and our mser parameters
+		// give it the section it has to process and our cte parameters
 		sliceExtractor->setInput("membrane", sectionExtractor->getOutput(section));
-		sliceExtractor->setInput("mser parameters", mserParameters);
+		sliceExtractor->setInput("component tree extractor parameters", cteParameters);
 
 		// get the slices in the current section
 		pipeline::Value<Slices> sectionSlices = sliceExtractor->getOutput("slices");
