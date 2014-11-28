@@ -1,7 +1,10 @@
-#include "StructuredProblemWriter.h"
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <util/Logger.h>
+#include "StructuredProblemWriter.h"
+
+logger::LogChannel structuredproblemwriterlog("structuredproblemwriterlog", "[StructuredProblemWriter] ");
 
 StructuredProblemWriter::StructuredProblemWriter()
 {
@@ -29,6 +32,12 @@ StructuredProblemWriter::write(std::string filename_labels,
 				   std::string filename_objective) {
 
 	updateInputs();
+
+	// create maps from segment ids to hashes
+	foreach (boost::shared_ptr<Segment> segment, _goldStandard->getSegments())
+		_gsHashes[segment->getId()] = segment->hashValue();
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		_allHashes[segment->getId()] = segment->hashValue();
 
 	// call write functions for the different files to write.
 	writeLabels(filename_labels, filename_objective);
@@ -63,18 +72,22 @@ StructuredProblemWriter::writeLabels(std::string filename_labels, std::string fi
 
 	double goldStandardObjectiveValue = 0;
 
+	std::set<SegmentHash> segmentHashes;
+
 	// For every variable...
 	for (unsigned int i = 0; i <= maxVariable; i++) {
 
 		// ...check if the segment that corresponds to that variable is contained in the gold standard.
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
 
-		bool isContained = false;
-		foreach (boost::shared_ptr<Segment> s, goldStandard) {
-			if (s->getId() == segmentId) {
-				isContained = true;
-				break;
-			}
+		bool isGoldStandard;
+		SegmentHash segmentHash = findSegmentHash(segmentId, isGoldStandard);
+
+		if (isGoldStandard) {
+			labelsOutput << 1 << " # " << segmentHash << std::endl;
+		} 
+		else {
+			labelsOutput << 0 << " # " << segmentHash << std::endl;
 		}
 
 		if (writeObjective) {
@@ -86,11 +99,15 @@ StructuredProblemWriter::writeLabels(std::string filename_labels, std::string fi
 			if (isContained)
 				goldStandardObjectiveValue += coefficient;
 		}
-		
-		labelsOutput << (isContained ? 1 : 0) << std::endl;
+
+		if (!segmentHashes.insert(segmentHash).second)
+			LOG_ERROR(structuredproblemwriterlog)
+					<< "hash collision detected: hash " << segmentHash
+					<< " appears at least twice!" << std::endl;
 	}
 
 	labelsOutput.close();
+
 	if (writeObjective) {
 
 		objectiveOutput << "constant " << -goldStandardObjectiveValue << std::endl;
@@ -138,4 +155,27 @@ StructuredProblemWriter::writeConstraints(std::string filenames_constraints) {
 	}
         constraintOutput.close();
 
+}
+
+SegmentHash
+StructuredProblemWriter::findSegmentHash(unsigned int segmentId, bool& isGoldStandard) {
+
+	// try to find it in the gold-standard
+
+	if (_gsHashes.count(segmentId)) {
+
+		isGoldStandard = true;
+		return _gsHashes[segmentId];
+	}
+
+	// try to find it in all segments
+	if (_allHashes.count(segmentId)) {
+
+		isGoldStandard = false;
+		return _allHashes[segmentId];
+	}
+
+	UTIL_THROW_EXCEPTION(
+			UsageError,
+			"segment with id " << segmentId << " is not contained in given segment set");
 }

@@ -155,6 +155,15 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 	if (signal.key == gui::keys::N) {
 
 		_painter->showSliceIds(signal.modifiers & gui::keys::ShiftDown);
+
+		setDirty(_painter);
+	}
+
+	if (signal.key == gui::keys::K) {
+
+		_painter->showSkeletons(signal.modifiers & gui::keys::ShiftDown);
+
+		setDirty(_painter);
 	}
 
 	if (signal.key == gui::keys::Q) {

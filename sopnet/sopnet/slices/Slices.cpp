@@ -51,7 +51,7 @@ Slices::clear() {
 void
 Slices::add(boost::shared_ptr<Slice> slice) {
 
-	_slices.push_back(slice);
+	_slices.insert(slice);
 
 	_kdTreeDirty = true;
 }
@@ -59,7 +59,7 @@ Slices::add(boost::shared_ptr<Slice> slice) {
 void
 Slices::addAll(const Slices& slices) {
 
-	_slices.insert(_slices.end(), slices.begin(), slices.end());
+	_slices.insert(slices.begin(), slices.end());
 
 	_kdTreeDirty = true;
 }
@@ -67,14 +67,10 @@ Slices::addAll(const Slices& slices) {
 void
 Slices::remove(boost::shared_ptr<Slice> slice) {
 
-	for (unsigned int i = 0; i < _slices.size(); i++)
-		if (_slices[i] == slice) {
+	slices_type::iterator i = _slices.find(slice);
 
-			_slices.erase(_slices.begin() + i);
-			return;
-		}
-
-	return;
+	if (i != _slices.end())
+		_slices.erase(i);
 }
 
 std::vector<boost::shared_ptr<Slice> >
@@ -93,7 +89,7 @@ Slices::find(const util::point<double>& center, double distance) {
 	if (!_kdTree) {
 
 		// create slice vector adaptor
-		_adaptor = new SliceVectorAdaptor(_slices);
+		_adaptor = new SliceVectorAdaptor(_slices.begin(), _slices.end());
 
 		// create the tree
 		_kdTree = new SliceKdTree(2, *_adaptor, nanoflann::KDTreeSingleIndexAdaptorParams(10));
@@ -120,7 +116,7 @@ Slices::find(const util::point<double>& center, double distance) {
 	std::vector<boost::shared_ptr<Slice> > found;
 
 	foreach (boost::tie(index, dist), results)
-		found.push_back(_slices[index]);
+		found.push_back((*_adaptor)[index]);
 
 	return found;
 }

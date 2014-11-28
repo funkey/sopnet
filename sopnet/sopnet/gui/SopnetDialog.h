@@ -13,7 +13,7 @@ class SopnetDialog : public pipeline::ProcessNode {
 
 public:
 
-	SopnetDialog();
+	SopnetDialog(bool forceExplanation);
 
 private:
 

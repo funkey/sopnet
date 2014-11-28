@@ -9,6 +9,8 @@
 #include <sopnet/segments/Segments.h>
 #include <sopnet/features/Overlap.h>
 
+extern util::ProgramOption optionGroundTruthFromSkeletons;
+
 class GroundTruthExtractor : public pipeline::SimpleProcessNode<> {
 
 public:
@@ -16,18 +18,11 @@ public:
 	/**
 	 * Create a ground truth extractor.
 	 *
-	 * @param firstSection
-	 *              The first section to use.
-	 * @param lastSection
-	 *              The last section to use.
-	 * @param addIntensityBoundaries
-	 *              Seperate regions of different intensities such that they end 
-	 *              up in different slices.
 	 * @param endSegmentsOnly
 	 *              Extract only end segments, no continuations. Each slice will 
 	 *              be a "neuron".
 	 */
-	GroundTruthExtractor(int firstSection = -1, int lastSection = -1, bool addIntensityBoundaries = true, bool endSegmentsOnly = false);
+	GroundTruthExtractor(bool endSegmentsOnly = false);
 
 private:
 
@@ -85,9 +80,6 @@ private:
 
 	// continuation and end segments of the ground-truth
 	pipeline::Output<Segments> _groundTruthSegments;
-
-	int _firstSection;
-	int _lastSection;
 
 	bool _addIntensityBoundaries;
 

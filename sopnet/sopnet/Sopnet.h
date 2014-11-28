@@ -129,9 +129,6 @@ private:
 	// a random forest file reader
 	boost::shared_ptr<RandomForestHdf5Reader>         	_randomForestReader;
 
-	// a segment evaluator that provides a cost function for segment types
-	boost::shared_ptr<PriorCostFunction>              	_priorCostFunction;
-
 	// the objective generator that computes the costs for each segment
 	boost::shared_ptr<ObjectiveGenerator>             	_objectiveGenerator;
 
@@ -151,7 +148,7 @@ private:
 
 	// the gold standard extractor, gives the closest candidate solution to the 
 	// groundtruth
-	boost::shared_ptr<GoldStandardExtractor>          _goldStandardExtractor;
+	boost::shared_ptr<pipeline::ProcessNode>          _goldStandardProvider;
 
 	// the training node, trains a random forest classifier on the gold standard
 	boost::shared_ptr<SegmentRandomForestTrainer>     _segmentRfTrainer;

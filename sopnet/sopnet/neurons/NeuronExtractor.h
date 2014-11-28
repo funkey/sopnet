@@ -19,20 +19,29 @@ private:
 
 	void updateOutputs();
 
-	// add a slice to the same-neuron lookup table
-	void addSlice(unsigned int slice);
+	void prepareSliceMaps();
 
-	// merge the slices of the neurons belonging to slice1 and slice2
-	void mergeSlices(unsigned int slice1, unsigned int slice2);
+	void findConnectedSlices();
 
-	pipeline::Input<Segments> _segments;
+	void createNeuronsFromSlices();
+
+	pipeline::Input<Segments>      _segments;
 	pipeline::Output<SegmentTrees> _neurons;
 
-	// a lookup table for slices of the same neuron
-	std::map<unsigned int, std::set<unsigned int> > _slices;
+	// map from slice id to all segments it is involved in
+	std::map<unsigned int, std::vector<boost::shared_ptr<Segment> > > _sliceSegments;
 
-	// a lookup table for neuron ids from slice ids
-	std::map<unsigned int, unsigned int> _neuronIds;
+	// map from slice id to all neighboring slice ids
+	std::map<unsigned int, std::vector<unsigned int> > _sliceNeighbors;
+
+	// set of already visited slices
+	std::set<unsigned int> _unvisitedSlices;
+
+	// ids of slices that are at the boundary of the current component
+	std::stack<unsigned int> _boundarySlices;
+
+	// list of connected slices
+	std::vector<std::set<unsigned int> > _connectedSlices;
 };
 
 #endif // SOPNET_NEURONS_NEURON_EXTRACTOR_H__

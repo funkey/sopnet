@@ -1,6 +1,6 @@
-#include "SliceErrors.h"
+#include "AnisotropicEditDistanceErrors.h"
 
-std::ostream& operator<<(std::ostream& os, const SliceErrors& sliceErrors) {
+std::ostream& operator<<(std::ostream& os, const AnisotropicEditDistanceErrors& sliceErrors) {
 
 	os
 			<< "FP: " << sliceErrors.numFalsePositives() << ", "

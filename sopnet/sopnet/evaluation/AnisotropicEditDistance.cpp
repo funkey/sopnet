@@ -1,27 +1,27 @@
 #include <util/Logger.h>
 #include <util/ProgramOptions.h>
 #include <util/helpers.hpp>
-#include "ResultEvaluator.h"
+#include "AnisotropicEditDistance.h"
 
-logger::LogChannel resultevaluatorlog("resultevaluatorlog", "[ResultEvaluator] ");
+logger::LogChannel resultevaluatorlog("resultevaluatorlog", "[AnisotropicEditDistance] ");
 
 util::ProgramOption optionEvaluatinMinOverlap(
 		util::_module           = "sopnet.evaluation",
 		util::_long_name        = "minOverlap",
 		util::_description_text = "The minimal normalized overlap between a result and ground-truth slice to consider them as a match.");
 
-ResultEvaluator::ResultEvaluator(double minOverlap) :
-	_sliceErrors(new SliceErrors()),
+AnisotropicEditDistance::AnisotropicEditDistance(double minOverlap) :
+	_errors(new AnisotropicEditDistanceErrors()),
 	_overlap(true /* normalize */, false /* don't align */),
 	_minOverlap(optionEvaluatinMinOverlap ? optionEvaluatinMinOverlap : minOverlap) {
 
 	registerInput(_result, "result");
 	registerInput(_groundTruth, "ground truth");
-	registerOutput(_sliceErrors, "slice errors");
+	registerOutput(_errors, "errors");
 }
 
 void
-ResultEvaluator::updateOutputs() {
+AnisotropicEditDistance::updateOutputs() {
 
 	LOG_DEBUG(resultevaluatorlog) << "updating outputs..." << std::endl;
 
@@ -43,7 +43,7 @@ ResultEvaluator::updateOutputs() {
 	std::vector<std::map<int, int> > bestPreviousMapping;
 
 	// all minimal sliceErrors until a section and a mapping of this section
-	std::vector<std::vector<SliceErrors> > accumulatedSliceErrors;
+	std::vector<std::vector<AnisotropicEditDistanceErrors> > accumulatedSliceErrors;
 
 	// For each section...
 	for (unsigned int section = 0; section < _numSections; section++) {
@@ -64,7 +64,7 @@ ResultEvaluator::updateOutputs() {
 
 			// The slice errors of the first section consist only of the 
 			// intra-section slice errors.
-			std::vector<SliceErrors> firstSliceErrors;
+			std::vector<AnisotropicEditDistanceErrors> firstSliceErrors;
 
 			foreach (Mapping& mapping, currentMappings)
 				firstSliceErrors.push_back(getIntraSliceErrors(mapping, 0));
@@ -77,14 +77,14 @@ ResultEvaluator::updateOutputs() {
 		}
 
 		// new vector of slice errors for current section
-		accumulatedSliceErrors.push_back(std::vector<SliceErrors>(currentMappings.size(), SliceErrors()));
+		accumulatedSliceErrors.push_back(std::vector<AnisotropicEditDistanceErrors>(currentMappings.size(), AnisotropicEditDistanceErrors()));
 
 		Mappings& previousMappings = allMappings[section - 1];
 
 		// Compute slice errors of all mappings of current section when combined 
 		// with any mapping of previous section.
 
-		std::map<int, std::map<int, SliceErrors> > sliceErrors;
+		std::map<int, std::map<int, AnisotropicEditDistanceErrors> > sliceErrors;
 
 		LOG_DEBUG(resultevaluatorlog)
 				<< "computing slice errors for all " << currentMappings.size() << "x"
@@ -107,10 +107,10 @@ ResultEvaluator::updateOutputs() {
 			for (unsigned int j = 0; j < previousMappings.size(); j++) {
 
 				// the sliceError until j in the previous section
-				const SliceErrors& previousSliceErrors = accumulatedSliceErrors[section-1][j];
+				const AnisotropicEditDistanceErrors& previousSliceErrors = accumulatedSliceErrors[section-1][j];
 
 				// the sliceError until i when going over j
-				SliceErrors currentSliceErrors = sliceErrors[i][j] + previousSliceErrors;
+				AnisotropicEditDistanceErrors currentSliceErrors = sliceErrors[i][j] + previousSliceErrors;
 
 				// remember the best j
 				if (currentSliceErrors.total() < numSliceErrors || numSliceErrors == -1) {
@@ -129,7 +129,7 @@ ResultEvaluator::updateOutputs() {
 
 	// Choose the mapping with the lowest acummulated slice error.
 
-	SliceErrors minSliceErrors;
+	AnisotropicEditDistanceErrors minSliceErrors;
 	int bestMapping = -1;
 
 	LOG_DEBUG(resultevaluatorlog) << "walking backwards to find sequence of optimal mappings" << std::endl;
@@ -157,7 +157,7 @@ ResultEvaluator::updateOutputs() {
 
 	// Set outputs.
 
-	*_sliceErrors = minSliceErrors;
+	*_errors = minSliceErrors;
 
 	LOG_DEBUG(resultevaluatorlog) << "done" << std::endl;
 
@@ -178,8 +178,8 @@ ResultEvaluator::updateOutputs() {
 			<< minSliceErrors.numFalseMerges() << std::endl;
 }
 
-ResultEvaluator::Mappings
-ResultEvaluator::getAllMappings(unsigned int section) {
+AnisotropicEditDistance::Mappings
+AnisotropicEditDistance::getAllMappings(unsigned int section) {
 
 	LOG_ALL(resultevaluatorlog) << "computing all mappings for section " << section << std::endl;
 
@@ -217,19 +217,19 @@ ResultEvaluator::getAllMappings(unsigned int section) {
 }
 
 std::vector<boost::shared_ptr<Slice> >
-ResultEvaluator::getGroundTruthSlices(unsigned int section) {
+AnisotropicEditDistance::getGroundTruthSlices(unsigned int section) {
 
 	return _groundTruthSlices[section];
 }
 
 std::vector<boost::shared_ptr<Slice> >
-ResultEvaluator::getResultSlices(unsigned int section) {
+AnisotropicEditDistance::getResultSlices(unsigned int section) {
 
 	return _resultSlices[section];
 }
 
 void
-ResultEvaluator::findAllSlicesAndLinks() {
+AnisotropicEditDistance::findAllSlicesAndLinks() {
 
 	_resultSlices      = std::vector<std::vector<boost::shared_ptr<Slice> > >();
 	_groundTruthSlices = std::vector<std::vector<boost::shared_ptr<Slice> > >();
@@ -250,7 +250,7 @@ ResultEvaluator::findAllSlicesAndLinks() {
 }
 
 std::vector<std::vector<boost::shared_ptr<Slice> > >
-ResultEvaluator::findSlices(Segments& segments) {
+AnisotropicEditDistance::findSlices(Segments& segments) {
 
 	// Fill a set of slices for each section.
 	std::vector<std::set<boost::shared_ptr<Slice> > > sliceSets;
@@ -287,7 +287,7 @@ ResultEvaluator::findSlices(Segments& segments) {
 }
 
 std::vector<std::set<std::pair<int, int> > >
-ResultEvaluator::findLinks(Segments& segments) {
+AnisotropicEditDistance::findLinks(Segments& segments) {
 
 	std::vector<std::set<std::pair<int, int> > > links;
 
@@ -345,7 +345,7 @@ ResultEvaluator::findLinks(Segments& segments) {
 }
 
 void
-ResultEvaluator::insertSlice(
+AnisotropicEditDistance::insertSlice(
 		std::vector<std::set<boost::shared_ptr<Slice> > >& sliceSets,
 		boost::shared_ptr<Slice>                           slice) {
 
@@ -356,7 +356,7 @@ ResultEvaluator::insertSlice(
 }
 
 void
-ResultEvaluator::createMappings(
+AnisotropicEditDistance::createMappings(
 		Mappings&                               mappings,
 		Mapping&                                currentMapping,
 		std::map<int, std::vector<int> >&       resultPartners,
@@ -424,8 +424,8 @@ ResultEvaluator::createMappings(
 	LOG_ALL(resultevaluatorlog) << "done with slice #" << numSlice << std::endl;
 }
 
-SliceErrors
-ResultEvaluator::getSliceErrors(
+AnisotropicEditDistanceErrors
+AnisotropicEditDistance::getSliceErrors(
 		const Mapping& mapping,
 		const Mapping& previousMapping,
 		unsigned int section) {
@@ -435,17 +435,17 @@ ResultEvaluator::getSliceErrors(
 
 	// Get intra-section slice errors.
 
-	SliceErrors intraSliceErrors = getIntraSliceErrors(mapping, section);
+	AnisotropicEditDistanceErrors intraSliceErrors = getIntraSliceErrors(mapping, section);
 
 	// Get inter-section slice errors.
 
-	SliceErrors interSliceErrors = getInterSliceErrors(mapping, previousMapping, section);
+	AnisotropicEditDistanceErrors interSliceErrors = getInterSliceErrors(mapping, previousMapping, section);
 
 	return intraSliceErrors + interSliceErrors;
 }
 
-SliceErrors
-ResultEvaluator::getIntraSliceErrors(const Mapping& mapping, unsigned int section) {
+AnisotropicEditDistanceErrors
+AnisotropicEditDistance::getIntraSliceErrors(const Mapping& mapping, unsigned int section) {
 
 	// Get all result slice ids of the current section.
 
@@ -478,7 +478,7 @@ ResultEvaluator::getIntraSliceErrors(const Mapping& mapping, unsigned int sectio
 		groundTruthIds.erase(groundTruthId);
 	}
 
-	SliceErrors sliceErrors;
+	AnisotropicEditDistanceErrors sliceErrors;
 
 	// Remaining result slice ids are false positives.
 
@@ -495,13 +495,13 @@ ResultEvaluator::getIntraSliceErrors(const Mapping& mapping, unsigned int sectio
 	return sliceErrors;
 }
 
-SliceErrors
-ResultEvaluator::getInterSliceErrors(
+AnisotropicEditDistanceErrors
+AnisotropicEditDistance::getInterSliceErrors(
 		const Mapping& mapping,
 		const Mapping& previousMapping,
 		unsigned int section) {
 
-	SliceErrors interSliceErrors;
+	AnisotropicEditDistanceErrors interSliceErrors;
 
 	// Create a look-up table for result ids to ground-truth ids under the 
 	// current mapping.

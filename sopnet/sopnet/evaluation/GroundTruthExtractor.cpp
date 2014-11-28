@@ -4,13 +4,21 @@
 #include <sopnet/slices/SliceExtractor.h>
 #include "GroundTruthExtractor.h"
 
+util::ProgramOption optionGroundTruthFromSkeletons(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "groundTruthFromSkeletons",
+		util::_description_text = "Indicate that the ground truth images contain skeletons and not volumetric processes.");
+
+util::ProgramOption optionGroundTruthAddIntensityBoundaries(
+		util::_module           = "sopnet.evaluation",
+		util::_long_name        = "groundTruthAddIntensityBoundaries",
+		util::_description_text = "Separate ground truth regions of different intensities with a black boundary, such that components of same intensity end up to be exactly one slice.");
+
 logger::LogChannel groundtruthextractorlog("groundtruthextractorlog", "[GroundTruthExtractor] ");
 
-GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bool addIntensityBoundaries, bool endSegmentsOnly) :
+GroundTruthExtractor::GroundTruthExtractor(bool endSegmentsOnly) :
 	_groundTruthSegments(new Segments()),
-	_firstSection(firstSection),
-	_lastSection(lastSection),
-	_addIntensityBoundaries(addIntensityBoundaries),
+	_addIntensityBoundaries(optionGroundTruthAddIntensityBoundaries && !optionGroundTruthFromSkeletons),
 	_endSegmentsOnly(endSegmentsOnly) {
 
 	registerInput(_groundTruthSections, "ground truth sections");
@@ -20,8 +28,8 @@ GroundTruthExtractor::GroundTruthExtractor(int firstSection, int lastSection, bo
 void
 GroundTruthExtractor::updateOutputs() {
 
-	unsigned int firstSection = (_firstSection >= 0 ? _firstSection : 0);
-	unsigned int lastSection  = (_lastSection  >= 0 ? _lastSection  : _groundTruthSections->size() - 1);
+	unsigned int firstSection = 0;
+	unsigned int lastSection  = _groundTruthSections->size() - 1;
 
 	LOG_ALL(groundtruthextractorlog)
 			<< "extacting groundtruth from sections "
@@ -40,7 +48,10 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 	// components
 	pipeline::Value<MserParameters> mserParameters;
 	mserParameters->delta        = 1;
-	mserParameters->minArea      = 50; // this is to avoid this tiny annotation that mess up the result
+	if (optionGroundTruthFromSkeletons)
+		mserParameters->minArea  = 0; // skeletons are small
+	else
+		mserParameters->minArea  = 50; // this is to avoid this tiny annotation that mess up the result
 	mserParameters->maxArea      = 10000000;
 	mserParameters->maxVariation = 100;
 	mserParameters->minDiversity = 0;

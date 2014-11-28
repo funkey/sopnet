@@ -160,16 +160,17 @@ SegmentExtractor::extractSegments() {
 	LOG_DEBUG(segmentextractorlog) << "extracting continuations to next section..." << std::endl;
 
 	// for all slices in previous section...
-	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+	foreach (boost::shared_ptr<Slice> prev, *_prevSlices) {
 
-		LOG_ALL(segmentextractorlog) << "found " << _nextOverlaps[i].size() << " partners" << std::endl;
+		LOG_ALL(segmentextractorlog) << "found " << _nextOverlaps[prev].size() << " partners" << std::endl;
 
 		// ...and all overlapping slices in the next section...
-		unsigned int j, overlap;
-		foreach (boost::tie(overlap, j), _nextOverlaps[i]) {
+		boost::shared_ptr<Slice> next;
+		unsigned int overlap;
+		foreach (boost::tie(overlap, next), _nextOverlaps[prev]) {
 
 			// ...try to extract the segment
-			extractSegment((*_prevSlices)[i], (*_nextSlices)[j], overlap);
+			extractSegment(prev, next, overlap);
 		}
 	}
 
@@ -187,42 +188,40 @@ SegmentExtractor::extractSegments() {
 
 		LOG_DEBUG(segmentextractorlog) << "extracting bisections from previous to next section..." << std::endl;
 
-		for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+		foreach (boost::shared_ptr<Slice> prev, *_prevSlices) {
 
-			for (unsigned int j1_index = 0; j1_index < _nextOverlaps[i].size(); j1_index++)
-				for (unsigned int j2_index = j1_index + 1; j2_index < _nextOverlaps[i].size(); j2_index++) {
+			unsigned int overlap1, overlap2;
+			boost::shared_ptr<Slice> next1, next2;
 
-					const unsigned int j1 = _nextOverlaps[i][j1_index].second;
-					const unsigned int j2 = _nextOverlaps[i][j2_index].second;
+			foreach (boost::tie(overlap1, next1), _nextOverlaps[prev]) {
+				foreach (boost::tie(overlap2, next2), _nextOverlaps[prev]) {
 
-					const unsigned int overlap1 = _nextOverlaps[i][j1_index].first;
-					const unsigned int overlap2 = _nextOverlaps[i][j2_index].first;
+					if (next1->getId() <= next2->getId())
+						continue;
 
-					if (!_nextSlices->areConflicting((*_nextSlices)[j1]->getId(), (*_nextSlices)[j2]->getId())) {
-
-						extractSegment((*_prevSlices)[i], (*_nextSlices)[j1], (*_nextSlices)[j2], Right, overlap1, overlap2);
-					}
+					if (!_nextSlices->areConflicting(next1->getId(), next2->getId()))
+						extractSegment(prev, next1, next2, Right, overlap1, overlap2);
 				}
+			}
 		}
 
 		LOG_DEBUG(segmentextractorlog) << "extracting bisections from next to previous section..." << std::endl;
 
-		for (unsigned int i = 0; i < _nextSlices->size(); i++) {
+		foreach (boost::shared_ptr<Slice> next, *_nextSlices) {
 
-			for (unsigned int j1_index = 0; j1_index < _prevOverlaps[i].size(); j1_index++)
-				for (unsigned int j2_index = j1_index + 1; j2_index < _prevOverlaps[i].size(); j2_index++) {
+			unsigned int overlap1, overlap2;
+			boost::shared_ptr<Slice> prev1, prev2;
 
-					const unsigned int j1 = _prevOverlaps[i][j1_index].second;
-					const unsigned int j2 = _prevOverlaps[i][j2_index].second;
+			foreach (boost::tie(overlap1, prev1), _prevOverlaps[next]) {
+				foreach (boost::tie(overlap2, prev2), _prevOverlaps[next]) {
 
-					const unsigned int overlap1 = _prevOverlaps[i][j1_index].first;
-					const unsigned int overlap2 = _prevOverlaps[i][j2_index].first;
+					if (prev1->getId() <= prev2->getId())
+						continue;
 
-					if (!_prevSlices->areConflicting((*_prevSlices)[j1]->getId(), (*_prevSlices)[j2]->getId())) {
-
-						extractSegment((*_nextSlices)[i], (*_prevSlices)[j1], (*_prevSlices)[j2], Left, overlap1, overlap2);
-					}
+					if (!_prevSlices->areConflicting(prev1->getId(), prev2->getId()))
+						extractSegment(next, prev1, prev2, Left, overlap1, overlap2);
 				}
+			}
 		}
 
 		LOG_DEBUG(segmentextractorlog) << _segments->size() << " segments extraced so far (+" << (_segments->size() - oldSize) << ")" << std::endl;
@@ -235,29 +234,30 @@ void
 SegmentExtractor::ensureMinContinuationPartners() {
 
 	// for all slices with fewer than the required number of partners...
-	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
+	foreach (boost::shared_ptr<Slice> prev, *_prevSlices) {
 
-		unsigned int prevId = (*_prevSlices)[i]->getId();
+		unsigned int prevId = prev->getId();
 
 		unsigned int numPartners = _continuationPartners[prevId].size();
 
 		if (numPartners < _minContinuationPartners) {
 
 			// sort overlapping slices by overlap
-			std::sort(_nextOverlaps[i].rbegin(), _nextOverlaps[i].rend());
+			std::sort(_nextOverlaps[prev].rbegin(), _nextOverlaps[prev].rend(), OverlapCompare());
 
 			// ...and all overlapping slices in the next section...
-			unsigned int j, overlap;
-			foreach (boost::tie(overlap, j), _nextOverlaps[i]) {
+			boost::shared_ptr<Slice> next;
+			unsigned int overlap;
+			foreach (boost::tie(overlap, next), _nextOverlaps[prev]) {
 
-				unsigned int nextId = (*_nextSlices)[j]->getId();
+				unsigned int nextId = next->getId();
 
 				// ...if not already a partner...
 				if (std::count(_continuationPartners[prevId].begin(), _continuationPartners[prevId].end(), nextId))
 					continue;
 
 				// ...extract the segment
-				extractSegment((*_prevSlices)[i], (*_nextSlices)[j]);
+				extractSegment(prev, next);
 
 				numPartners++;
 
@@ -268,26 +268,27 @@ SegmentExtractor::ensureMinContinuationPartners() {
 	}
 
 	// for all slices with fewer than the required number of partners
-	for (unsigned int i = 0; i < _nextSlices->size(); i++) {
+	foreach (boost::shared_ptr<Slice> next, *_nextSlices) {
 
-		unsigned int nextId = (*_nextSlices)[i]->getId();
+		unsigned int nextId = next->getId();
 
 		unsigned int numPartners = _continuationPartners[nextId].size();
 
 		if (numPartners < _minContinuationPartners) {
 
 			// ...and all overlapping slices in the prev section...
-			unsigned int j, overlap;
-			foreach (boost::tie(overlap, j), _prevOverlaps[i]) {
+			boost::shared_ptr<Slice> prev;
+			unsigned int overlap;
+			foreach (boost::tie(overlap, prev), _prevOverlaps[next]) {
 
-				unsigned int prevId = (*_prevSlices)[j]->getId();
+				unsigned int prevId = prev->getId();
 
 				// ...if not already a partner...
 				if (std::count(_continuationPartners[nextId].begin(), _continuationPartners[nextId].end(), prevId))
 					continue;
 
 				// ...extract the segment
-				extractSegment((*_prevSlices)[j], (*_nextSlices)[i]);
+				extractSegment(prev, next);
 
 				numPartners++;
 
@@ -306,19 +307,16 @@ SegmentExtractor::buildOverlapMap() {
 	_prevOverlaps.clear();
 	_nextOverlaps.clear();
 
-	for (unsigned int i = 0; i < _prevSlices->size(); i++) {
-
-		for (unsigned int j = 0; j < _nextSlices->size(); j++) {
-
-			const Slice& prev = *(*_prevSlices)[i];
-			const Slice& next = *(*_nextSlices)[j];
+	unsigned int i = 0;
+	foreach (boost::shared_ptr<Slice> prev, *_prevSlices) {
+		foreach (boost::shared_ptr<Slice> next, *_nextSlices) {
 
 			double value;
 
-			if (_overlap.exceeds(prev, next, 0, value)) {
+			if (_overlap.exceeds(*prev, *next, 0, value)) {
 
-				_nextOverlaps[i].push_back(std::make_pair(static_cast<unsigned int>(value), j));
-				_prevOverlaps[j].push_back(std::make_pair(static_cast<unsigned int>(value), i));
+				_nextOverlaps[prev].push_back(std::make_pair(static_cast<unsigned int>(value), next));
+				_prevOverlaps[next].push_back(std::make_pair(static_cast<unsigned int>(value), prev));
 			}
 		}
 
@@ -326,6 +324,8 @@ SegmentExtractor::buildOverlapMap() {
 
 			LOG_DEBUG(segmentextractorlog) << round(static_cast<double>(i)*100/std::max(static_cast<unsigned int>(1), _prevSlices->size())) << "%" << std::endl;
 		}
+
+		i++;
 	}
 
 	LOG_DEBUG(segmentextractorlog) << "done." << std::endl;

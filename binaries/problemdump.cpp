@@ -17,7 +17,6 @@
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <pipeline/Value.h>
 #include <sopnet/Sopnet.h>
-#include <sopnet/evaluation/ResultEvaluator.h>
 #include <sopnet/evaluation/VariationOfInformation.h>
 #include <sopnet/gui/SopnetDialog.h>
 #include <sopnet/io/IdMapCreator.h>

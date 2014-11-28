@@ -18,6 +18,15 @@ public:
 			const ImageStack& recLabels,
 			const ImageStack& gtLabels);
 
+protected:
+
+	virtual void findRelabelCandidates(const std::vector<float>& maxBoundaryDistances);
+
+	std::vector<unsigned int> _relabelCandidates;
+
+	bool _haveBackgroundLabel;
+	float _backgroundLabel;
+
 private:
 
 	// find alternative cell labels
@@ -46,9 +55,6 @@ private:
 	// the distance threshold in nm
 	float _maxDistanceThreshold;
 
-	bool _haveBackgroundLabel;
-	float _backgroundLabel;
-
 	// the size of one voxel
 	float _resolutionX;
 	float _resolutionY;
@@ -64,8 +70,6 @@ private:
 
 	vigra::MultiArray<3, bool>  _boundaryMap;
 	vigra::MultiArray<3, float> _boundaryDistance2;
-
-	std::vector<unsigned int> _relabelCandidates;
 };
 
 #endif // SOPNET_EVALUATION_DISTANCE_TOLERANCE_FUNCTION_H__

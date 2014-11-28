@@ -1,9 +1,11 @@
 #include <algorithm>
 
 #include <boost/range/adaptors.hpp>
+#include <boost/timer/timer.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <vigra/multi_labeling.hxx>
 
+#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <inference/LinearConstraints.h>
 #include <inference/LinearObjective.h>
 #include <inference/LinearSolver.h>
@@ -13,6 +15,7 @@
 #include <util/ProgramOptions.h>
 #include "TolerantEditDistance.h"
 #include "DistanceToleranceFunction.h"
+#include "SkeletonToleranceFunction.h"
 
 logger::LogChannel tedlog("tedlog", "[TolerantEditDistance] ");
 
@@ -41,7 +44,7 @@ util::ProgramOption optionReconstructionBackgroundLabel(
 		util::_default_value    = 0.0);
 
 TolerantEditDistance::TolerantEditDistance() :
-	_haveBackgroundLabel(optionHaveBackgroundLabel),
+	_haveBackgroundLabel(optionHaveBackgroundLabel || optionGroundTruthFromSkeletons),
 	_gtBackgroundLabel(optionGroundTruthBackgroundLabel),
 	_recBackgroundLabel(optionReconstructionBackgroundLabel),
 	_correctedReconstruction(new ImageStack()),
@@ -49,7 +52,7 @@ TolerantEditDistance::TolerantEditDistance() :
 	_mergeLocations(new ImageStack()),
 	_fpLocations(new ImageStack()),
 	_fnLocations(new ImageStack()),
-	_errors(_haveBackgroundLabel ? new Errors(_gtBackgroundLabel, _recBackgroundLabel) : new Errors()) {
+	_errors(_haveBackgroundLabel ? new TolerantEditDistanceErrors(_gtBackgroundLabel, _recBackgroundLabel) : new TolerantEditDistanceErrors()) {
 
 	if (optionHaveBackgroundLabel) {
 		LOG_ALL(tedlog) << "started TolerantEditDistance with background label" << std::endl;
@@ -67,7 +70,10 @@ TolerantEditDistance::TolerantEditDistance() :
 	registerOutput(_fnLocations, "false negatives");
 	registerOutput(_errors, "errors");
 
-	_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
+	if (optionGroundTruthFromSkeletons)
+		_toleranceFunction = new SkeletonToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _recBackgroundLabel);
+	else
+		_toleranceFunction = new DistanceToleranceFunction(optionToleranceDistanceThreshold.as<float>(), _haveBackgroundLabel, _recBackgroundLabel);
 }
 
 TolerantEditDistance::~TolerantEditDistance() {
@@ -108,6 +114,8 @@ TolerantEditDistance::clear() {
 
 void
 TolerantEditDistance::extractCells() {
+
+	boost::timer::auto_cpu_timer timer(std::cout, "\textractCells():\t\t\t\t%ws\n");
 
 	if (_groundTruth->size() != _reconstruction->size())
 		BOOST_THROW_EXCEPTION(SizeMismatchError() << error_message("ground truth and reconstruction have different size") << STACK_TRACE);
@@ -166,6 +174,8 @@ TolerantEditDistance::extractCells() {
 void
 TolerantEditDistance::findBestCellLabels() {
 
+	boost::timer::auto_cpu_timer timer(std::cout, "\tfindBestCellLabels():\t\t\t%ws\n");
+
 	pipeline::Value<LinearConstraints>      constraints;
 	pipeline::Value<LinearSolverParameters> parameters;
 
@@ -188,7 +198,7 @@ TolerantEditDistance::findBestCellLabels() {
 		foreach (float l, cell.getAlternativeLabels()) {
 
 			unsigned int ind = var++;
-			_alternativeIndicators.push_back(ind);
+			_alternativeIndicators.push_back(std::make_pair(ind, cell.size()));
 			assignIndicatorVariable(ind, cellIndex, cell.getGroundTruthLabel(), l);
 		}
 
@@ -343,14 +353,11 @@ TolerantEditDistance::findBestCellLabels() {
 	// the least changes -- therefore, we add a small value for each of those 
 	// variables that can not sum up to one and therefor does not change the 
 	// number of splits and merges
-	foreach (unsigned int ind, _alternativeIndicators)
-		objective->setCoefficient(ind, 1.0/(_numCells + 1));
-	// if we have to change a label, slightly prefer the background -- this 
-	// makes merges with background and false positives look nicer
-	if (_haveBackgroundLabel) {
-		foreach (unsigned int ind, getIndicatorsByRec(_recBackgroundLabel))
-			objective->setCoefficient(ind, -0.5/(_numCells + 1));
-	}
+	unsigned int ind;
+	size_t cellSize;
+	double volumeSize = _width*_height*_depth;
+	foreach (boost::tie(ind, cellSize), _alternativeIndicators)
+		objective->setCoefficient(ind, static_cast<double>(cellSize)/(volumeSize + 1));
 	objective->setSense(Minimize);
 
 	// solve
@@ -366,6 +373,8 @@ TolerantEditDistance::findBestCellLabels() {
 
 void
 TolerantEditDistance::findErrors() {
+
+	boost::timer::auto_cpu_timer timer(std::cout, "\tfindErrors():\t\t\t\t%ws\n");
 
 	// prepare error location image stack
 
@@ -395,11 +404,11 @@ TolerantEditDistance::findErrors() {
 		}
 	}
 
-	LOG_DEBUG(tedlog) << "error counts from Errors data structure:" << std::endl;
-	LOG_DEBUG(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
-	LOG_DEBUG(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
-	LOG_DEBUG(tedlog) << "num false positives: " << _errors->getNumFalsePositives() << std::endl;
-	LOG_DEBUG(tedlog) << "num false negatives: " << _errors->getNumFalseNegatives() << std::endl;
+	//LOG_USER(tedlog) << "error counts from Errors data structure:" << std::endl;
+	//LOG_USER(tedlog) << "num splits: " << _errors->getNumSplits() << std::endl;
+	//LOG_USER(tedlog) << "num merges: " << _errors->getNumMerges() << std::endl;
+	//LOG_USER(tedlog) << "num false positives: " << _errors->getNumFalsePositives() << std::endl;
+	//LOG_USER(tedlog) << "num false negatives: " << _errors->getNumFalseNegatives() << std::endl;
 
 	// fill error location image stack
 
@@ -407,9 +416,9 @@ TolerantEditDistance::findErrors() {
 
 	// all cells that split the ground truth
 	float gtLabel;
-	typedef Errors::cell_map_t::mapped_type::value_type mapping_t;
+	typedef TolerantEditDistanceErrors::cell_map_t::mapped_type::value_type mapping_t;
 	foreach (gtLabel, _errors->getSplitLabels())
-		foreach (const mapping_t& cells, _errors->getSplits(gtLabel))
+		foreach (const mapping_t& cells, _errors->getSplitCells(gtLabel))
 			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
 					(*(*_splitLocations)[l.z])(l.x, l.y) = cells.first;
@@ -417,7 +426,7 @@ TolerantEditDistance::findErrors() {
 	// all cells that split the reconstruction
 	float recLabel;
 	foreach (recLabel, _errors->getMergeLabels())
-		foreach (const mapping_t& cells, _errors->getMerges(recLabel))
+		foreach (const mapping_t& cells, _errors->getMergeCells(recLabel))
 			foreach (unsigned int cellIndex, cells.second)
 				foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
 					(*(*_mergeLocations)[l.z])(l.x, l.y) = cells.first;
@@ -425,7 +434,7 @@ TolerantEditDistance::findErrors() {
 	if (_haveBackgroundLabel) {
 
 		// all cells that are false positives
-		foreach (const mapping_t& cells, _errors->getFalsePositives())
+		foreach (const mapping_t& cells, _errors->getFalsePositiveCells())
 			if (cells.first != _recBackgroundLabel) {
 				foreach (unsigned int cellIndex, cells.second)
 					foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
@@ -433,7 +442,7 @@ TolerantEditDistance::findErrors() {
 			}
 
 		// all cells that are false negatives
-		foreach (const mapping_t& cells, _errors->getFalseNegatives())
+		foreach (const mapping_t& cells, _errors->getFalseNegativeCells())
 			if (cells.first != _gtBackgroundLabel) {
 				foreach (unsigned int cellIndex, cells.second)
 					foreach (const cell_t::Location& l, (*_toleranceFunction->getCells())[cellIndex])
@@ -444,6 +453,8 @@ TolerantEditDistance::findErrors() {
 
 void
 TolerantEditDistance::correctReconstruction() {
+
+	boost::timer::auto_cpu_timer timer(std::cout, "\tcorrectReconstruction():\t\t%ws\n");
 
 	// prepare output image
 

@@ -1,3 +1,4 @@
+#include <boost/timer/timer.hpp>
 #include <util/Logger.h>
 #include <util/foreach.h>
 #include <util/helpers.hpp>
@@ -9,7 +10,8 @@ LinearSolver::LinearSolver(const LinearSolverBackendFactory& backendFactory) :
 	_solution(new Solution()),
 	_objectiveDirty(true),
 	_linearConstraintsDirty(true),
-	_parametersDirty(true) {
+	_parametersDirty(true),
+	_pinnedChanged(false) {
 
 	registerInput(_objective, "objective");
 	registerInput(_linearConstraints, "linear constraints");
@@ -28,6 +30,34 @@ LinearSolver::LinearSolver(const LinearSolverBackendFactory& backendFactory) :
 LinearSolver::~LinearSolver() {
 
 	delete _solver;
+}
+
+void
+LinearSolver::pinVariable(unsigned int varNum, double value) {
+
+	// already pinned to that value?
+	if (_pinned.count(varNum) && _pinned[varNum] == value)
+		return;
+
+	_pinned[varNum] = value;
+	_pinnedChanged = true;
+	setDirty(_solution);
+}
+
+bool
+LinearSolver::unpinVariable(unsigned int varNum) {
+
+	// was it pinned?
+	if (_pinned.erase(varNum) > 0) {
+
+		_unpinned.insert(varNum);
+		_pinnedChanged = true;
+		setDirty(_solution);
+
+		return true;
+	}
+
+	return false;
 }
 
 void
@@ -50,6 +80,8 @@ LinearSolver::onParametersModified(const pipeline::Modified&) {
 
 void
 LinearSolver::updateOutputs() {
+
+	boost::timer::auto_cpu_timer timer("\tLinearSolver::updateOutputs()\t\t%ws\n");
 
 	updateLinearProgram();
 
@@ -92,6 +124,22 @@ LinearSolver::updateLinearProgram() {
 		_solver->setConstraints(*_linearConstraints);
 
 		_linearConstraintsDirty = false;
+	}
+
+	if (_pinnedChanged) {
+
+		LOG_DEBUG(linearsolverlog) << "(un)pinning variables" << std::endl;
+
+		unsigned int varNum;
+		double       value;
+		foreach (boost::tie(varNum, value), _pinned)
+			_solver->pinVariable(varNum, value);
+
+		foreach (varNum, _unpinned)
+			_solver->unpinVariable(varNum);
+		_unpinned.clear();
+
+		_pinnedChanged = false;
 	}
 }
 

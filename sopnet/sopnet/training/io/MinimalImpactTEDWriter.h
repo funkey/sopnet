@@ -28,9 +28,23 @@ private:
 
 	void updateOutputs() {}
 
-	void clearPipeline();
+	/**
+	 * Initialize the pipeline components that don't change between iterations.
+	 */
+	void initPipeline();
 
-	void createPipeline();
+	/**
+	 * Update the pipeline for the computation of the TED for the current 
+	 * segment.
+	 *
+	 * @param interSectionInterval
+	 *              The inter-section interval of the segment that is currently 
+	 *              flipped.
+	 * @param numAdjacentSections
+	 *              The number of sections to consider around the current 
+	 *              segment for the computation of the TED.
+	 */
+	void updatePipeline(int interSectionInterval, int numAdjacentSections = 0);
 
 	/*********
 	* Inputs *
@@ -38,6 +52,10 @@ private:
 
 	// The gold standard with respect to which to measure the TED
 	pipeline::Input<Segments> 			_goldStandard;
+
+	// The ground truth, which can be used instead of the gold standard to 
+	// compute the TED (see option optionUseDirectGroundTruth)
+	pipeline::Input<ImageStack> _groundTruth;
 
 	// The linear constraints that describe the relationship among the segments
 	pipeline::Input<LinearConstraints> 		_linearConstraints;

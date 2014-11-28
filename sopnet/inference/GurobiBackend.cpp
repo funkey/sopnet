@@ -231,6 +231,24 @@ GurobiBackend::setConstraints(const LinearConstraints& constraints) {
 	}
 }
 
+void
+GurobiBackend::pinVariable(unsigned int varNum, double value) {
+
+	_variables[varNum].set(GRB_DoubleAttr_LB, value);
+	_variables[varNum].set(GRB_DoubleAttr_UB, value);
+}
+
+bool
+GurobiBackend::unpinVariable(unsigned int varNum) {
+
+	bool pinned = (_variables[varNum].get(GRB_DoubleAttr_LB) > -GRB_INFINITY);
+
+	_variables[varNum].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
+	_variables[varNum].set(GRB_DoubleAttr_UB,  GRB_INFINITY);
+
+	return pinned;
+}
+
 bool
 GurobiBackend::solve(Solution& x, double& value, std::string& msg) {
 

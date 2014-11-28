@@ -23,6 +23,7 @@
 #include <sopnet/inference/Reconstructor.h>
 #include <sopnet/io/FileContentProvider.h>
 #include <sopnet/training/GoldStandardExtractor.h>
+#include <sopnet/training/io/GoldStandardFileReader.h>
 #include <sopnet/training/SegmentRandomForestTrainer.h>
 #include <sopnet/training/io/StructuredProblemWriter.h>
 #include <sopnet/training/io/MinimalImpactTEDWriter.h>
@@ -47,6 +48,12 @@ util::ProgramOption optionSegmentationCostFunction(
 		util::_long_name        = "segmentationCostFunction",
 		util::_description_text = "Use the segmentation cost function (based on membrane probabilites) for segments.");
 
+util::ProgramOption optionPriorCostFunction(
+		util::_module           = "sopnet.inference",
+		util::_long_name        = "priorCostFunction",
+		util::_description_text = "Use the prior cost function for segments (only really makes sense for gridSearch, since linearCostFunction provides the same).",
+		util::_default_value    = false);
+
 util::ProgramOption optionRandomForestFile(
 		util::_module           = "sopnet.inference",
 		util::_long_name        = "segmentRandomForest",
@@ -65,18 +72,21 @@ util::ProgramOption optionDecomposeProblem(
 		util::_description_text = "Decompose the problem into overlapping subproblems and solve them using SCALAR.",
 		util::_default_value    = false);
 
+util::ProgramOption optionReadGoldStandardFromFile(
+		util::_module           = "sopnet.training",
+		util::_long_name        = "readGoldStandardFromFile",
+		util::_description_text = "Instead of looking at the ground truth, read the gold standard from a file with segment hashes, where each line is of the form: [0 or 1 (part of GS or not)] # [hash].");
+
 Sopnet::Sopnet(
 		const std::string& projectDirectory,
 		boost::shared_ptr<ProcessNode> problemWriter) :
 	_problemAssembler(boost::make_shared<ProblemAssembler>()),
 	_segmentFeaturesExtractor(boost::make_shared<SegmentFeaturesExtractor>()),
 	_randomForestReader(boost::make_shared<RandomForestHdf5Reader>(optionRandomForestFile.as<std::string>())),
-	_priorCostFunction(boost::make_shared<PriorCostFunction>()),
 	_objectiveGenerator(boost::make_shared<ObjectiveGenerator>()),
 	_linearSolver(boost::make_shared<LinearSolver>()),
 	_reconstructor(boost::make_shared<Reconstructor>()),
 	_groundTruthExtractor(boost::make_shared<GroundTruthExtractor>()),
-	_goldStandardExtractor(boost::make_shared<GoldStandardExtractor>()),
 	_segmentRfTrainer(boost::make_shared<SegmentRandomForestTrainer>()),
 	_spWriter(boost::make_shared<StructuredProblemWriter>()),
 	_mitWriter(boost::make_shared<MinimalImpactTEDWriter>()),
@@ -98,16 +108,105 @@ Sopnet::Sopnet(
 	registerInput(_priorCostFunctionParameters, "prior cost parameters");
 	registerInput(_forceExplanation, "force explanation");
 
+	if (optionReadGoldStandardFromFile) {
+
+		LOG_USER(sopnetlog) << "reading gold standard from file " << optionReadGoldStandardFromFile.as<std::string>() << std::endl;
+
+		_goldStandardProvider = boost::make_shared<GoldStandardFileReader>(optionReadGoldStandardFromFile.as<std::string>());
+
+	} else {
+
+		LOG_USER(sopnetlog) << "extract gold standard from ground truth" << std::endl;
+
+		_goldStandardProvider = boost::make_shared<GoldStandardExtractor>();
+	}
+
 	// tell the outside world what we've got
 	registerOutput(_reconstructor->getOutput(), "solution");
 	registerOutput(_problemAssembler->getOutput("segments"), "segments");
 	registerOutput(_problemAssembler->getOutput("problem configuration"), "problem configuration");
 	registerOutput(_objectiveGenerator->getOutput("objective"), "objective");
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
-	registerOutput(_goldStandardExtractor->getOutput("gold standard"), "gold standard");
-	registerOutput(_goldStandardExtractor->getOutput("negative samples"), "negative samples");
+	registerOutput(_goldStandardProvider->getOutput("gold standard"), "gold standard");
+	registerOutput(_goldStandardProvider->getOutput("negative samples"), "negative samples");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
+
+	// set input-output dependencies
+	setDependency(_rawSections, _reconstructor->getOutput());
+	setDependency(_rawSections, _objectiveGenerator->getOutput("objective"));
+	setDependency(_rawSections, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_rawSections, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_membranes, _reconstructor->getOutput());
+	setDependency(_membranes, _objectiveGenerator->getOutput("objective"));
+	setDependency(_membranes, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_membranes, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_neuronSlices, _reconstructor->getOutput());
+	setDependency(_neuronSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_neuronSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_neuronSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_neuronSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_neuronSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_neuronSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_neuronSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_neuronSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_neuronSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_neuronSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_neuronSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_neuronSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_neuronSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_neuronSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_neuronSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_mitochondriaSlices, _reconstructor->getOutput());
+	setDependency(_mitochondriaSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_mitochondriaSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_mitochondriaSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_mitochondriaSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_mitochondriaSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_mitochondriaSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_mitochondriaSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_mitochondriaSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_mitochondriaSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_mitochondriaSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_mitochondriaSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_mitochondriaSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_mitochondriaSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_mitochondriaSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_mitochondriaSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_synapseSlices, _reconstructor->getOutput());
+	setDependency(_synapseSlices, _problemAssembler->getOutput("segments"));
+	setDependency(_synapseSlices, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_synapseSlices, _objectiveGenerator->getOutput("objective"));
+	setDependency(_synapseSlices, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_synapseSlices, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_synapseSlices, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_synapseSlices, _segmentFeaturesExtractor->getOutput("all features"));
+	setDependency(_synapseSliceStackDirectories, _reconstructor->getOutput());
+	setDependency(_synapseSliceStackDirectories, _problemAssembler->getOutput("segments"));
+	setDependency(_synapseSliceStackDirectories, _problemAssembler->getOutput("problem configuration"));
+	setDependency(_synapseSliceStackDirectories, _objectiveGenerator->getOutput("objective"));
+	setDependency(_synapseSliceStackDirectories, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_synapseSliceStackDirectories, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_synapseSliceStackDirectories, _segmentRfTrainer->getOutput("random forest"));
+	setDependency(_synapseSliceStackDirectories, _segmentFeaturesExtractor->getOutput("all features"));
+
+	setDependency(_groundTruth, _groundTruthExtractor->getOutput("ground truth segments"));
+	setDependency(_groundTruth, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_groundTruth, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_groundTruth, _segmentRfTrainer->getOutput("random forest"));
+
+	setDependency(_segmentationCostFunctionParameters, _reconstructor->getOutput());
+	setDependency(_segmentationCostFunctionParameters, _objectiveGenerator->getOutput("objective"));
+
+	setDependency(_priorCostFunctionParameters, _reconstructor->getOutput());
+	setDependency(_priorCostFunctionParameters, _objectiveGenerator->getOutput("objective"));
+
+	setDependency(_forceExplanation, _reconstructor->getOutput());
+	setDependency(_forceExplanation, _goldStandardProvider->getOutput("gold standard"));
+	setDependency(_forceExplanation, _goldStandardProvider->getOutput("negative samples"));
+	setDependency(_forceExplanation, _segmentRfTrainer->getOutput("random forest"));
 }
 
 void
@@ -221,6 +320,7 @@ Sopnet::createInferencePipeline() {
 	boost::shared_ptr<LinearCostFunction>       linearCostFunction;
 	boost::shared_ptr<RandomForestCostFunction> rfCostFunction;
 	boost::shared_ptr<SegmentationCostFunction> segmentationCostFunction;
+	boost::shared_ptr<PriorCostFunction>        priorCostFunction;
 
 	// setup the segment evaluation functions
 	if (optionLinearCostFunction) {
@@ -254,7 +354,11 @@ Sopnet::createInferencePipeline() {
 		segmentationCostFunction->setInput("parameters", _segmentationCostFunctionParameters);
 	}
 
-	_priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
+	if (optionPriorCostFunction) {
+
+		priorCostFunction = boost::make_shared<PriorCostFunction>();
+		priorCostFunction->setInput("parameters", _priorCostFunctionParameters);
+	}
 
 	if (_problemWriter) {
 
@@ -281,6 +385,8 @@ Sopnet::createInferencePipeline() {
 			_objectiveGenerator->addInput("cost functions", linearCostFunction->getOutput("cost function"));
 		if (segmentationCostFunction)
 			_objectiveGenerator->addInput("cost functions", segmentationCostFunction->getOutput("cost function"));
+		if (priorCostFunction)
+			_objectiveGenerator->addInput("cost functions", priorCostFunction->getOutput("cost function"));
 
 		if (optionDecomposeProblem) {
 
@@ -317,12 +423,19 @@ Sopnet::createTrainingPipeline() {
 
 	LOG_DEBUG(sopnetlog) << "re-creating training part..." << std::endl;
 
-	_goldStandardExtractor->setInput("ground truth", _groundTruth);
-	_goldStandardExtractor->setInput("all segments", _problemAssembler->getOutput("segments"));
-	_goldStandardExtractor->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
+	if (optionReadGoldStandardFromFile) {
 
-	_segmentRfTrainer->setInput("positive samples", _goldStandardExtractor->getOutput("gold standard"));
-	_segmentRfTrainer->setInput("negative samples", _goldStandardExtractor->getOutput("negative samples"));
+		_goldStandardProvider->setInput("all segments", _problemAssembler->getOutput("segments"));
+
+	} else {
+
+		_goldStandardProvider->setInput("ground truth", _groundTruthExtractor->getOutput());
+		_goldStandardProvider->setInput("all segments", _problemAssembler->getOutput("segments"));
+		_goldStandardProvider->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
+	}
+
+	_segmentRfTrainer->setInput("positive samples", _goldStandardProvider->getOutput("gold standard"));
+	_segmentRfTrainer->setInput("negative samples", _goldStandardProvider->getOutput("negative samples"));
 	_segmentRfTrainer->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 }
 
@@ -361,7 +474,8 @@ Sopnet::createMinimalImpactTEDPipeline() {
 	LOG_DEBUG(sopnetlog) << "re-creating minimal impact TED part..." << std::endl;
 
 	// Set inputs to MinimalImpactTEDWriter
-	_mitWriter->setInput("gold standard", _goldStandardExtractor->getOutput("gold standard"));	
+	_mitWriter->setInput("gold standard", _goldStandardProvider->getOutput("gold standard"));
+	_mitWriter->setInput("ground truth", _groundTruth);
 	_mitWriter->setInput("segments", _problemAssembler->getOutput("segments"));
 	_mitWriter->setInput("linear constraints", _problemAssembler->getOutput("linear constraints"));
 	_mitWriter->setInput("reference", _rawSections);

@@ -7,6 +7,8 @@
 #include <imageprocessing/DiscreteVolume.h>
 #include <sopnet/slices/Slice.h>
 #include <util/point.hpp>
+#include <util/Hashable.h>
+#include "SegmentHash.h"
 
 /**
  * The direction of the segment.
@@ -22,7 +24,7 @@ enum Direction {
  * implement one-to-one segments (continuations), one-to-two segments
  * (branches), and one-to-zero segments (ends).
  */
-class Segment : public pipeline::Data, public DiscreteVolume {
+class Segment : public pipeline::Data, public DiscreteVolume, public Hashable<Segment, SegmentHash> {
 
 public:
 

@@ -6,11 +6,13 @@
 #include <imageprocessing/DiscreteVolume.h>
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
+#include <util/Hashable.h>
+#include "SliceHash.h"
 
 // forward declaration
 class ConnectedComponent;
 
-class Slice : public DiscreteVolume {
+class Slice : public DiscreteVolume, public Hashable<Slice, SliceHash> {
 
 public:
 
@@ -46,7 +48,7 @@ public:
 	 * a single connected component any longer.
 	 */
 	void intersect(const Slice& other);
-
+	
 	/**
 	 * Translate this Slice
 	 * @param pt a point representing the translation to perform.

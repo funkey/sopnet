@@ -36,6 +36,7 @@ Slice::intersect(const Slice& other) {
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->intersect(*other.getComponent()));
 
 	setBoundingBoxDirty();
+	setHashDirty();
 }
 
 void
@@ -44,6 +45,7 @@ Slice::translate(const util::point<int>& pt)
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->translate(pt));
 
 	setBoundingBoxDirty();
+	setHashDirty();
 }
 
 bool

@@ -6,12 +6,14 @@
 
 #include <iostream>
 #include <gui/ContainerView.h>
-#include <gui/HorizontalPlacing.h>
-#include <gui/NamedView.h>
+#include <gui/OverlayPlacing.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
+#include <sopnet/evaluation/GroundTruthExtractor.h>
+#include <sopnet/neurons/NeuronExtractor.h>
+#include <sopnet/gui/NeuronsStackView.h>
 #include <pipeline/Process.h>
 #include <pipeline/Value.h>
 #include <util/ProgramOptions.h>
@@ -24,6 +26,10 @@ util::ProgramOption optionStack(
 		util::_description_text = "The image stack.",
 		util::_default_value    = "stack",
 		util::_is_positional    = true);
+
+util::ProgramOption optionOverlay(
+		util::_long_name        = "overlay",
+		util::_description_text = "An optional overlay image stack with component ids.");
 
 int main(int optionc, char** optionv) {
 
@@ -57,14 +63,23 @@ int main(int optionc, char** optionv) {
 
 		stackView->setInput(stackReader->getOutput());
 
-		pipeline::Process<gui::NamedView> stackNamedView("stack");
+		pipeline::Process<gui::ContainerView<gui::OverlayPlacing> > container;
 
-		stackNamedView->setInput(stackView->getOutput());
+		if (optionOverlay) {
 
-		pipeline::Process<gui::ContainerView<gui::HorizontalPlacing> > container;
-		container->setSpacing(10);
-		container->setAlign(gui::HorizontalPlacing::Bottom);
-		container->addInput(stackNamedView->getOutput());
+			pipeline::Process<ImageStackDirectoryReader> overlayReader(optionOverlay.as<std::string>());
+			pipeline::Process<GroundTruthExtractor>      overlayExtractor;
+			pipeline::Process<NeuronExtractor>           componentExtractor;
+			pipeline::Process<NeuronsStackView>          overlayView;
+
+			overlayExtractor->setInput(overlayReader->getOutput());
+			componentExtractor->setInput(overlayExtractor->getOutput());
+			overlayView->setInput(componentExtractor->getOutput());
+
+			container->addInput(overlayView->getOutput());
+		}
+
+		container->addInput(stackView->getOutput());
 
 		zoomView->setInput(container->getOutput());
 		window->setInput(zoomView->getOutput());

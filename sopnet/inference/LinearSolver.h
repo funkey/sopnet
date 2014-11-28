@@ -45,6 +45,28 @@ public:
 
 	virtual ~LinearSolver();
 
+	/**
+	 * Force the value of a variable to be a given value, i.e., pin the variable 
+	 * to a fixed value.
+	 *
+	 * @param varNum
+	 *              The number of the variable to pin.
+	 *
+	 * @param value
+	 *              The value the variable has to assume.
+	 */
+	void pinVariable(unsigned int varNum, double value);
+
+	/**
+	 * Remove a previous pin from a variable.
+	 *
+	 * @param varNum
+	 *              The number of the variable to unpin.
+	 *
+	 * @return True, if the variable was pinned before.
+	 */
+	bool unpinVariable(unsigned int varNum);
+
 private:
 
 	void onObjectiveModified(const pipeline::Modified& signal);
@@ -82,6 +104,14 @@ private:
 	bool _linearConstraintsDirty;
 
 	bool _parametersDirty;
+
+	// pinned variables and their values
+	std::map<unsigned int, double> _pinned;
+
+	// variables that have been unpinned since the last call to solve
+	std::set<unsigned int> _unpinned;
+
+	bool _pinnedChanged;
 };
 
 #endif // INFERENCE_LINEAR_SOLVER_H__

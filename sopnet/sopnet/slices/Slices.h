@@ -22,8 +22,9 @@ public:
 	/**
 	 * Create a new adaptor.
 	 */
-	SliceVectorAdaptor(const slices_type& slices) :
-		_slices(slices) {}
+	template <typename Iterator>
+	SliceVectorAdaptor(Iterator begin, Iterator end) :
+		_slices(begin, end) {}
 
 	/**
 	 * Nanoflann access interface. Gets the number of data points.
@@ -61,10 +62,16 @@ public:
 	template <class BBox>
 	bool kdtree_get_bbox(BBox&) const { return false; }
 
+	/**
+	 * Get the slice with the given index, as returned by radiusSearch on the kd 
+	 * tree.
+	 */
+	boost::shared_ptr<Slice> operator[](unsigned int i) { return _slices[i]; }
+
 private:
 
 	// a reference to the data to sort into the kd-tree
-	const slices_type& _slices;
+	const slices_type _slices;
 };
 
 /**
@@ -72,7 +79,13 @@ private:
  */
 class Slices : public pipeline::Data {
 
-	typedef std::vector<boost::shared_ptr<Slice> > slices_type;
+	struct SliceComparator {
+		bool operator()(boost::shared_ptr<Slice> a, boost::shared_ptr<Slice> b) {
+			return a->hashValue() < b->hashValue();
+		}
+	};
+
+	typedef std::set<boost::shared_ptr<Slice>, SliceComparator> slices_type;
 
 	// nanoflann kd-tree type
 	typedef nanoflann::KDTreeSingleIndexAdaptor<
@@ -169,8 +182,6 @@ public:
 	iterator end() { return _slices.end(); }
 
 	unsigned int size() const { return _slices.size(); }
-
-	boost::shared_ptr<Slice> operator[](unsigned int i) { return _slices[i]; }
 
 	/**
 	 * Find all slices within distance to the given center.

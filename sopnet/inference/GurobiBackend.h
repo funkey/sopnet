@@ -56,6 +56,28 @@ public:
 
 	void setConstraints(const LinearConstraints& constraints);
 
+	/**
+	 * Force the value of a variable to be a given value, i.e., pin the variable 
+	 * to a fixed value.
+	 *
+	 * @param varNum
+	 *              The number of the variable to pin.
+	 *
+	 * @param value
+	 *              The value the variable has to assume.
+	 */
+	void pinVariable(unsigned int varNum, double value);
+
+	/**
+	 * Remove a previous pin from a variable.
+	 *
+	 * @param varNum
+	 *              The number of the variable to unpin.
+	 *
+	 * @return True, if the variable was pinned before.
+	 */
+	bool unpinVariable(unsigned int varNum);
+
 	bool solve(Solution& solution, double& value, std::string& message);
 
 private:
@@ -99,6 +121,7 @@ private:
 	// the objective
 	GRBQuadExpr _objective;
 
+	// all constraints set via setConstraints()
 	std::vector<GRBConstr> _constraints;
 
 	// the GRB model containing the objective and constraints

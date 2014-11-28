@@ -35,5 +35,7 @@ FeaturesView::updateOutputs() {
 	_painter->setSegmentId(segmentId);
 	if (_groundTruthScore.isSet())
 		_painter->setGroundTruthScore(_groundTruthScore->getCoefficients()[variable]);
+	else
+		_painter->setGroundTruthScore(0);
 }
 

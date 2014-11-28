@@ -4,7 +4,7 @@
 #include <gui/RecordablePainter.h>
 #include <gui/Texture.h>
 #include <imageprocessing/ImageStack.h>
-#include <sopnet/evaluation/SliceErrors.h>
+#include <sopnet/evaluation/AnisotropicEditDistanceErrors.h>
 #include <sopnet/segments/Segments.h>
 #include "SliceTextures.h"
 
@@ -27,7 +27,7 @@ public:
 	/**
 	 * Set the errors to highlight.
 	 */
-	void setSliceErrors(boost::shared_ptr<SliceErrors> sliceErrors);
+	void setSliceErrors(boost::shared_ptr<AnisotropicEditDistanceErrors> sliceErrors);
 
 	void showEnds(bool show);
 
@@ -63,7 +63,7 @@ private:
 
 	boost::shared_ptr<Segments> _segments;
 
-	boost::shared_ptr<SliceErrors> _sliceErrors;
+	boost::shared_ptr<AnisotropicEditDistanceErrors> _sliceErrors;
 
 	util::rect<double> _size;
 
