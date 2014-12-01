@@ -67,8 +67,11 @@ StructuredProblemWriter::writeLabels(std::string filename_labels, std::string fi
 	std::ofstream objectiveOutput;
 
 	labelsOutput.open(filename_labels.c_str());
-	if (writeObjective)
+	if (writeObjective) {
+
 		objectiveOutput.open(filename_objective.c_str());
+		objectiveOutput << "numVars " << (maxVariable + 1) << std::endl;
+	}
 
 	double goldStandardObjectiveValue = 0;
 
@@ -94,7 +97,7 @@ StructuredProblemWriter::writeLabels(std::string filename_labels, std::string fi
 
 			double coefficient = _goldStandardObjective->getCoefficients()[i];
 
-			objectiveOutput << "c" << i << " " << coefficient << std::endl;
+			objectiveOutput << "v" << i << " " << coefficient << std::endl;
 
 			if (isGoldStandard)
 				goldStandardObjectiveValue += coefficient;
