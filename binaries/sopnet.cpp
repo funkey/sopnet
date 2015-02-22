@@ -648,6 +648,25 @@ int main(int optionc, char** optionv) {
 			LOG_USER(out) << *reportLine   << std::endl;
 		}
 
+		// Compute gold standard error in headless mode if show gold standard option is set
+		if (optionHeadless && optionShowGoldStandard && groundTruthReader && !optionGridSearch) {
+
+			boost::shared_ptr<ErrorReport> goldStandardErrorReport = boost::make_shared<ErrorReport>();
+
+			goldStandardErrorReport->setInput("ground truth", groundTruthReader->getOutput());
+			goldStandardErrorReport->setInput("ground truth segments", sopnet->getOutput("ground truth segments"));
+			goldStandardErrorReport->setInput("gold standard segments", sopnet->getOutput("gold standard"));
+			goldStandardErrorReport->setInput("reconstruction segments", sopnet->getOutput("gold standard"));
+
+			LOG_USER(out) << "Computing GOLDSTANDARD HEADLESS ERRORS:" << std::endl;
+
+			pipeline::Value<std::string> reportHeaderGoldStandard = goldStandardErrorReport->getOutput("error report header");
+			pipeline::Value<std::string> reportLineGoldStandard = goldStandardErrorReport->getOutput("error report");
+
+			LOG_USER(out) << *reportHeaderGoldStandard << std::endl;
+			LOG_USER(out) << *reportLineGoldStandard   << std::endl;
+		}
+
 		if (optionTraining) {
 
 			boost::shared_ptr<RandomForestHdf5Writer> rfWriter = boost::make_shared<RandomForestHdf5Writer>("./segment_rf.hdf");
