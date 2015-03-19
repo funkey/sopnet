@@ -26,9 +26,9 @@ FindSuperPixels::updateOutputs() {
 	else
 		_labels->clear();
 
-	float minX = _boundaryMap->getOffsetX();
-	float minY = _boundaryMap->getOffsetY();
-	float minZ = _boundaryMap->getOffsetZ();
+	float minX = _boundaryMap->getBoundingBox().getMinX();
+	float minY = _boundaryMap->getBoundingBox().getMinY();
+	float minZ = _boundaryMap->getBoundingBox().getMinZ();
 
 	float resX = _boundaryMap->getResolutionX();
 	float resY = _boundaryMap->getResolutionY();
@@ -102,7 +102,7 @@ FindSuperPixels::updateOutputs() {
 	}
 
 	// provide labels as output
-	_labels->setOffset(minX, minY, minZ);
+	_labels->setBoundingBox(_boundaryMap->getBoundingBox());
 	_labels->setResolution(resX, resY, resZ);
 	for (unsigned int z = 0; z < size[2]; z++) {
 

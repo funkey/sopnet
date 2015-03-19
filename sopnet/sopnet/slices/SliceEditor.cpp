@@ -2,7 +2,7 @@
 #include <util/foreach.h>
 #include <pipeline/Value.h>
 #include <imageprocessing/ConnectedComponent.h>
-#include <imageprocessing/MserParameters.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <sopnet/slices/SliceExtractor.h>
 #include <sopnet/features/Overlap.h>
 #include "SliceEditor.h"
@@ -48,26 +48,21 @@ SliceEditor::finish() {
 
 	SliceEdits edits;
 
-	// create mser parameters suitable to extract connected
-	// components
-	pipeline::Value<MserParameters> mserParameters;
-	mserParameters->delta        = 1;
-	mserParameters->minArea      = 0;
-	mserParameters->maxArea      = 10000000;
-	mserParameters->maxVariation = 100;
-	mserParameters->minDiversity = 0;
-	mserParameters->darkToBright = false;
-	mserParameters->brightToDark = true;
-	mserParameters->sameIntensityComponents = false;
+	// create parameters suitable to extract connected components
+	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
+	cteParameters->minSize      = 0;
+	cteParameters->maxSize      = 10000000;
+	cteParameters->darkToBright = false;
+	cteParameters->sameIntensityComponents = false;
 
 	LOG_DEBUG(sliceeditorlog) << "extracting slices from current slice image" << std::endl;
 
 	// create a SliceExtractor
 	pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(_section, false /* don't downsample */);
 
-	// give it the section it has to process and our mser parameters
+	// give it the section it has to process and our parameters
 	sliceExtractor->setInput("membrane", _sliceImage);
-	sliceExtractor->setInput("mser parameters", mserParameters);
+	sliceExtractor->setInput("parameters", cteParameters);
 
 	// get the slices in the current section
 	pipeline::Value<Slices> extractedSlices = sliceExtractor->getOutput("slices");

@@ -82,8 +82,8 @@ int main(int argc, char** argv) {
 			// create image reader
 			boost::shared_ptr<ImageReader> reader = boost::make_shared<ImageReader>(imagename);
 
-			// create Mser
-			boost::shared_ptr<Mser> mser = boost::make_shared<Mser>();
+			// create ComponentTreeExtractor
+			boost::shared_ptr<ComponentTreeExtractor> cte = boost::make_shared<ComponentTreeExtractor>();
 
 			// create down sampler
 			boost::shared_ptr<ComponentTreeDownSampler> downsampler = boost::make_shared<ComponentTreeDownSampler>();
@@ -91,25 +91,25 @@ int main(int argc, char** argv) {
 			// create hdf5 writer
 			boost::shared_ptr<ComponentTreeHdf5Writer> hdf5Writer = boost::make_shared<ComponentTreeHdf5Writer>(componentsGroup);
 
-			// connect image reader to mser
-			mser->setInput("image", reader->getOutput());
+			// connect image reader to cte
+			cte->setInput("image", reader->getOutput());
 
 			// set default parameters
 			boost::shared_ptr<MserParameters> defaultParameters = boost::make_shared<MserParameters>();
-			mser->setInput("parameters", defaultParameters);
+			cte->setInput("parameters", defaultParameters);
 
 			if (util::CommandLineParser::isOptionSet(argDownsample)) {
 
-				// connect mser to component tree downsampler
-				downsampler->setInput(mser->getOutput());
+				// connect cte to component tree downsampler
+				downsampler->setInput(cte->getOutput());
 
 				// connect downsampler output to hdf5 writer
 				hdf5Writer->setInput(downsampler->getOutput());
 
 			} else {
 
-				// connect mser output to hdf5 writer
-				hdf5Writer->setInput(mser->getOutput());
+				// connect cte output to hdf5 writer
+				hdf5Writer->setInput(cte->getOutput());
 			}
 
 			hdf5Writer->write();
