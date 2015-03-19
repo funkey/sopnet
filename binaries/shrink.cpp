@@ -5,6 +5,10 @@
  */
 
 #include <iostream>
+#include <pipeline/Process.h>
+#include <pipeline/Value.h>
+#include <util/ProgramOptions.h>
+#include <util/Logger.h>
 #include <vigra/multi_distance.hxx>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
@@ -14,10 +18,6 @@
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <imageprocessing/io/ImageStackDirectoryWriter.h>
-#include <pipeline/Process.h>
-#include <pipeline/Value.h>
-#include <util/ProgramOptions.h>
-#include <util/Logger.h>
 
 using namespace logger;
 

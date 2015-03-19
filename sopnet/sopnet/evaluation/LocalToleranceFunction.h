@@ -7,10 +7,10 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <vigra/multi_array.hxx>
-
 #include <imageprocessing/ImageStack.h>
 #include "Cell.h"
+
+#include <vigra/multi_array.hxx>
 
 /**
  * Superclass of local tolerance functions, i.e., functions, that assign relabel
