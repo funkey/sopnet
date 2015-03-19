@@ -103,7 +103,13 @@ SegmentsStackPainter::setFocus(const util::point<double>& focus) {
 	dummyPixelList->add(util::point<unsigned int>(focus));
 
 	// create a connected component for this list
-	boost::shared_ptr<ConnectedComponent> dummyComponent = boost::make_shared<ConnectedComponent>(boost::shared_ptr<Image>(), 0, dummyPixelList, dummyPixelList->begin(), dummyPixelList->end());
+	boost::shared_ptr<ConnectedComponent> dummyComponent =
+			boost::make_shared<ConnectedComponent>(
+					boost::shared_ptr<Image>(),
+					0,
+					dummyPixelList,
+					dummyPixelList->begin(),
+					dummyPixelList->end());
 
 	// create a dummy slice from the component
 	boost::shared_ptr<Slice> dummySlice = boost::make_shared<Slice>(0, _section, dummyComponent);
@@ -289,21 +295,21 @@ SegmentsStackPainter::updateVisibleSegments() {
 	if (_showPrev) {
 
 		if (_showEnds && _closestPrevEndSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevEndSegments[_closestPrevSegment].first);
 		else if (_showContinuations && _closestPrevContinuationSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevContinuationSegments[_closestPrevSegment].first);
 		else if (_showBranches && _closestPrevBranchSegments.size() > _closestPrevSegment)
-			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment]);
+			_prevSegments->add(_closestPrevBranchSegments[_closestPrevSegment].first);
 	}
 
 	if (_showNext) {
 
 		if (_showEnds && _closestNextEndSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextEndSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextEndSegments[_closestNextSegment].first);
 		else if (_showContinuations && _closestNextContinuationSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextContinuationSegments[_closestNextSegment].first);
 		else if (_showBranches && _closestNextBranchSegments.size() > _closestNextSegment)
-			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment]);
+			_nextSegments->add(_closestNextBranchSegments[_closestNextSegment].first);
 	}
 }
 

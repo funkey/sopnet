@@ -1,4 +1,7 @@
 #include "Segments.h"
+#include <util/Logger.h>
+
+logger::LogChannel segmentslog("segmentslog", "[Segments] ");
 
 std::vector<boost::shared_ptr<EndSegment> >          Segments::EmptyEnds;
 std::vector<boost::shared_ptr<ContinuationSegment> > Segments::EmptyContinuations;
@@ -51,6 +54,8 @@ Segments::clear() {
 	_ends.clear();
 	_continuations.clear();
 	_branches.clear();
+
+	resetBoundingBox();
 }
 
 void
@@ -86,6 +91,8 @@ Segments::add(boost::shared_ptr<EndSegment> end) {
 	_endTreeDirty[interSectionInterval] = true;
 
 	_ends[interSectionInterval].push_back(end);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -103,6 +110,8 @@ Segments::add(boost::shared_ptr<ContinuationSegment> continuation) {
 	_continuationTreeDirty[interSectionInterval] = true;
 
 	_continuations[interSectionInterval].push_back(continuation);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -120,6 +129,8 @@ Segments::add(boost::shared_ptr<BranchSegment> branch) {
 	_branchTreeDirty[interSectionInterval] = true;
 
 	_branches[interSectionInterval].push_back(branch);
+
+	setBoundingBoxDirty();
 }
 
 void
@@ -207,7 +218,7 @@ Segments::getSegments(unsigned int interval) {
 	return allSegments;
 }
 
-std::vector<boost::shared_ptr<EndSegment> >
+std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >
 Segments::findEnds(
 		boost::shared_ptr<EndSegment> reference,
 		double distance) {
@@ -215,7 +226,7 @@ Segments::findEnds(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _ends, _endAdaptors, _endTrees, _endTreeDirty);
 }
 
-std::vector<boost::shared_ptr<ContinuationSegment> >
+std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> >
 Segments::findContinuations(
 		boost::shared_ptr<ContinuationSegment> reference,
 		double distance) {
@@ -223,7 +234,7 @@ Segments::findContinuations(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _continuations, _continuationAdaptors, _continuationTrees, _continuationTreeDirty);
 }
 
-std::vector<boost::shared_ptr<BranchSegment> >
+std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >
 Segments::findBranches(
 		boost::shared_ptr<BranchSegment> reference,
 		double distance) {
@@ -231,7 +242,7 @@ Segments::findBranches(
 	return find(reference->getCenter(), reference->getInterSectionInterval(), distance, _branches, _branchAdaptors, _branchTrees, _branchTreeDirty);
 }
 
-std::vector<boost::shared_ptr<EndSegment> >
+std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >
 Segments::findEnds(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
@@ -240,7 +251,7 @@ Segments::findEnds(
 	return find(center, interSectionInterval, distance, _ends, _endAdaptors, _endTrees, _endTreeDirty);
 }
 
-std::vector<boost::shared_ptr<ContinuationSegment> >
+std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> >
 Segments::findContinuations(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
@@ -249,7 +260,7 @@ Segments::findContinuations(
 	return find(center, interSectionInterval, distance, _continuations, _continuationAdaptors, _continuationTrees, _continuationTreeDirty);
 }
 
-std::vector<boost::shared_ptr<BranchSegment> >
+std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >
 Segments::findBranches(
 		const util::point<double>& center,
 		unsigned int interSectionInterval,
@@ -259,7 +270,7 @@ Segments::findBranches(
 }
 
 unsigned int
-Segments::getNumInterSectionIntervals() {
+Segments::getNumInterSectionIntervals() const {
 
 	return std::max(_ends.size(), std::max(_continuations.size(), _branches.size()));
 }
@@ -277,5 +288,27 @@ Segments::size() {
 		size += branches.size();
 
 	return size;
+}
+
+BoundingBox
+Segments::computeBoundingBox() const {
+
+	LOG_ALL(segmentslog) << "updating bounding box" << std::endl;
+
+	BoundingBox boundingBox;
+
+	foreach (std::vector<boost::shared_ptr<EndSegment> > ends, _ends)
+		foreach (boost::shared_ptr<EndSegment> end, ends)
+			boundingBox += end->getBoundingBox();
+	foreach (std::vector<boost::shared_ptr<ContinuationSegment> > continuations, _continuations)
+		foreach (boost::shared_ptr<ContinuationSegment> continuation, continuations)
+			boundingBox += continuation->getBoundingBox();
+	foreach (std::vector<boost::shared_ptr<BranchSegment> > branches, _branches)
+		foreach (boost::shared_ptr<BranchSegment> branch, branches)
+			boundingBox += branch->getBoundingBox();
+
+	LOG_ALL(segmentslog) << "bounding box of my segments is " << boundingBox << std::endl;
+
+	return boundingBox;
 }
 

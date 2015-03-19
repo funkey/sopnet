@@ -102,7 +102,10 @@ FindSuperPixels::updateOutputs() {
 	}
 
 	// provide labels as output
-	_labels->setBoundingBox(_boundaryMap->getBoundingBox());
+	_labels->setBoundingBox(
+			BoundingBox(
+					minX, minY, minZ,
+					minX + size[0]*resX, minY + size[1]*resY, minZ + size[2]*resZ));
 	_labels->setResolution(resX, resY, resZ);
 	for (unsigned int z = 0; z < size[2]; z++) {
 

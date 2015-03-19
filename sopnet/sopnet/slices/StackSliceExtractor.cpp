@@ -1,4 +1,4 @@
-#include <imageprocessing/ComponentTree.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <sopnet/features/Overlap.h>
 #include <util/ProgramOptions.h>
 #include "ComponentTreeConverter.h"
@@ -18,8 +18,11 @@ util::ProgramOption optionSetDifferenceThreshold(
 		util::_description_text = "The maximal set difference for which two slices are considered the same.",
 		util::_default_value    = 200);
 
-StackSliceExtractor::StackSliceExtractor(unsigned int section) :
+StackSliceExtractor::StackSliceExtractor(unsigned int section, float resX, float resY, float resZ) :
 	_section(section),
+	_resX(resX),
+	_resY(resY),
+	_resZ(resZ),
 	_sliceImageExtractor(boost::make_shared<ImageExtractor>()),
 	_cteParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
 	_sliceCollector(boost::make_shared<SliceCollector>()) {
@@ -32,9 +35,9 @@ StackSliceExtractor::StackSliceExtractor(unsigned int section) :
 	_sliceImageStack.registerCallback(&StackSliceExtractor::onInputSet, this);
 
 	// set parameters to extract white connected components
-	_cteParameters->darkToBright      = false;
-	_cteParameters->minSize = 0;
-	_cteParameters->maxSize = 100000000;
+	_cteParameters->darkToBright = false;
+	_cteParameters->minSize      = 0;
+	_cteParameters->maxSize      = 100000000;
 }
 
 void
@@ -56,7 +59,7 @@ StackSliceExtractor::onInputSet(const pipeline::InputSet<ImageStack>&) {
 		cte->setInput("image", _sliceImageExtractor->getOutput(i));
 		cte->setInput("parameters", _cteParameters);
 
-		boost::shared_ptr<ComponentTreeConverter> converter = boost::make_shared<ComponentTreeConverter>(_section);
+		boost::shared_ptr<ComponentTreeConverter> converter = boost::make_shared<ComponentTreeConverter>(_section, _resX, _resY, _resZ);
 
 		converter->setInput(cte->getOutput());
 

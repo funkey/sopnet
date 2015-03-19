@@ -1,5 +1,6 @@
 #include <boost/lexical_cast.hpp>
 
+#include <util/time.h>
 #include <gui/TextPainter.h>
 #include "NeuronsStackPainter.h"
 
@@ -33,6 +34,12 @@ NeuronsStackPainter::setNeurons(boost::shared_ptr<SegmentTrees> neurons) {
 	loadTextures();
 
 	setCurrentSection(_section);
+}
+
+void
+NeuronsStackPainter::setSelection(boost::shared_ptr<SegmentTrees> selectedNeurons) {
+
+	_selectedNeurons = selectedNeurons;
 }
 
 void
@@ -294,6 +301,8 @@ NeuronsStackPainter::draw(
 
 	LOG_ALL(neuronsstackpainterlog) << "redrawing section " << _section << std::endl;
 
+	bool selectionActive = false;
+
 	// from previous section
 
 	if (_showSingleNeuron) {
@@ -310,12 +319,22 @@ NeuronsStackPainter::draw(
 			// read lock on neuron
 			boost::shared_lock<boost::shared_mutex> lockNeuron(neuron->getMutex());
 
-			drawNeuron(*neuron, neuronNum, roi, resolution);
+			// is this neuron currently selected?
+			if (_selectedNeurons && _selectedNeurons->contains(neuron)) {
+
+				drawNeuron(*neuron, neuronNum, roi, resolution, true);
+				selectionActive = true;
+
+			} else {
+
+				drawNeuron(*neuron, neuronNum, roi, resolution);
+			}
+
 			neuronNum++;
 		}
 	}
 
-	return false;
+	return selectionActive;
 }
 
 void
@@ -323,7 +342,8 @@ NeuronsStackPainter::drawNeuron(
 		SegmentTree& neuron,
 		unsigned int neuronNum,
 		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::point<double>& resolution,
+		bool selected) {
 
 	if (neuron.getContinuations().size() >= 1 && !_showCompleteNeurons)
 		return;
@@ -331,6 +351,8 @@ NeuronsStackPainter::drawNeuron(
 	double red   = _colors[neuronNum][0];
 	double green = _colors[neuronNum][1];
 	double blue  = _colors[neuronNum][2];
+	double alpha = _alpha;
+	double scale = (selected ? 1.0 - std::abs(0.25 - 0.001*(millisecondsSinceEpoch() % 500)) : 1.0);
 
 	// we want to show the slices of the current section and the links to slices 
 	// in the previous and next section
@@ -347,7 +369,7 @@ NeuronsStackPainter::drawNeuron(
 			if (end->getDirection() == Left) {
 
 				// draw the slice
-				drawSlice(*end->getSlice(), red, green, blue, _alpha, roi, resolution);
+				drawSlice(*end->getSlice(), red, green, blue, alpha, roi, resolution, scale);
 
 				// draw the end-link
 				drawEnd(end->getSlice()->getComponent()->getCenter(), Left, roi, resolution);
@@ -363,7 +385,7 @@ NeuronsStackPainter::drawNeuron(
 				// draw the slice, it it wasn't drawn by previous segment to the
 				// right
 				if (_section == 0)
-					drawSlice(*end->getSlice(), red, green, blue, _alpha, roi, resolution);
+					drawSlice(*end->getSlice(), red, green, blue, alpha, roi, resolution, scale);
 
 				// draw the end-link
 				drawEnd(end->getSlice()->getComponent()->getCenter(), Right, roi, resolution);
@@ -381,8 +403,8 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*continuation->getSourceSlice(),
 						red, green, blue,
-						_alpha,
-						roi, resolution);
+						alpha,
+						roi, resolution, scale);
 
 				drawContinuation(
 						continuation->getSourceSlice()->getComponent()->getCenter(),
@@ -394,8 +416,8 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*continuation->getTargetSlice(),
 						red, green, blue,
-						_alpha,
-						roi, resolution);
+						alpha,
+						roi, resolution, scale);
 
 				drawContinuation(
 						continuation->getTargetSlice()->getComponent()->getCenter(),
@@ -416,8 +438,8 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*continuation->getTargetSlice(),
 							red, green, blue,
-							_alpha,
-							roi, resolution);
+							alpha,
+							roi, resolution, scale);
 
 				drawContinuation(
 						continuation->getTargetSlice()->getComponent()->getCenter(),
@@ -432,8 +454,8 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*continuation->getSourceSlice(),
 							red, green, blue,
-							_alpha,
-							roi, resolution);
+							alpha,
+							roi, resolution, scale);
 
 				drawContinuation(
 						continuation->getSourceSlice()->getComponent()->getCenter(),
@@ -454,8 +476,8 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*branch->getSourceSlice(),
 						red, green, blue,
-						_alpha,
-						roi, resolution);
+						alpha,
+						roi, resolution, scale);
 
 				drawBranch(
 						branch->getSourceSlice()->getComponent()->getCenter(),
@@ -469,14 +491,14 @@ NeuronsStackPainter::drawNeuron(
 				drawSlice(
 						*branch->getTargetSlice1(),
 						red, green, blue,
-						_alpha,
-						roi, resolution);
+						alpha,
+						roi, resolution, scale);
 
 				drawSlice(
 						*branch->getTargetSlice2(),
 						red, green, blue,
-						_alpha,
-						roi, resolution);
+						alpha,
+						roi, resolution, scale);
 
 				drawMerge(
 						branch->getTargetSlice1()->getComponent()->getCenter(),
@@ -499,13 +521,13 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*branch->getTargetSlice1(),
 							red, green, blue,
-							_alpha,
-							roi, resolution);
+							alpha,
+							roi, resolution, scale);
 					drawSlice(
 							*branch->getTargetSlice2(),
 							red, green, blue,
-							_alpha,
-							roi, resolution);
+							alpha,
+							roi, resolution, scale);
 				}
 
 				drawMerge(
@@ -523,8 +545,8 @@ NeuronsStackPainter::drawNeuron(
 					drawSlice(
 							*branch->getSourceSlice(),
 							red, green, blue,
-							_alpha,
-							roi, resolution);
+							alpha,
+							roi, resolution, scale);
 
 				drawBranch(
 						branch->getSourceSlice()->getComponent()->getCenter(),
@@ -546,7 +568,8 @@ NeuronsStackPainter::drawSlice(
 		double red, double green, double blue,
 		double alpha,
 		const util::rect<double>&  roi,
-		const util::point<double>& resolution) {
+		const util::point<double>& resolution,
+		double scale) {
 
 	if (_drawnSlices.count(slice.getId()))
 		return;
@@ -575,6 +598,13 @@ NeuronsStackPainter::drawSlice(
 		_textures.get(slice.getId())->bind();
 	}
 
+	double x = slice.getComponent()->getCenter().x;
+	double y = slice.getComponent()->getCenter().y;
+
+	glPushMatrix();
+	glTranslatef(x*(1 - scale), y*(1 - scale), 0);
+	glScalef(scale, scale, scale);
+
 	glBegin(GL_QUADS);
 
 	util::rect<double> bb = slice.getComponent()->getBoundingBox();
@@ -589,14 +619,13 @@ NeuronsStackPainter::drawSlice(
 
 	glCheck(glEnd());
 
+	glPopMatrix();
+
 	if (_showSliceIds) {
 
 		gui::TextPainter idPainter(boost::lexical_cast<std::string>(slice.getId()));
 		idPainter.setTextSize(10.0);
 		idPainter.setTextColor(1.0 - red, 1.0 - green, 1.0 - blue);
-
-		double x = slice.getComponent()->getCenter().x;
-		double y = slice.getComponent()->getCenter().y;
 
 		glPushMatrix();
 		glTranslatef(x, y, 0);

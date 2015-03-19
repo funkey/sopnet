@@ -9,7 +9,7 @@ define_module(edit_distance     BINARY SOURCES edit_distance.cpp     LINKS allso
 define_module(grow              BINARY SOURCES grow.cpp              LINKS imageprocessing imageprocessing_gui gui)
 define_module(shrink            BINARY SOURCES shrink.cpp            LINKS imageprocessing imageprocessing_gui gui)
 define_module(viewer            BINARY SOURCES viewer.cpp            LINKS allsopnet)
-define_module(analyze_neurons   BINARY SOURCES analyze_neurons.cpp       LINKS allsopnet)
+define_module(analyze_neurons   BINARY SOURCES analyze_neurons.cpp   LINKS allsopnet)
 define_module(marching_cubes    BINARY SOURCES marching_cubes.cpp    LINKS allsopnet)
 define_module(blobs             BINARY SOURCES blobs.cpp             LINKS allsopnet)
 define_module(skeletonize       BINARY SOURCES skeletonize.cpp       LINKS allsopnet)

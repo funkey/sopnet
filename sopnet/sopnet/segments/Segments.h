@@ -5,6 +5,7 @@
 
 #include <pipeline/all.h>
 #include <imageprocessing/ConnectedComponent.h>
+#include <imageprocessing/DiscreteVolume.h>
 #include "EndSegment.h"
 #include "ContinuationSegment.h"
 #include "BranchSegment.h"
@@ -68,7 +69,7 @@ private:
 	const segments_type& _segments;
 };
 
-class Segments : public pipeline::Data {
+class Segments : public pipeline::Data, public DiscreteVolume {
 
 	// nanoflann segment vector adaptors for each segment type
 	typedef SegmentVectorAdaptor<EndSegment>          EndSegmentVectorAdaptor;
@@ -179,7 +180,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<EndSegment> > findEnds(
+	std::vector<std::pair<boost::shared_ptr<EndSegment>, double> > findEnds(
 			boost::shared_ptr<EndSegment> reference,
 			double                        distance);
 
@@ -191,7 +192,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<ContinuationSegment> > findContinuations(
+	std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > findContinuations(
 			boost::shared_ptr<ContinuationSegment> reference,
 			double                                 distance);
 
@@ -203,7 +204,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<BranchSegment> > findBranches(
+	std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> > findBranches(
 			boost::shared_ptr<BranchSegment> reference,
 			double                           distance);
 
@@ -216,7 +217,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<EndSegment> > findEnds(
+	std::vector<std::pair<boost::shared_ptr<EndSegment>, double> > findEnds(
 			const util::point<double>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
@@ -230,7 +231,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<ContinuationSegment> > findContinuations(
+	std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > findContinuations(
 			const util::point<double>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
@@ -244,7 +245,7 @@ public:
 	 * @param distance The maximally allowed distance of the segments to the
 	 *                 given segments.
 	 */
-	std::vector<boost::shared_ptr<BranchSegment> > findBranches(
+	std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> > findBranches(
 			const util::point<double>& center,
 			unsigned int               interSectionInterval,
 			double                     distance);
@@ -289,12 +290,19 @@ public:
 	 *
 	 * @return The number of inter-section intervals.
 	 */
-	unsigned int getNumInterSectionIntervals();
+	unsigned int getNumInterSectionIntervals() const;
 
 	/**
 	 * Get the number of segments.
 	 */
 	unsigned int size();
+
+protected:
+
+	/**
+	 * Overwritten from Volume.
+	 */
+	virtual BoundingBox computeBoundingBox() const;
 
 private:
 
@@ -318,7 +326,7 @@ private:
 	}
 
 	template <typename SegmentType, typename SegmentAdaptorType, typename SegmentKdTreeType>
-	std::vector<boost::shared_ptr<SegmentType> > find(
+	std::vector<std::pair<boost::shared_ptr<SegmentType>, double> > find(
 			const util::point<double>& center,
 			unsigned int interSectionInterval,
 			double distance,
@@ -327,7 +335,7 @@ private:
 			std::vector<SegmentKdTreeType*>& trees,
 			std::vector<bool>& dirty) {
 
-		std::vector<boost::shared_ptr<SegmentType> > found;
+		std::vector<std::pair<boost::shared_ptr<SegmentType>, double> > found;
 
 		// nothing if interSectionInterval >= num intervals or no segments in
 		// interval
@@ -373,7 +381,7 @@ private:
 		double dist;
 
 		foreach (boost::tie(index, dist), results)
-			found.push_back(allSegments[interSectionInterval][index]);
+			found.push_back(std::make_pair(allSegments[interSectionInterval][index], dist));
 
 		return found;
 	}
@@ -399,6 +407,7 @@ private:
 		if (i != segments.end()) {
 
 			segments.erase(i);
+			setBoundingBoxDirty();
 			return true;
 		}
 

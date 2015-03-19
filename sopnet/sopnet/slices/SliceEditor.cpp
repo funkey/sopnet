@@ -58,7 +58,7 @@ SliceEditor::finish() {
 	LOG_DEBUG(sliceeditorlog) << "extracting slices from current slice image" << std::endl;
 
 	// create a SliceExtractor
-	pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(_section, false /* don't downsample */);
+	pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(_section, 1.0, 1.0, 1.0 /* dummy resolution */, false /* don't downsample */);
 
 	// give it the section it has to process and our parameters
 	sliceExtractor->setInput("membrane", _sliceImage);

@@ -8,11 +8,13 @@ NeuronsStackView::NeuronsStackView() :
 	_section(0),
 	_neuronsModified(true),
 	_currentNeuronModified(false),
-	_alpha(0.8) {
+	_alpha(0.8),
+	_selectedNeurons(new SegmentTrees()) {
 
 	registerInput(_neurons, "neurons");
 	registerInput(_currentNeuron, "current neuron", pipeline::Optional);
 	registerOutput(_painter, "painter");
+	registerOutput(_selection, "selection");
 
 	_neurons.registerCallback(&NeuronsStackView::onNeuronsModified, this);
 	_currentNeuron.registerCallback(&NeuronsStackView::onCurrentNeuronModified, this);
@@ -20,6 +22,8 @@ NeuronsStackView::NeuronsStackView() :
 	_painter.registerSlot(_sizeChanged);
 	_painter.registerSlot(_contentChanged);
 	_painter.registerCallback(&NeuronsStackView::onKeyDown, this);
+	_painter.registerCallback(&NeuronsStackView::onMouseDown, this);
+	_painter->setSelection(_selectedNeurons);
 	_painter->setAlpha(_alpha);
 }
 
@@ -68,6 +72,11 @@ NeuronsStackView::updateOutputs() {
 
 		_sizeChanged();
 	}
+
+	if (!_selection)
+		_selection = new SegmentTrees();
+
+	*_selection = *_selectedNeurons;
 }
 
 void
@@ -178,3 +187,69 @@ NeuronsStackView::onKeyDown(gui::KeyDown& signal) {
 	}
 }
 
+void
+NeuronsStackView::onMouseDown(gui::MouseDown& signal) {
+
+	if (!_neurons.isSet())
+		return;
+
+	if (!_painter->getSize().contains(signal.position))
+		return;
+
+	if (signal.button == gui::buttons::Left) {
+
+		// find the neuron that was clicked at
+
+		unsigned int interSectionInterval = _section;
+		util::point<double> center = signal.position;
+
+		boost::shared_ptr<SegmentTree> closestNeuron;
+		double minDistance = std::numeric_limits<double>::max();
+
+		foreach (boost::shared_ptr<SegmentTree> neuron, *_neurons) {
+
+			// find the closest segments
+			std::vector<std::pair<boost::shared_ptr<EndSegment>, double> > closestEnds =
+					neuron->findEnds(center, interSectionInterval, 1e6);
+			std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > closestContinuations =
+					neuron->findContinuations(center, interSectionInterval, 1e6);
+			std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> > closestBranches =
+					neuron->findBranches(center, interSectionInterval, 1e6);
+
+			// get the distance of the current neuron to the click position
+			double distance =
+					std::min(
+						(closestEnds.size() > 0 ? closestEnds[0].second : std::numeric_limits<double>::max()),
+						std::min(
+							(closestContinuations.size() > 0 ? closestContinuations[0].second : std::numeric_limits<double>::max()),
+							(closestBranches.size() > 0 ? closestBranches[0].second : std::numeric_limits<double>::max())
+						)
+					);
+
+			if (distance < minDistance) {
+
+				minDistance = distance;
+				closestNeuron = neuron;
+			}
+		}
+
+		if (closestNeuron) {
+
+			if (_selectedNeurons->contains(closestNeuron))
+				_selectedNeurons->remove(closestNeuron);
+			else
+				_selectedNeurons->add(closestNeuron);
+		}
+
+		setDirty(_selection);
+		setDirty(_painter);
+	}
+
+	if (signal.button == gui::buttons::Right) {
+
+		_selectedNeurons->clear();
+
+		setDirty(_selection);
+		setDirty(_painter);
+	}
+}

@@ -85,6 +85,26 @@ ProblemAssembler::collectSegments() {
 	_allSynapseSegments->clear();
 	_numSynapseSegments = 0;
 
+	if (_neuronSegments.size() > 0) {
+
+		_allSegments->setResolution(
+				_neuronSegments[0]->getResolutionX(),
+				_neuronSegments[0]->getResolutionY(),
+				_neuronSegments[0]->getResolutionZ());
+		_allNeuronSegments->setResolution(
+				_neuronSegments[0]->getResolutionX(),
+				_neuronSegments[0]->getResolutionY(),
+				_neuronSegments[0]->getResolutionZ());
+		_allMitochondriaSegments->setResolution(
+				_neuronSegments[0]->getResolutionX(),
+				_neuronSegments[0]->getResolutionY(),
+				_neuronSegments[0]->getResolutionZ());
+		_allSynapseSegments->setResolution(
+				_neuronSegments[0]->getResolutionX(),
+				_neuronSegments[0]->getResolutionY(),
+				_neuronSegments[0]->getResolutionZ());
+	}
+
 	foreach (boost::shared_ptr<Segments> segments, _neuronSegments) {
 
 		_allSegments->addAll(segments);
@@ -450,21 +470,26 @@ ProblemAssembler::extractMitochondriaEnclosingNeuronSegments() {
 
 		unsigned int mitochondriaSegmentId = mitochondriaSegment->getId();
 
-		foreach (boost::shared_ptr<EndSegment> end, _allNeuronSegments->findEnds(
+		boost::shared_ptr<EndSegment>          end;
+		boost::shared_ptr<ContinuationSegment> continuation;
+		boost::shared_ptr<BranchSegment>       branch;
+		double distance;
+
+		foreach (boost::tie(end, distance), _allNeuronSegments->findEnds(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
 			if (encloses(end, mitochondriaSegment, _enclosingMitochondriaThreshold))
 				_mitochondriaEnclosingNeuronSegments[mitochondriaSegmentId].push_back(end->getId());
 
-		foreach (boost::shared_ptr<ContinuationSegment> continuation, _allNeuronSegments->findContinuations(
+		foreach (boost::tie(continuation, distance), _allNeuronSegments->findContinuations(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
 			if (encloses(continuation, mitochondriaSegment, _enclosingMitochondriaThreshold))
 				_mitochondriaEnclosingNeuronSegments[mitochondriaSegmentId].push_back(continuation->getId());
 
-		foreach (boost::shared_ptr<BranchSegment> branch, _allNeuronSegments->findBranches(
+		foreach (boost::tie(branch, distance), _allNeuronSegments->findBranches(
 				mitochondriaSegment->getCenter(),
 				mitochondriaSegment->getInterSectionInterval(),
 				maxMitochondriaNeuronDistance))
@@ -483,21 +508,26 @@ ProblemAssembler::extractSynapseEnclosingNeuronSegments() {
 
 		unsigned int synapseSegmentId = synapseSegment->getId();
 
-		foreach (boost::shared_ptr<EndSegment> end, _allNeuronSegments->findEnds(
+		boost::shared_ptr<EndSegment> end;
+		boost::shared_ptr<ContinuationSegment> continuation;
+		boost::shared_ptr<BranchSegment> branch;
+		double distance;
+
+		foreach (boost::tie(end, distance), _allNeuronSegments->findEnds(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))
 			if (encloses(end, synapseSegment, _enclosingSynapseThreshold))
 				_synapseEnclosingNeuronSegments[synapseSegmentId].push_back(end->getId());
 
-		foreach (boost::shared_ptr<ContinuationSegment> continuation, _allNeuronSegments->findContinuations(
+		foreach (boost::tie(continuation, distance), _allNeuronSegments->findContinuations(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))
 			if (encloses(continuation, synapseSegment, _enclosingSynapseThreshold))
 				_synapseEnclosingNeuronSegments[synapseSegmentId].push_back(continuation->getId());
 
-		foreach (boost::shared_ptr<BranchSegment> branch, _allNeuronSegments->findBranches(
+		foreach (boost::tie(branch, distance), _allNeuronSegments->findBranches(
 				synapseSegment->getCenter(),
 				synapseSegment->getInterSectionInterval(),
 				maxSynapseNeuronDistance))

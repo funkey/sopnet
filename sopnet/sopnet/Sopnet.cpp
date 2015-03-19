@@ -129,6 +129,7 @@ Sopnet::Sopnet(
 	registerOutput(_groundTruthExtractor->getOutput("ground truth segments"), "ground truth segments");
 	registerOutput(_goldStandardProvider->getOutput("gold standard"), "gold standard");
 	registerOutput(_goldStandardProvider->getOutput("negative samples"), "negative samples");
+	if (!optionReadGoldStandardFromFile) registerOutput(_goldStandardProvider->getOutput("gold standard objective"), "gold standard objective");
 	registerOutput(_segmentRfTrainer->getOutput("random forest"), "random forest");
 	registerOutput(_segmentFeaturesExtractor->getOutput("all features"), "all features");
 
@@ -429,7 +430,8 @@ Sopnet::createTrainingPipeline() {
 
 	} else {
 
-		_goldStandardProvider->setInput("ground truth", _groundTruthExtractor->getOutput());
+		_goldStandardProvider->setInput("ground truth", _groundTruth);
+		_goldStandardProvider->setInput("ground truth segments", _groundTruthExtractor->getOutput());
 		_goldStandardProvider->setInput("all segments", _problemAssembler->getOutput("segments"));
 		_goldStandardProvider->setInput("all linear constraints", _problemAssembler->getOutput("linear constraints"));
 	}
@@ -448,8 +450,8 @@ Sopnet::createStructuredProblemPipeline() {
 	_spWriter->setInput("problem configuration", _problemAssembler->getOutput("problem configuration"));
 	_spWriter->setInput("features", _segmentFeaturesExtractor->getOutput("all features"));
 	_spWriter->setInput("segments", _problemAssembler->getOutput("segments"));
-	_spWriter->setInput("ground truth segments", _groundTruthExtractor->getOutput("ground truth segments"));
 	_spWriter->setInput("gold standard", _goldStandardProvider->getOutput("gold standard"));
+	if (!optionReadGoldStandardFromFile) _spWriter->setInput("gold standard objective", _goldStandardProvider->getOutput("gold standard objective"));
 }
 
 void

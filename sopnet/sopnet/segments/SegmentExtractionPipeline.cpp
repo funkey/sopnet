@@ -48,6 +48,7 @@ SegmentExtractionPipeline::create() {
 	_sliceExtractors.clear();
 
 	unsigned int numSections = 0;
+	float resX, resY, resZ;
 
 	std::vector<boost::shared_ptr<ImageStackDirectoryReader> > stackSliceReaders;
 
@@ -72,6 +73,13 @@ SegmentExtractionPipeline::create() {
 	} else {
 
 		numSections = _slices->size();
+		resX = _slices->getResolutionX();
+		resY = _slices->getResolutionY();
+		resZ = _slices->getResolutionZ();
+
+		LOG_DEBUG(segmentextractionpipelinelog)
+				<< "resolution of slices image stack is "
+				<< resX << "x" << resY << "x" << resZ << std::endl;
 
 		_sliceImageExtractor = boost::make_shared<ImageExtractor>();
 
@@ -91,7 +99,7 @@ SegmentExtractionPipeline::create() {
 		if (_sliceStackDirectories) {
 
 			// create image stack slice extractor
-			sliceExtractor = boost::make_shared<StackSliceExtractor>(section);
+			sliceExtractor = boost::make_shared<StackSliceExtractor>(section, resX, resY, resZ);
 
 			// set its input
 			sliceExtractor->setInput("slices", stackSliceReaders[section]->getOutput());
@@ -99,7 +107,7 @@ SegmentExtractionPipeline::create() {
 		} else {
 
 			// create a single image slice extractor
-			sliceExtractor = boost::make_shared<SliceExtractor<unsigned char> >(section, true /* downsample component tree */);
+			sliceExtractor = boost::make_shared<SliceExtractor<unsigned char> >(section, resX, resY, resZ, true /* downsample component tree */);
 
 			// set its input
 			sliceExtractor->setInput("membrane", _sliceImageExtractor->getOutput(section));

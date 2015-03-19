@@ -1,5 +1,5 @@
-#ifndef SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
-#define SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
+#ifndef SOPNET_TRAINING_OVERLAP_COST_FUNCTION_H__
+#define SOPNET_TRAINING_OVERLAP_COST_FUNCTION_H__
 
 #include <pipeline/SimpleProcessNode.h>
 #include <pipeline/Value.h>
@@ -11,7 +11,7 @@ class EndSegment;
 class ContinuationSegment;
 class BranchSegment;
 
-class GoldStandardCostFunction : public pipeline::SimpleProcessNode<> {
+class OverlapCostFunction : public pipeline::SimpleProcessNode<> {
 
 	typedef boost::function<
 			void
@@ -23,7 +23,7 @@ class GoldStandardCostFunction : public pipeline::SimpleProcessNode<> {
 
 public:
 
-	GoldStandardCostFunction();
+	OverlapCostFunction();
 
 private:
 
@@ -90,5 +90,5 @@ private:
 	bool _gtFromSkeletons;
 };
 
-#endif // SOPNET_TRAINING_GOLD_STANDARD_COST_FUNCTION_H__
+#endif // SOPNET_TRAINING_OVERLAP_COST_FUNCTION_H__
 

@@ -13,22 +13,21 @@
 #include <util/exceptions.h>
 #include <gui/ContainerView.h>
 #include <gui/HorizontalPlacing.h>
+#include <gui/MeshView.h>
 #include <gui/NamedView.h>
 #include <gui/RotateView.h>
 #include <gui/Window.h>
 #include <gui/ZoomView.h>
 #include <inference/io/RandomForestHdf5Writer.h>
-#include <imageprocessing/ImageExtractor.h>
 #include <imageprocessing/SubStackSelector.h>
-#include <imageprocessing/gui/ImageView.h>
 #include <imageprocessing/gui/ImageStackView.h>
 #include <imageprocessing/io/ImageStackHdf5Reader.h>
 #include <imageprocessing/io/ImageStackDirectoryReader.h>
 #include <sopnet/Sopnet.h>
-#include <sopnet/evaluation/GroundTruthExtractor.h>
 #include <sopnet/evaluation/ErrorReport.h>
 #include <sopnet/gui/ErrorsView.h>
 #include <sopnet/gui/FeaturesView.h>
+#include <sopnet/gui/NeuronsMeshExtractor.h>
 #include <sopnet/gui/NeuronsView.h>
 #include <sopnet/gui/NeuronsStackView.h>
 #include <sopnet/gui/SegmentsView.h>
@@ -37,9 +36,7 @@
 #include <sopnet/io/IdMapCreator.h>
 #include <sopnet/io/NeuronsImageWriter.h>
 #include <sopnet/inference/GridSearch.h>
-#include <sopnet/inference/ObjectiveGenerator.h>
 #include <sopnet/neurons/NeuronExtractor.h>
-#include <sopnet/training/GoldStandardCostFunction.h>
 #include <util/ProgramOptions.h>
 #include <util/SignalHandler.h>
 
@@ -495,24 +492,8 @@ int main(int optionc, char** optionv) {
 					featuresView->setInput("problem configuration", sopnet->getOutput("problem configuration"));
 					featuresView->setInput("objective", sopnet->getOutput("objective"));
 
-					if (optionShowGoldStandard) {
-
-						// here we re-create the objective for the gold standard, to 
-						// avoid having to pass it through Sopnet just for the 
-						// visualization
-
-						pipeline::Process<GoldStandardCostFunction> goldStandardCostFunction;
-						pipeline::Process<ObjectiveGenerator>       objectiveGenerator;
-						pipeline::Process<GroundTruthExtractor>     groundTruthExtractor;
-
-						groundTruthExtractor->setInput(groundTruthReader->getOutput());
-						goldStandardCostFunction->setInput("ground truth", groundTruthExtractor->getOutput());
-
-						objectiveGenerator->setInput("segments", sopnet->getOutput("segments"));
-						objectiveGenerator->addInput("cost functions", goldStandardCostFunction->getOutput());
-
-						featuresView->setInput("ground truth score", objectiveGenerator->getOutput());
-					}
+					if (optionShowGoldStandard)
+						featuresView->setInput("ground truth score", sopnet->getOutput("gold standard objective"));
 
 					container->addInput(featuresView->getOutput());
 				}
@@ -545,15 +526,14 @@ int main(int optionc, char** optionv) {
 
 			if (optionShowResult3d) {
 
-				boost::shared_ptr<SegmentsView> resultView   = boost::make_shared<SegmentsView>("result");
-				boost::shared_ptr<RotateView>   rotateView   = boost::make_shared<RotateView>();
-				boost::shared_ptr<NamedView>    namedView    = boost::make_shared<NamedView>("Result:");
+				boost::shared_ptr<NeuronsMeshExtractor> meshExtractor = boost::make_shared<NeuronsMeshExtractor>();
+				boost::shared_ptr<MeshView>             result3DView  = boost::make_shared<MeshView>();
+				boost::shared_ptr<RotateView>           rotateView    = boost::make_shared<RotateView>();
+				boost::shared_ptr<NamedView>            namedView     = boost::make_shared<NamedView>("Result:");
 
-				if (optionShowErrors)
-					resultView->setInput("aed errors", errorReport->getOutput("aed errors"));
-
-				resultView->setInput(sopnet->getOutput("solution"));
-				rotateView->setInput(resultView->getOutput());
+				meshExtractor->setInput(resultView->getOutput("selection"));
+				result3DView->setInput(meshExtractor->getOutput());
+				rotateView->setInput(result3DView->getOutput());
 				namedView->setInput(rotateView->getOutput());
 
 				segmentsContainer->addInput(namedView->getOutput());
@@ -564,9 +544,6 @@ int main(int optionc, char** optionv) {
 				boost::shared_ptr<NeuronExtractor>  gtNeuronExtractor = boost::make_shared<NeuronExtractor>();
 				boost::shared_ptr<NeuronsStackView> groundTruthView   = boost::make_shared<NeuronsStackView>();
 				boost::shared_ptr<NamedView>        namedView         = boost::make_shared<NamedView>("Ground-truth:");
-
-				//if (optionShowErrors)
-					//groundTruthView->setInput("aed errors", errorReport->getOutput("aed errors"));
 
 				gtNeuronExtractor->setInput(sopnet->getOutput("ground truth segments"));
 				groundTruthView->setInput(gtNeuronExtractor->getOutput());
@@ -579,13 +556,19 @@ int main(int optionc, char** optionv) {
 
 			if (optionShowGoldStandard) {
 
-				gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
-				boost::shared_ptr<NeuronsStackView> goldstandardView  = boost::make_shared<NeuronsStackView>();
-				boost::shared_ptr<NamedView>        namedView         = boost::make_shared<NamedView>("Gold Standard:");
+				boost::shared_ptr<NeuronsStackView>               goldstandardView = boost::make_shared<NeuronsStackView>();
+				boost::shared_ptr<ImageStackView>                 sectionsView     = boost::make_shared<ImageStackView>();
+				boost::shared_ptr<ContainerView<OverlayPlacing> > overlay          = boost::make_shared<ContainerView<OverlayPlacing> >("result");
+				boost::shared_ptr<NamedView>                      namedView        = boost::make_shared<NamedView>("Gold Standard:");
 
-				gsNeuronExtractor->setInput(sopnet->getOutput("gold standard"));
+				gsNeuronExtractor = boost::make_shared<NeuronExtractor>();
+				gsNeuronExtractor->setInput("segments", sopnet->getOutput("gold standard"));
+
 				goldstandardView->setInput(gsNeuronExtractor->getOutput());
-				namedView->setInput(goldstandardView->getOutput());
+				sectionsView->setInput(rawSectionsReader->getOutput());
+				overlay->addInput(goldstandardView->getOutput());
+				overlay->addInput(sectionsView->getOutput());
+				namedView->setInput(overlay->getOutput());
 
 				segmentsContainer->addInput(namedView->getOutput());
 			}
@@ -663,6 +646,25 @@ int main(int optionc, char** optionv) {
 
 			LOG_USER(out) << *reportHeader << std::endl;
 			LOG_USER(out) << *reportLine   << std::endl;
+		}
+
+		// Compute gold standard error in headless mode if show gold standard option is set
+		if (optionHeadless && optionShowGoldStandard && groundTruthReader && !optionGridSearch) {
+
+			boost::shared_ptr<ErrorReport> goldStandardErrorReport = boost::make_shared<ErrorReport>();
+
+			goldStandardErrorReport->setInput("ground truth", groundTruthReader->getOutput());
+			goldStandardErrorReport->setInput("ground truth segments", sopnet->getOutput("ground truth segments"));
+			goldStandardErrorReport->setInput("gold standard segments", sopnet->getOutput("gold standard"));
+			goldStandardErrorReport->setInput("reconstruction segments", sopnet->getOutput("gold standard"));
+
+			LOG_USER(out) << "Computing GOLDSTANDARD HEADLESS ERRORS:" << std::endl;
+
+			pipeline::Value<std::string> reportHeaderGoldStandard = goldStandardErrorReport->getOutput("error report header");
+			pipeline::Value<std::string> reportLineGoldStandard = goldStandardErrorReport->getOutput("error report");
+
+			LOG_USER(out) << *reportHeaderGoldStandard << std::endl;
+			LOG_USER(out) << *reportLineGoldStandard   << std::endl;
 		}
 
 		if (optionTraining) {

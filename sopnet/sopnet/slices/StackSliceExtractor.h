@@ -57,7 +57,16 @@ class StackSliceExtractor : public pipeline::ProcessNode {
 
 public:
 
-	StackSliceExtractor(unsigned int section);
+	/**
+	 * Create a new slice extractor for the given section.
+	 *
+	 * @param section
+	 *              The section number that the extracted slices will have.
+	 *
+	 * @param resX, resY, resZ
+	 *              The resolution of the image stack used to extract slices.
+	 */
+	StackSliceExtractor(unsigned int section, float resX, float resY, float resZ);
 
 private:
 
@@ -96,6 +105,8 @@ private:
 
 	// the number of the section this extractor was build for
 	unsigned int _section;
+
+	float _resX, _resY, _resZ;
 
 	// the input image stack
 	pipeline::Input<ImageStack>         _sliceImageStack;

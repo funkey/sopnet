@@ -42,6 +42,10 @@ SegmentsStackView::updateOutputs() {
 
 	// query visible segments
 	_painter->getVisibleSegments(*_visibleSegments);
+	_visibleSegments->setResolution(
+			_segments->getResolutionX(),
+			_segments->getResolutionY(),
+			_segments->getResolutionZ());
 
 	LOG_ALL(segmentsstackviewlog) << "there are " << _visibleSegments->size() << " visible segments" << std::endl;
 

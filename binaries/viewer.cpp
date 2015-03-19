@@ -58,7 +58,7 @@ int main(int optionc, char** optionv) {
 		// start GUI
 
 		pipeline::Process<ImageStackView> stackView;
-		pipeline::Process<gui::ZoomView>  zoomView;
+		pipeline::Process<gui::ZoomView>  zoomView(true);
 		pipeline::Process<gui::Window>    window("edit distance");
 
 		stackView->setInput(stackReader->getOutput());

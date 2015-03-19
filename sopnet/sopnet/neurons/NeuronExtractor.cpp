@@ -103,6 +103,11 @@ NeuronExtractor::createNeuronsFromSlices() {
 
 		boost::shared_ptr<SegmentTree> segmentTree = boost::make_shared<SegmentTree>();
 
+		segmentTree->setResolution(
+				_segments->getResolutionX(),
+				_segments->getResolutionY(),
+				_segments->getResolutionZ());
+
 		foreach (unsigned int slice, connectedSlices) {
 
 			foreach (boost::shared_ptr<Segment> segment, _sliceSegments[slice]) {

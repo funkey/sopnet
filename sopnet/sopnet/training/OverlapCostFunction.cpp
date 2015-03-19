@@ -6,24 +6,24 @@
 #include <sopnet/segments/EndSegment.h>
 #include <sopnet/segments/ContinuationSegment.h>
 #include <sopnet/segments/BranchSegment.h>
-#include "GoldStandardCostFunction.h"
+#include "OverlapCostFunction.h"
 
-static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[GoldStandardCostFunction] ");
+static logger::LogChannel linearcostfunctionlog("linearcostfunctionlog", "[OverlapCostFunction] ");
 
-GoldStandardCostFunction::GoldStandardCostFunction() :
-	_costFunction(new costs_function_type(boost::bind(&GoldStandardCostFunction::costs, this, _1, _2, _3, _4))),
+OverlapCostFunction::OverlapCostFunction() :
+	_costFunction(new costs_function_type(boost::bind(&OverlapCostFunction::costs, this, _1, _2, _3, _4))),
 	_overlap(false, false),
 	_gtFromSkeletons(optionGroundTruthFromSkeletons) {
 
-	registerInput(_groundTruth, "ground truth");
+	registerInput(_groundTruth, "ground truth segments");
 	registerOutput(_costFunction, "cost function");
 }
 
 void
-GoldStandardCostFunction::updateOutputs() {}
+OverlapCostFunction::updateOutputs() {}
 
 void
-GoldStandardCostFunction::costs(
+OverlapCostFunction::costs(
 		const std::vector<boost::shared_ptr<EndSegment> >&          ends,
 		const std::vector<boost::shared_ptr<ContinuationSegment> >& continuations,
 		const std::vector<boost::shared_ptr<BranchSegment> >&       branches,
@@ -57,7 +57,7 @@ GoldStandardCostFunction::costs(
 }
 
 double
-GoldStandardCostFunction::costs(const Segment& segment) {
+OverlapCostFunction::costs(const Segment& segment) {
 
 	pipeline::Process<NeuronExtractor> connectedSegmentsExtractor;
 
@@ -79,7 +79,7 @@ GoldStandardCostFunction::costs(const Segment& segment) {
 
 
 pipeline::Value<Segments>
-GoldStandardCostFunction::getOverlappingGroundTruthSegments(const Segment& segment) {
+OverlapCostFunction::getOverlappingGroundTruthSegments(const Segment& segment) {
 
 	unsigned int interSectionInterval = segment.getInterSectionInterval();
 
@@ -99,7 +99,7 @@ GoldStandardCostFunction::getOverlappingGroundTruthSegments(const Segment& segme
 }
 
 double
-GoldStandardCostFunction::getDefaultCosts(const Segment& segment) {
+OverlapCostFunction::getDefaultCosts(const Segment& segment) {
 
 	if (_gtFromSkeletons)
 		return 0;
@@ -108,7 +108,7 @@ GoldStandardCostFunction::getDefaultCosts(const Segment& segment) {
 }
 
 double
-GoldStandardCostFunction::getMatchingCosts(const Segment& segment, const Segments& segments) {
+OverlapCostFunction::getMatchingCosts(const Segment& segment, const Segments& segments) {
 
 	std::vector<boost::shared_ptr<Slice> > aLeftSlices;
 	std::vector<boost::shared_ptr<Slice> > aRightSlices;
@@ -138,7 +138,7 @@ GoldStandardCostFunction::getMatchingCosts(const Segment& segment, const Segment
 }
 
 bool
-GoldStandardCostFunction::overlaps(const Segment& a, const Segment& b) {
+OverlapCostFunction::overlaps(const Segment& a, const Segment& b) {
 
 	std::vector<boost::shared_ptr<Slice> > aLeftSlices;
 	std::vector<boost::shared_ptr<Slice> > aRightSlices;
@@ -164,7 +164,7 @@ GoldStandardCostFunction::overlaps(const Segment& a, const Segment& b) {
 }
 
 void
-GoldStandardCostFunction::addLeftRightSlices(
+OverlapCostFunction::addLeftRightSlices(
 		const Segment& segment,
 		std::vector<boost::shared_ptr<Slice> >& leftSlices,
 		std::vector<boost::shared_ptr<Slice> >& rightSlices) {
@@ -186,7 +186,7 @@ GoldStandardCostFunction::addLeftRightSlices(
 }
 
 int
-GoldStandardCostFunction::sumSizes(const std::vector<boost::shared_ptr<Slice> >& slices) {
+OverlapCostFunction::sumSizes(const std::vector<boost::shared_ptr<Slice> >& slices) {
 
 	unsigned int sum = 0;
 
@@ -197,7 +197,7 @@ GoldStandardCostFunction::sumSizes(const std::vector<boost::shared_ptr<Slice> >&
 }
 
 int
-GoldStandardCostFunction::overlap(
+OverlapCostFunction::overlap(
 		const std::vector<boost::shared_ptr<Slice> >& aSlices,
 		const std::vector<boost::shared_ptr<Slice> >& bSlices) {
 

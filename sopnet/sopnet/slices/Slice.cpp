@@ -34,6 +34,8 @@ void
 Slice::intersect(const Slice& other) {
 
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->intersect(*other.getComponent()));
+
+	setBoundingBoxDirty();
 	setHashDirty();
 }
 
@@ -41,6 +43,8 @@ void
 Slice::translate(const util::point<int>& pt)
 {
 	_component = boost::make_shared<ConnectedComponent>(getComponent()->translate(pt));
+
+	setBoundingBoxDirty();
 	setHashDirty();
 }
 
@@ -50,3 +54,16 @@ Slice::operator==(const Slice& other) const
 	return getSection() == other.getSection() && (*getComponent()) == (*other.getComponent());
 }
 
+BoundingBox
+Slice::computeBoundingBox() const {
+
+	const util::rect<double>& componentBoundingBox = getComponent()->getBoundingBox();
+
+	return BoundingBox(
+			componentBoundingBox.minX*getResolutionX(),
+			componentBoundingBox.minY*getResolutionY(),
+			 _section                *getResolutionZ(),
+			componentBoundingBox.maxX*getResolutionX(),
+			componentBoundingBox.maxY*getResolutionY(),
+			(_section + 1)           *getResolutionZ());
+}

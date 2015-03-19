@@ -115,14 +115,14 @@ private:
 	boost::shared_ptr<Segments> _nextSegments;
 
 	// the closest previous segments to the current focus
-	std::vector<boost::shared_ptr<EndSegment> >          _closestPrevEndSegments;
-	std::vector<boost::shared_ptr<ContinuationSegment> > _closestPrevContinuationSegments;
-	std::vector<boost::shared_ptr<BranchSegment> >       _closestPrevBranchSegments;
+	std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >          _closestPrevEndSegments;
+	std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > _closestPrevContinuationSegments;
+	std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >       _closestPrevBranchSegments;
 
 	// the closest next segments to the current focus
-	std::vector<boost::shared_ptr<EndSegment> >          _closestNextEndSegments;
-	std::vector<boost::shared_ptr<ContinuationSegment> > _closestNextContinuationSegments;
-	std::vector<boost::shared_ptr<BranchSegment> >       _closestNextBranchSegments;
+	std::vector<std::pair<boost::shared_ptr<EndSegment>, double> >          _closestNextEndSegments;
+	std::vector<std::pair<boost::shared_ptr<ContinuationSegment>, double> > _closestNextContinuationSegments;
+	std::vector<std::pair<boost::shared_ptr<BranchSegment>, double> >       _closestNextBranchSegments;
 
 	// the closest previous segment to show currently
 	unsigned int _closestPrevSegment;

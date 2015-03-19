@@ -1,5 +1,5 @@
 #include <util/ProgramOptions.h>
-#include <imageprocessing/ComponentTree.h>
+#include <imageprocessing/ComponentTreeExtractor.h>
 #include <imageprocessing/ComponentTreeDownSampler.h>
 #include <imageprocessing/ComponentTreePruner.h>
 #include <pipeline/Value.h>
@@ -33,12 +33,12 @@ util::ProgramOption optionMaxSliceMerges(
 		util::_default_value    = 3);
 
 template <typename Precision>
-SliceExtractor<Precision>::SliceExtractor(unsigned int section, bool downsample) :
+SliceExtractor<Precision>::SliceExtractor(unsigned int section, float resX, float resY, float resZ, bool downsample) :
 	_componentExtractor(boost::make_shared<ComponentTreeExtractor<Precision> >()),
 	_defaultParameters(boost::make_shared<ComponentTreeExtractorParameters>()),
 	_downSampler(boost::make_shared<ComponentTreeDownSampler>()),
 	_pruner(boost::make_shared<ComponentTreePruner>()),
-	_converter(boost::make_shared<ComponentTreeConverter>(section)) {
+	_converter(boost::make_shared<ComponentTreeConverter>(section, resX, resY, resZ)) {
 
 	registerInput(_componentExtractor->getInput("image"), "membrane");
 	registerInput(_parameters, "parameters");

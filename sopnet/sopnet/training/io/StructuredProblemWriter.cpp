@@ -13,15 +13,23 @@ StructuredProblemWriter::StructuredProblemWriter()
 	registerInput(_problemConfiguration, "problem configuration");
 	registerInput(_features, "features");
 	registerInput(_segments, "segments");
-	registerInput(_groundTruthSegments, "ground truth segments");
 	registerInput(_goldStandard, "gold standard");
 
+	/* The objective that was used to compute the gold standard. If set, it will 
+	 * be written to an additional file, with one coeffient per variable.  
+	 * Additionally, the objective value of the gold standard y' will be stored 
+	 * in that file as a constant term. The coefficients and constant term can 
+	 * then be used for structured learning as the application specific cost 
+	 * function Δ(y',y), with Δ(y',y') = 0 and Δ(y', y) ≥ 0.
+	 */
+	registerInput(_goldStandardObjective, "gold standard objective", pipeline::Optional);
 }
 
 void
 StructuredProblemWriter::write(std::string filename_labels,
 		   	       std::string filename_features,
-		   	       std::string filename_constraints ) {
+		   	       std::string filename_constraints,
+				   std::string filename_objective) {
 
 	updateInputs();
 
@@ -32,37 +40,46 @@ StructuredProblemWriter::write(std::string filename_labels,
 		_allHashes[segment->getId()] = segment->hashValue();
 
 	// call write functions for the different files to write.
-	writeLabels(filename_labels);
+	writeLabels(filename_labels, filename_objective);
 	writeFeatures(filename_features);
 	writeConstraints(filename_constraints);
 
 }
 
 void
-StructuredProblemWriter::writeLabels(std::string filename_labels) {
+StructuredProblemWriter::writeLabels(std::string filename_labels, std::string filename_objective) {
+
+	bool writeObjective = false;
+	if (_goldStandardObjective.isSet())
+		writeObjective = true;
 	
-	// write only the labels.
+	// write the labels.
 	// How many variables are there?
 	unsigned int maxVariable = 0;
-        foreach (boost::shared_ptr<Segment> segment, _segments->getSegments()) {
-                maxVariable = std::max(maxVariable,_problemConfiguration->getVariable(segment->getId()));
-        }
-
-	// Get a vector with all ground truth segments.
-	//const std::vector<boost::shared_ptr<Segment> > groundTruthSegments = _groundTruthSegments->getSegments();
+	foreach (boost::shared_ptr<Segment> segment, _segments->getSegments())
+		maxVariable = std::max(maxVariable,_problemConfiguration->getVariable(segment->getId()));
 
 	// Get a vector with all gold standard segments.
 	const std::vector<boost::shared_ptr<Segment> > goldStandard = _goldStandard->getSegments();
 
-	// Output stream
+	// Output streams
 	std::ofstream labelsOutput;
-        labelsOutput.open(filename_labels.c_str());
+	std::ofstream objectiveOutput;
+
+	labelsOutput.open(filename_labels.c_str());
+	if (writeObjective) {
+
+		objectiveOutput.open(filename_objective.c_str());
+		objectiveOutput << "numVars " << (maxVariable + 1) << std::endl;
+	}
+
+	double goldStandardObjectiveValue = 0;
 
 	std::set<SegmentHash> segmentHashes;
 
 	// For every variable...
 	for (unsigned int i = 0; i <= maxVariable; i++) {
-		
+
 		// ...check if the segment that corresponds to that variable is contained in the gold standard.
 		unsigned int segmentId = _problemConfiguration->getSegmentId(i);
 
@@ -76,6 +93,16 @@ StructuredProblemWriter::writeLabels(std::string filename_labels) {
 			labelsOutput << 0 << " # " << segmentHash << std::endl;
 		}
 
+		if (writeObjective) {
+
+			double coefficient = _goldStandardObjective->getCoefficients()[i];
+
+			objectiveOutput << "v" << i << " " << coefficient << std::endl;
+
+			if (isGoldStandard)
+				goldStandardObjectiveValue += coefficient;
+		}
+
 		if (!segmentHashes.insert(segmentHash).second)
 			LOG_ERROR(structuredproblemwriterlog)
 					<< "hash collision detected: hash " << segmentHash
@@ -83,6 +110,12 @@ StructuredProblemWriter::writeLabels(std::string filename_labels) {
 	}
 
 	labelsOutput.close();
+
+	if (writeObjective) {
+
+		objectiveOutput << "constant " << -goldStandardObjectiveValue << std::endl;
+		objectiveOutput.close();
+	}
 }
 
 void

@@ -113,6 +113,17 @@ SegmentExtractor::extractSegments() {
 			<< "previous sections contains " << _prevSlices->size() << " slices,"
 			<< "next sections contains "     << _nextSlices->size() << " slices" << std::endl;
 
+	if (_prevSlices->size() > 0)
+		_segments->setResolution(
+				(*_prevSlices->begin())->getResolutionX(),
+				(*_prevSlices->begin())->getResolutionY(),
+				(*_prevSlices->begin())->getResolutionZ());
+	else if (_nextSlices->size() > 0)
+		_segments->setResolution(
+				(*_nextSlices->begin())->getResolutionX(),
+				(*_nextSlices->begin())->getResolutionY(),
+				(*_nextSlices->begin())->getResolutionZ());
+
 	buildOverlapMap();
 
 	unsigned int oldSize = 0;
@@ -460,7 +471,6 @@ SegmentExtractor::assembleLinearConstraint(const ConflictSet& conflictSet) {
 	LinearConstraint constraint;
 
 	// for each slice in the constraint
-	typedef std::map<unsigned int, double>::value_type pair_t;
 	foreach (unsigned int sliceId, conflictSet.getSlices()) {
 
 		// for all the segments that involve this slice

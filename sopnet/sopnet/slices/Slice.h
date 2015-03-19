@@ -3,6 +3,7 @@
 
 #include <boost/shared_ptr.hpp>
 
+#include <imageprocessing/DiscreteVolume.h>
 #include <util/ProgramOptions.h>
 #include <util/rect.hpp>
 #include <util/Hashable.h>
@@ -11,7 +12,7 @@
 // forward declaration
 class ConnectedComponent;
 
-class Slice : public Hashable<Slice, SliceHash> {
+class Slice : public DiscreteVolume, public Hashable<Slice, SliceHash> {
 
 public:
 
@@ -55,6 +56,13 @@ public:
 	void translate(const util::point<int>& pt);
 
 	bool operator==(const Slice& other) const;
+
+protected:
+
+	/**
+	 * Overwritten from Volume.
+	 */
+	BoundingBox computeBoundingBox() const;
 
 private:
 

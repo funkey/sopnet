@@ -44,6 +44,16 @@ GroundTruthExtractor::updateOutputs() {
 std::vector<Slices>
 GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 
+	// find the maximal value in the ground truth images
+	float maxIntensity = 0;
+	foreach (boost::shared_ptr<Image> image, *_groundTruthSections) {
+
+		float min, max;
+		image->minmax(&min, &max);
+
+		maxIntensity = std::max(maxIntensity, max);
+	}
+
 	// create parameters suitable to extract ground-truth connected components
 	pipeline::Value<ComponentTreeExtractorParameters> cteParameters;
 	if (optionGroundTruthFromSkeletons)
@@ -53,6 +63,8 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 	cteParameters->maxSize      = 10000000;
 	cteParameters->darkToBright = false;
 	cteParameters->sameIntensityComponents = _addIntensityBoundaries; // only extract connected components of same intensity
+	cteParameters->minIntensity = 0;
+	cteParameters->maxIntensity = maxIntensity;
 
 	// create a section extractor to access the sections in the stack
 	pipeline::Process<ImageExtractor> sectionExtractor;
@@ -61,12 +73,16 @@ GroundTruthExtractor::extractSlices(int firstSection, int lastSection) {
 	// list of all slices for each section
 	std::vector<Slices> slices;
 
+	float resX = _groundTruthSections->getResolutionX();
+	float resY = _groundTruthSections->getResolutionY();
+	float resZ = _groundTruthSections->getResolutionZ();
+
 	for (int section = firstSection; section <= lastSection; section++) {
 
 		LOG_DEBUG(groundtruthextractorlog) << "extracting slices in section " << section << std::endl;
 
 		// create a SliceExtractor
-		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, false /* don't downsample */);
+		pipeline::Process<SliceExtractor<unsigned short> > sliceExtractor(section, resX, resY, resZ, false /* don't downsample */);
 
 		// give it the section it has to process and our parameters
 		sliceExtractor->setInput("membrane", sectionExtractor->getOutput(section));
@@ -87,6 +103,11 @@ GroundTruthExtractor::findMinimalTrees(const std::vector<Slices>& slices) {
 
 	// tree segments of all found neurons
 	Segments segments;
+
+	segments.setResolution(
+			_groundTruthSections->getResolutionX(),
+			_groundTruthSections->getResolutionY(),
+			_groundTruthSections->getResolutionZ());
 
 	// all possible continuation segments by neuron label
 	std::map<float, std::vector<ContinuationSegment> > links;
