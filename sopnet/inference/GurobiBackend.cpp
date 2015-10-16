@@ -120,6 +120,17 @@ GurobiBackend::initialize(
 		char t = (type == Binary ? 'B' : (type == Integer ? 'I' : 'C'));
 		LOG_ALL(gurobilog) << "changing type of variable " << v << " to " << t << std::endl;
 		_variables[v].set(GRB_CharAttr_VType, t);
+
+		if (type == Integer || type == Continuous) {
+
+			// remove bounds, which might have been set by the default variable 
+			// type being binary previously
+			for (unsigned int i = 0; i < _numVariables; i++) {
+
+				_variables[i].set(GRB_DoubleAttr_LB, -GRB_INFINITY);
+				_variables[i].set(GRB_DoubleAttr_UB,  GRB_INFINITY);
+			}
+		}
 	}
 
 	LOG_DEBUG(gurobilog) << "creating " << _numVariables << " ceofficients" << std::endl;
