@@ -20,8 +20,6 @@ EyetrackFeatureExtractor::EyetrackFeatureExtractor(const std::string& eyetrackDi
 
 	// read tracks
 	readDistributions();
-
-	// compute per-neurite track distribution for each section
 }
 
 void
@@ -72,6 +70,10 @@ EyetrackFeatureExtractor::readNeuriteDistribution(boost::filesystem::path neurit
 
 			if (!in.good())
 				break;
+
+			// some measurements are discareded with -99
+			if (point[0] < -50 || point[1] < -50)
+				continue;
 
 			if (!sections.count(section)) {
 
