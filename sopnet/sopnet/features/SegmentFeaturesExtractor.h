@@ -9,6 +9,7 @@
 // forward declaration
 class GeometryFeatureExtractor;
 class HistogramFeatureExtractor;
+class EyetrackFeatureExtractor;
 class TypeFeatureExtractor;
 
 class SegmentFeaturesExtractor : public pipeline::ProcessNode {
@@ -43,6 +44,8 @@ private:
 	boost::shared_ptr<GeometryFeatureExtractor>  _geometryFeatureExtractor;
 
 	boost::shared_ptr<HistogramFeatureExtractor> _histogramFeatureExtractor;
+
+	boost::shared_ptr<EyetrackFeatureExtractor> _eyetrackFeatureExtractor;
 
 	boost::shared_ptr<TypeFeatureExtractor> _typeFeatureExtractor;
 

@@ -1,6 +1,7 @@
 #include "SegmentFeaturesExtractor.h"
 #include "GeometryFeatureExtractor.h"
 #include "HistogramFeatureExtractor.h"
+#include "EyetrackFeatureExtractor.h"
 #include "TypeFeatureExtractor.h"
 #include <util/ProgramOptions.h>
 
@@ -9,6 +10,11 @@ util::ProgramOption optionSquareFeatures(
 		util::_long_name        = "squareFeatures",
 		util::_description_text = "Add the square of each feature to the feature vector.");
 
+util::ProgramOption optionEyetrackDirectory(
+		util::_module           = "sopnet.features",
+		util::_long_name        = "eyetrackDirectory",
+		util::_description_text = "A directory containing eye tracks for selected neurons.");
+
 logger::LogChannel segmentfeaturesextractorlog("segmentfeaturesextractorlog", "[SegmentFeaturesExtractor] ");
 
 SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
@@ -16,6 +22,9 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 	_histogramFeatureExtractor(boost::make_shared<HistogramFeatureExtractor>(10)),
 	_typeFeatureExtractor(boost::make_shared<TypeFeatureExtractor>()),
 	_featuresAssembler(boost::make_shared<FeaturesAssembler>()) {
+
+	if (optionEyetrackDirectory)
+		_eyetrackFeatureExtractor = boost::make_shared<EyetrackFeatureExtractor>(optionEyetrackDirectory.as<std::string>());
 
 	registerInput(_segments, "segments");
 	registerInput(_rawSections, "raw sections");
@@ -27,6 +36,8 @@ SegmentFeaturesExtractor::SegmentFeaturesExtractor() :
 
 	_featuresAssembler->addInput(_geometryFeatureExtractor->getOutput());
 	_featuresAssembler->addInput(_histogramFeatureExtractor->getOutput());
+	if (_eyetrackFeatureExtractor)
+		_featuresAssembler->addInput(_eyetrackFeatureExtractor->getOutput());
 	_featuresAssembler->addInput(_typeFeatureExtractor->getOutput());
 }
 
@@ -38,6 +49,8 @@ SegmentFeaturesExtractor::onInputSet(const pipeline::InputSetBase&) {
 		_geometryFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 		_histogramFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 		_histogramFeatureExtractor->setInput("raw sections", _rawSections.getAssignedOutput());
+		if (_eyetrackFeatureExtractor)
+			_eyetrackFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 		_typeFeatureExtractor->setInput("segments", _segments.getAssignedOutput());
 	}
 }
