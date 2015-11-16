@@ -149,47 +149,55 @@ EyetrackFeatureExtractor::updateOutputs() {
 void
 EyetrackFeatureExtractor::getFeatures(const EndSegment& /*end*/, std::vector<double>& features) {
 
+	// we don't have an opinion on ends
 	features[0] = 0;
 }
 
 void
 EyetrackFeatureExtractor::getFeatures(const ContinuationSegment& continuation, std::vector<double>& features) {
 
+	// the score is a number between 0 and 1, make it a reward
+	features[0] = -getLinkScore(*continuation.getSourceSlice(), *continuation.getTargetSlice());
+}
+
+void
+EyetrackFeatureExtractor::getFeatures(const BranchSegment& branch, std::vector<double>& features) {
+
+	// the score is a number between 0 and 1, make it a reward
+	features[0] = -std::max(
+			getLinkScore(*branch.getSourceSlice(), *branch.getTargetSlice1()),
+			getLinkScore(*branch.getSourceSlice(), *branch.getTargetSlice1()));
+}
+
+double
+EyetrackFeatureExtractor::getLinkScore(const Slice& a, const Slice& b) {
+
 	double bestScore = 0;
 
 	std::map<int, Track>::const_iterator i;
 	for (i = _tracks.begin(); i != _tracks.end(); i++) {
 
-		/* For the score, let's take the product of the probabilities of the 
-		 * centroids of the involved slices in the track distribution of the 
-		 * corresponding section.
+		/* For the score, let's take the product of the probability density of 
+		 * the centroids of the involved slices in the track distribution.
 		 */
-
-		double score = 1.0;
-
-		foreach (boost::shared_ptr<Slice> slice, continuation.getSlices()) {
-
-			int section = slice->getSection();
-			if (!i->second.distributions.count(section))
-				continue;
-
-			Vec x(2);
-			x[0] = slice->getComponent()->getCenter().x;
-			x[1] = slice->getComponent()->getCenter().y;
-			score *= i->second.distributions.at(section).pdf(x);
-		}
-
+		double score = getSliceScore(i->second, a)*getSliceScore(i->second, b);
 		bestScore = std::max(bestScore, score);
 	}
 
-	// the score is a number between 0 and 1, make it a reward
-	features[0] = -bestScore;
+	return bestScore;
 }
 
-void
-EyetrackFeatureExtractor::getFeatures(const BranchSegment& /*branch*/, std::vector<double>& features) {
+double
+EyetrackFeatureExtractor::getSliceScore(const Track& track, const Slice& slice) {
 
-	features[0] = 0;
+	int section = slice.getSection();
+	if (!track.distributions.count(section))
+		return 0.5; // default score of "no observation"
+
+	Vec x(2);
+	x[0] = slice.getComponent()->getCenter().x;
+	x[1] = slice.getComponent()->getCenter().y;
+	return track.distributions.at(section).pdf(x);
 }
 
 void

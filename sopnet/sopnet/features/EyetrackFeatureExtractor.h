@@ -88,6 +88,10 @@ private:
 		std::map<int, Distribution> distributions;
 	};
 
+	double getLinkScore(const Slice& a, const Slice& b);
+
+	double getSliceScore(const Track& track, const Slice& slice);
+
 	// a track per neurite
 	std::map<int, Track> _tracks;
 
