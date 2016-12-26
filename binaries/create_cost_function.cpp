@@ -22,6 +22,10 @@ util::ProgramOption optionTedCoefficientFile(
 		util::_description_text = "A file that contains TED coefficients, one per line: [varnum] [coeff] # [hash] [gs] [fs] [fm] [fp] [fn].",
 		util::_default_value    = "ted_coefficients.txt");
 
+util::ProgramOption optionJustCopy(
+		util::_long_name        = "justCopy",
+		util::_description_text = "Don't recompute any score, just take the coefficients like they are.");
+
 util::ProgramOption optionCostFunctionFile(
 		util::_long_name        = "out",
 		util::_description_text = "The file to store the coefficients in.",
@@ -46,6 +50,8 @@ readCoefficients(const std::string& filename) {
 	std::map<SegmentHash, double> coefficients;
 
 	std::ifstream coefsfile(filename.c_str());
+
+	bool justCopy = optionJustCopy;
 
 	while (coefsfile.good()) {
 
@@ -74,6 +80,12 @@ readCoefficients(const std::string& filename) {
 
 		SegmentHash hash;
 		linestream >> hash;
+
+		if (justCopy) {
+
+			coefficients[hash] = coef;
+			continue;
+		}
 
 		double gs;
 		linestream >> gs;
