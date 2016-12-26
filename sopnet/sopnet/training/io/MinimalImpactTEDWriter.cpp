@@ -268,6 +268,7 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 
 	// create new pipeline components
 	_teDistance = boost::make_shared<TolerantEditDistance>();
+	_randIndex = boost::make_shared<RandIndex>();
 	_rimCreator = boost::make_shared<IdMapCreator>();
 	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
 	_rReconstructor = boost::make_shared<Reconstructor>();
@@ -313,6 +314,8 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 	_teDistance->setInput("ground truth", goldStandard);
 	// IdMapCreator [reconstruction] ----> TED
 	_teDistance->setInput("reconstruction", reconstruction);
+	_randIndex->setInput("stack 1", goldStandard);
+	_randIndex->setInput("stack 2", reconstruction);
 	// Reconstructor ----> NeuronExtractor [reconstruction]
 	_rNeuronExtractor->setInput("segments", _rReconstructor->getOutput("reconstruction"));
 	// NeuronExtractor [reconstruction] ----> IdMapCreator [reconstruction]
