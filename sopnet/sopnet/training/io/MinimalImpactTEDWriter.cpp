@@ -35,6 +35,7 @@ static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalIm
 
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 	_teDistance(boost::make_shared<TolerantEditDistance>()),
+	_randIndex(boost::make_shared<RandIndex>()),
 	_gsimCreator(boost::make_shared<IdMapCreator>()),
 	_rimCreator(boost::make_shared<IdMapCreator>()),
 	_rNeuronExtractor(boost::make_shared<NeuronExtractor>()),
@@ -55,7 +56,7 @@ MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 }
 
 void
-MinimalImpactTEDWriter::write(std::string filename) {
+MinimalImpactTEDWriter::write(std::string filename, std::string measure) {
 
 	updateInputs();
 
@@ -149,26 +150,43 @@ MinimalImpactTEDWriter::write(std::string filename) {
 
 		if (!optionWriteTedConditions) {
 
-			pipeline::Value<TolerantEditDistanceErrors> errors = _teDistance->getOutput("errors");
-			int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
+			if (measure == "ted") {
 
-			outfile << "c" << varNum << " ";
-			outfile << (isContained ? -sumErrors : sumErrors) << " ";
-			outfile << "# ";
-			outfile << segmentHash << " ";
-			outfile << (isContained ? 1 : 0) << " ";
-			outfile << errors->getNumSplits() << " ";
-			outfile << errors->getNumMerges() << " ";
-			outfile << errors->getNumFalsePositives() << " ";
-			outfile << errors->getNumFalseNegatives() << std::endl;
+				pipeline::Value<TolerantEditDistanceErrors> errors = _teDistance->getOutput("errors");
+				int sumErrors = errors->getNumSplits() + errors->getNumMerges() + errors->getNumFalsePositives() + errors->getNumFalseNegatives();
 
-			if (isContained) {
+				outfile << "c" << varNum << " ";
+				outfile << (isContained ? -sumErrors : sumErrors) << " ";
+				outfile << "# ";
+				outfile << segmentHash << " ";
+				outfile << (isContained ? 1 : 0) << " ";
+				outfile << errors->getNumSplits() << " ";
+				outfile << errors->getNumMerges() << " ";
+				outfile << errors->getNumFalsePositives() << " ";
+				outfile << errors->getNumFalseNegatives() << std::endl;
 
-				// Forced segment to not be part of the reconstruction.
-				// This resulted in a number of errors that are going to be stored in the constant.
-				// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
+				if (isContained) {
 
-				constant += sumErrors;
+					// Forced segment to not be part of the reconstruction.
+					// This resulted in a number of errors that are going to be stored in the constant.
+					// To make net 0 errors when the variable is on, minus the number of errors will be written to the file.
+
+					constant += sumErrors;
+				}
+
+			} else if (measure == "rand") {
+
+				pipeline::Value<RandIndexErrors> errors = _randIndex->getOutput("errors");
+				double error = 1.0 - errors->getRandIndex();
+
+				outfile << "c" << varNum << " ";
+				outfile << (isContained ? -error: error) << " ";
+				outfile << "# ";
+				outfile << segmentHash << " ";
+				outfile << (isContained ? 1 : 0) << std::endl;
+
+				if (isContained)
+					constant += error;
 			}
 
 		} else {

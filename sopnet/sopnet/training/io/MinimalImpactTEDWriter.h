@@ -6,6 +6,7 @@
 #include <sopnet/inference/ProblemConfiguration.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/io/IdMapCreator.h>
+#include <sopnet/evaluation/RandIndex.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
 #include <sopnet/neurons/NeuronExtractor.h>
 #include <sopnet/inference/Reconstructor.h>
@@ -22,7 +23,7 @@ public:
 
 	MinimalImpactTEDWriter();
 
-	void write(std::string filename);
+	void write(std::string filename, std::string measure = "ted");
 
 private:
 
@@ -75,6 +76,7 @@ private:
 	********************/
 
 	// The node that calculates the tolerant edit distance	
+	boost::shared_ptr<RandIndex>		_randIndex;
 	boost::shared_ptr<TolerantEditDistance>		_teDistance;
 	
 	// The id map creator that creates image stacks for the TED from the gold standard
