@@ -13,8 +13,12 @@ set(VERSION_MINOR 1)
 # compiler settings #
 #####################
 
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -fomit-frame-pointer -std=c++0x -DWITH_BOOST_GRAPH")
-set(CMAKE_CXX_FLAGS_DEBUG   "-g -DDEBUG -Wall -Wextra -std=c++0x -DWITH_BOOST_GRAPH")
+# the only platform supported
+set(SYSTEM_LINUX 1)
+set(SYSTEM_UNIX 1)
+
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -Wall -Wextra -fomit-frame-pointer -std=c++11 -DWITH_BOOST_GRAPH")
+set(CMAKE_CXX_FLAGS_DEBUG   "-g -DDEBUG -Wall -Wextra -std=c++11 -DWITH_BOOST_GRAPH")
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Release or Debug" FORCE)
 endif()
