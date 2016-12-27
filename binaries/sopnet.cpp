@@ -70,6 +70,10 @@ util::ProgramOption optionWriteStructuredProblem(
 		_long_name        = "writeStructuredProblem",
 		_description_text = "Dump the gold standard, all features and constraints for structured learning.");
 
+util::ProgramOption optionWriteMinimalImpactVOI(
+		_long_name	  = "writeMinimalImpactVOI",
+		_description_text = "Dump coefficients for minimal impact VOI for structured learning.");
+
 util::ProgramOption optionWriteMinimalImpactRAND(
 		_long_name	  = "writeMinimalImpactRAND",
 		_description_text = "Dump coefficients for minimal impact RAND for structured learning.");
@@ -684,6 +688,13 @@ int main(int optionc, char** optionv) {
 			sopnet->writeStructuredProblem("./labels.txt", "./features.txt", "./constraints.txt");
 
 			LOG_USER(out) << "[main] files for structured learning written!" << std::endl;
+		}
+
+		if (optionWriteMinimalImpactVOI) {
+			
+			sopnet->writeMinimalImpactVOICoefficients("./minimalImpactVOIcoefficients.txt");
+
+			LOG_USER(out) << "[main] file for minimal impact VOI written!" << std::endl;
 		}
 
 		if (optionWriteMinimalImpactRAND) {

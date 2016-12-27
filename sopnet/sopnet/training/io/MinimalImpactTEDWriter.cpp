@@ -36,6 +36,7 @@ static logger::LogChannel minimalImpactTEDlog("minimalImpactTEDlog", "[minimalIm
 MinimalImpactTEDWriter::MinimalImpactTEDWriter() :
 	_teDistance(boost::make_shared<TolerantEditDistance>()),
 	_randIndex(boost::make_shared<RandIndex>()),
+	_voi(boost::make_shared<VariationOfInformation>()),
 	_gsimCreator(boost::make_shared<IdMapCreator>()),
 	_rimCreator(boost::make_shared<IdMapCreator>()),
 	_rNeuronExtractor(boost::make_shared<NeuronExtractor>()),
@@ -174,6 +175,20 @@ MinimalImpactTEDWriter::write(std::string filename, std::string measure) {
 					constant += sumErrors;
 				}
 
+			} else if (measure == "voi") {
+
+				pipeline::Value<VariationOfInformationErrors> errors = _voi->getOutput("errors");
+				double error = errors->getSplitEntropy() + errors->getMergeEntropy();
+
+				outfile << "c" << varNum << " ";
+				outfile << (isContained ? -error: error) << " ";
+				outfile << "# ";
+				outfile << segmentHash << " ";
+				outfile << (isContained ? 1 : 0) << std::endl;
+
+				if (isContained)
+					constant += error;
+
 			} else if (measure == "rand") {
 
 				pipeline::Value<RandIndexErrors> errors = _randIndex->getOutput("errors");
@@ -269,6 +284,7 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 	// create new pipeline components
 	_teDistance = boost::make_shared<TolerantEditDistance>();
 	_randIndex = boost::make_shared<RandIndex>();
+	_voi = boost::make_shared<VariationOfInformation>();
 	_rimCreator = boost::make_shared<IdMapCreator>();
 	_rNeuronExtractor = boost::make_shared<NeuronExtractor>();
 	_rReconstructor = boost::make_shared<Reconstructor>();
@@ -316,6 +332,8 @@ MinimalImpactTEDWriter::updatePipeline(int interSectionInterval, int numAdjacent
 	_teDistance->setInput("reconstruction", reconstruction);
 	_randIndex->setInput("stack 1", goldStandard);
 	_randIndex->setInput("stack 2", reconstruction);
+	_voi->setInput("stack 1", goldStandard);
+	_voi->setInput("stack 2", reconstruction);
 	// Reconstructor ----> NeuronExtractor [reconstruction]
 	_rNeuronExtractor->setInput("segments", _rReconstructor->getOutput("reconstruction"));
 	// NeuronExtractor [reconstruction] ----> IdMapCreator [reconstruction]

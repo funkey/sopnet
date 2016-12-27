@@ -6,6 +6,7 @@
 #include <sopnet/inference/ProblemConfiguration.h>
 #include <sopnet/segments/Segments.h>
 #include <sopnet/io/IdMapCreator.h>
+#include <sopnet/evaluation/VariationOfInformation.h>
 #include <sopnet/evaluation/RandIndex.h>
 #include <sopnet/evaluation/TolerantEditDistance.h>
 #include <sopnet/neurons/NeuronExtractor.h>
@@ -76,6 +77,7 @@ private:
 	********************/
 
 	// The node that calculates the tolerant edit distance	
+	boost::shared_ptr<VariationOfInformation>		_voi;
 	boost::shared_ptr<RandIndex>		_randIndex;
 	boost::shared_ptr<TolerantEditDistance>		_teDistance;
 	

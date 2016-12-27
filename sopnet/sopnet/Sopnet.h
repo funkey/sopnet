@@ -44,6 +44,7 @@ public:
 
 	void writeStructuredProblem(std::string filename_labels, std::string filename_features, std::string filename_constraints);
 
+	void writeMinimalImpactVOICoefficients(std::string filename);
 	void writeMinimalImpactRANDCoefficients(std::string filename);
 	void writeMinimalImpactTEDCoefficients(std::string filename);
 

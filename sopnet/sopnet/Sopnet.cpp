@@ -484,6 +484,22 @@ Sopnet::createMinimalImpactTEDPipeline() {
 }
 
 void
+Sopnet::writeMinimalImpactVOICoefficients(std::string filename) {
+
+	LOG_DEBUG(sopnetlog) << "requested to write minimal impact VOI coefficients, updating inputs" << std::endl;
+
+	updateInputs();
+
+	LOG_DEBUG(sopnetlog) << "creating internal pipeline, if not created yet" << std::endl;
+
+	createPipeline();
+
+	LOG_DEBUG(sopnetlog) << "writing minimal impact VOI coefficient files..." << std::endl;
+
+	_mitWriter->write(filename, "voi");
+}
+
+void
 Sopnet::writeMinimalImpactRANDCoefficients(std::string filename) {
 
 	LOG_DEBUG(sopnetlog) << "requested to write minimal impact RAND coefficients, updating inputs" << std::endl;
